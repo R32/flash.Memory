@@ -4,13 +4,12 @@ import flash.display.StageAlign;
 import flash.display.StageScaleMode;
 import flash.Lib;
 import haxe.unit.TestRunner;
-
 /**
 * ...
 * @author 匿名
 */
-
 class Main {
+
 	
 	static function main() {
 		var stage = Lib.current.stage;
@@ -18,9 +17,11 @@ class Main {
 		stage.align = StageAlign.TOP_LEFT;
 		// entry point
 		
+		Ram.attach();
+		
 		var runner = new TestRunner();
-		runner.add(new test.Test());
+		runner.add(new test.Test());		
 		runner.run();
 	}
-	
+
 }

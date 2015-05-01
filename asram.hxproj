@@ -11,7 +11,7 @@
     <movie version="17" />
     <movie minorVersion="0" />
     <movie platform="Flash Player" />
-    <movie background="#FFFFFF" />
+    <movie background="#000000" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -24,7 +24,7 @@
     <option noInlineOnDebug="False" />
     <option mainClass="Main" />
     <option enabledebug="True" />
-    <option additional="" />
+    <option additional="-dce full" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -40,7 +40,7 @@
   </library>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
-    <!-- example: <hidden path="..." /> -->
+    <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand />

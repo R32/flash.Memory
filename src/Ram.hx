@@ -5,79 +5,56 @@ import flash.utils.ByteArray;
 import flash.utils.IDataInput;
 import flash.utils.IDataOutput;
 import flash.Memory;
+import haxe.Utf8;
+
 import mem.LEByteArray;
 import mem.MemoryChunk;
 
-/**
-* 只有在不经常交换数据时, flash.Memory 才会有性能上的提升
-* 只有 直接将 ByteArray 直接挂到 ApplicationDomain.currentDomain.domainMemory 中去？这样就省去内存管理了
-*/
+
 class Ram{
 	
-	/**
-	* LB 只能为 2 的 n 次幂, 8,16,32,64.....Math.pow(2,n);
-	*/
+	// LB 只能为 2 的 n 次幂, 8,16,32,64.....Math.pow(2,n);
 	static inline var LB:Int = 16;
 	
-	static var bts:LEByteArray = null;
+	static var Comb:LEByteArray = null;
+	static var Tmp:ByteArray;
 	
-	static var tmp:ByteArray = null;
-
 	public static var total(get, never):Int;
 	private static function get_total():Int {
-		return 	bts == null ? 0 : bts.length; 
+		return 	Comb == null ? 0 : Comb.length; 
 	}
 	
 	public static var ready(default,null):Bool = false;
-	
-
-	public static inline function init():Void {attach();}
-	
-	
-	/**
-	* 将 bts 关联到 DomainMemory,如果 DomainMemory 不为 null时,DomainMemory的值会被暂存在 tmp上
-	* 直到调用 detach 才会恢复 DomainMemory 之前所关联的对象
-	*/
+		
 	public static function attach():Void {
-		if (bts == null) {
-			bts = new LEByteArray(ApplicationDomain.MIN_DOMAIN_MEMORY_LENGTH);
-		}
-		if (ApplicationDomain.currentDomain.domainMemory != bts) {
-			tmp = ApplicationDomain.currentDomain.domainMemory;
+		if (Comb == null) {
+			Comb = new LEByteArray(ApplicationDomain.MIN_DOMAIN_MEMORY_LENGTH);
 		}
 		
-		if (!ready) {
-			Memory.select(bts);
+		if (ApplicationDomain.currentDomain.domainMemory != Comb) {
+			Tmp = ApplicationDomain.currentDomain.domainMemory;
+			Memory.select(Comb);
 			ready = true;
-		}
+		}	
 	}
 	
-	/**
-	* 除非使用多个flash.Memory 管理,如 flash alchemy, 否则很多情况下都不需要调用这个方法,
-	*/
 	public static function detach():Void {
-		Memory.select(tmp);
-		ready =  false;
+		Memory.select(Tmp);
+		ready = false;
 	}
 	
-	
-	/**
-	* 	分配 size 字节,返回 一个 Int 类型的内存地址.
-	* @param	size
-	* @return
-	*/
+	// 以字节为单位
 	public static function malloc(size:Int):Int {
-		var ptr:Int = 0;
+		var ptr:Int = -1;
 		if(ready && size > 0) {
 			
 			size += (LB - (size & (LB - 1)	)) & (LB - 1);	// 补满为 LB 的倍数.
 			
-			ptr = MemoryChunk.calcPtr(size);
+			ptr = MemoryChunk.calc(size);
 			
 			if (size > (total - ptr)) {
-				bts.length = ptr + size;
-			}
-			
+				Comb.length = ptr + size;
+			}		
 			new MemoryChunk(ptr, size);
 		}else {
 			throw 'not ready or size <= 0';
@@ -87,16 +64,16 @@ class Ram{
 	
 	public static function free(ptr:Int):Bool {
 		if (ready) {
-			return MemoryChunk.release(ptr);
+			return MemoryChunk.free(ptr);
 		}
 		return false;
 	}
 	
 	/**
-	* 从 domainByteArray 中读数据,写到 dst 中,写数据前需要自行设置 dst 的 position 位置
+	* 从 ptr 处读取 len 数据,写到 dst 中
 	* @param	ptr
 	* @param	len
-	* @param	dst #if openfl ByteArray #else IDataOutput #end 因为openfl 的 ByteArray 没有接口 IDataOutput 
+	* @param	dst
 	*/
 	public static function readBytes(ptr:Int, len:Int, dst:IDataOutput):Void {
 		while (len >= 4) {
@@ -108,8 +85,9 @@ class Ram{
 			dst.writeByte(Memory.getByte(ptr++));
 		}
 	}
+	
 	/**
-	* 从 src 中读数据,写到 domainByteArray 的指定位置,读数据前需要自行设置 src 的 position 位置
+	* 从 src 中读 len 数据,写到 ptr 位置
 	* @param	ptr
 	* @param	len
 	* @param	src
@@ -127,23 +105,20 @@ class Ram{
 	
 	/**
 	* 
-	* @param	dst
-	* @param	src
+	* @param	dst ptr
+	* @param	src ptr 
 	* @param	size
 	*/
 	public static function memcpy(dst:Int,src:Int,size:Int):Void {
-		// for flash.Memory
 		if (src > dst){
 			while (size >= 4) {
 				Memory.setI32(dst,	Memory.getI32(src));
 				dst += 4;
 				src += 4;
 				size -= 4;
-				//trace("++++++ 4 ++++++");
 			}
 			while (0 != size--) {
 				Memory.setByte( dst++ ,	Memory.getByte( src++ ));
-				//trace("++++++ 1 ++++++");
 			}
 		}else {// 逆序复制
 			dst += size;
@@ -153,11 +128,9 @@ class Ram{
 				src -= 4;
 				size -= 4;
 				Memory.setI32(dst,	Memory.getI32(src));
-				//trace("------ 4 ------");
 			}
 			while (0 != size--) {
 				Memory.setByte( --dst ,	Memory.getByte( --src ));
-				//trace("------ 1 ------");
 			}
 		}
 	}
@@ -179,4 +152,11 @@ class Ram{
 			Memory.setByte(dst++, v);	
 		}
 	}
+	
+	public static function mallocFromString(str:String):Int {
+		// 实际上在 flash 中, str 的长度中文也只算一个字符.
+		throw "Does not yet support";
+		return 0;
+	}
+	
 }
