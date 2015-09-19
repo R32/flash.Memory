@@ -1,4 +1,4 @@
-package test;
+package;
 
 import flash.display.Shape;
 import flash.Lib;
@@ -140,6 +140,14 @@ class Test extends TestCase{
 			mc.graphics.lineTo(p, h + MC_H);
 		}
 		mc.graphics.endFill();
+	}
+	
+	public static function main(){
+		Ram.attach();
+		var runner = new TestRunner();
+		runner.add(new Test());		
+		runner.run();
+		Ram.detach();
 	}
 	
 }
