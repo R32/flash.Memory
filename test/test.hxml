@@ -1,0 +1,7 @@
+-cp ../tools
+-swf test.swf
+-swf-header 550:410:24:000000
+--flash-strict
+-swf-version 10.3
+-main TestStruct
+-resource ../res/super_mario.nsf@supermario
