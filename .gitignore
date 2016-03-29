@@ -1,4 +1,11 @@
 bin
 obj
+dump
 *.swc
 *.swf
+*.p12
+*.js
+*.css
+.depend
+*.exe
+*.o
