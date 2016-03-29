@@ -23,7 +23,7 @@ class Ram{
 
 	public static function create():ByteArray{
 		var ba = new ByteArray();
-		ba.length = 1024;
+		ba.length = LLB;
 		ba.endian = flash.utils.Endian.LITTLE_ENDIAN;
 		return ba;
 	}
@@ -55,7 +55,7 @@ class Ram{
 		return i;
 	}
 
-	public static function readBytes(ptr:Ptr, len:Int, dst:IDataOutput):Void {
+	public static function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
 		while (len >= 4) {
 			dst.writeInt(Memory.getI32(ptr));
 			ptr += 4;
@@ -66,7 +66,7 @@ class Ram{
 		}
 	}
 
-	public static function writeBytes(ptr:Ptr, len:Int, src:IDataInput):Void {
+	public static function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		while (len >= 4) {
 			Memory.setI32(ptr, src.readInt());
 			ptr += 4;
@@ -107,15 +107,15 @@ class Ram{
 	public static function memcmp(dst:Ptr, src: Ptr, size:Int):Bool{
 		if (dst == src) return true;
 		while (size >= 4){
-			if (Memory.getI32(dst) == Memory.getI32(src)) return true;
+			if (Memory.getI32(dst) != Memory.getI32(src)) return false;
 			dst += 4;
 			src += 4;
 			size -= 4;
 		}
 		while (0 != size--) {
-			if (Memory.getByte(dst) == Memory.getByte(src)) return true;
+			if (Memory.getByte(dst++) != Memory.getByte(src++)) return false;
 		}
-		return false;
+		return true;
 	}
 
 	public static function memset(dst:Ptr,v:Int,size:Int):Void {

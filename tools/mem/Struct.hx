@@ -233,10 +233,8 @@ class ZStructBuild{
 									if (sget == null || sset == null){
 										null;
 									}else{
-										[macro{ var ret:Array<$ct> = [];
-											for (i in 0...$v{params.nums}) ret.push(Memory.$sget(ptr + i));
-											ret;
-										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset(ptr + i, v[i]); }];
+										[macro{[for (i in 0...$v{params.nums}) Memory.$sget(ptr + $v{offset} + i)];
+										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset(ptr + $v{offset} + i, v[i]); }];
 									}
 								default: null;
 								}
