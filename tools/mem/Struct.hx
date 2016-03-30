@@ -91,11 +91,11 @@ class ZStructBuild{
 
 	static public function build(){
 		var cls:ClassType = Context.getLocalClass().get();
+		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
 
 		var all_fields:Array<String> = [];
 		var attrs = {};
-
 		var offset = 0;
 		var params:Param;
 		var metaParams;
@@ -317,6 +317,7 @@ class ZStructBuild{
 			}
 
 		}
+		if (offset == 0) return null;
 		fields.push({
 			name : "CAPACITY",
 			doc:  "== " + $v{offset},
