@@ -1,7 +1,33 @@
+-dce full
 -cp ../tools
+-main TestStruct
+-resource ../res/super_mario.nsf@supermario
+#--connect 6000
+--each
+
 -swf test.swf
 -swf-header 550:410:24:000000
 --flash-strict
 -swf-version 10.3
--main TestStruct
--resource ../res/super_mario.nsf@supermario
+
+--next
+-neko bin/test.n
+
+--next
+-java bin/jav
+
+--next
+-cs bin/cs
+
+--next
+-php bin/php
+
+--next
+-python bin/pyt
+
+--next
+-hl bin/hl/hl.c
+
+#--next
+#-cpp bin/cpp
+

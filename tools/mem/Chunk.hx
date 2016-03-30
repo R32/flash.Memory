@@ -2,7 +2,6 @@ package mem;
 
 import Ram;
 import haxe.ds.IntMap;
-import flash.utils.Dictionary;
 
 class Chunk{
 	public var id(default,null):Int;
