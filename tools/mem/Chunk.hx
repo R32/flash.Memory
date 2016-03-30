@@ -107,7 +107,7 @@ class Chunk{
 	}
 
 	public static inline function get_used():Ptr {		// space used
-		return last == null ? 0 : last.ptr + last.length;
+		return last == null ? 16 : last.ptr + last.length;
 	}
 
 	public static inline function free(ptr:Ptr):Bool {

@@ -51,13 +51,13 @@ class Ram{
 	public static function malloc(size:UInt):Ptr {
 		size += (LB - (size & (LB - 1)	)) & (LB - 1);
 
-		var ptr = Chunk.calc(size);
+		var ptr = Chunk.calc(size); // always ptr >= 16
 
 		if ((size + ptr) > current.length) {
 		#if flash
-			current.length = ptr + (size + ((LLB - (size & (LLB - 1))) & (LLB - 1)));
+			current.length = calcPad(ptr + size);
 		#else
-			var a = Bytes.alloc(ptr + (size + ((LLB - (size & (LLB - 1))) & (LLB - 1))));
+			var a = Bytes.alloc(calcPad(ptr + size));
 			a.blit(0, current, 0, current.length);
 			Memory.select(a);
 			current = a;
@@ -66,7 +66,9 @@ class Ram{
 		new Chunk(ptr, size);
 		return ptr;
 	}
-
+	static inline function calcPad(u){
+		return LLB >= u ? LLB  : LLB + calcPad(u - LLB);
+	}
 	public static inline function free(ptr:Ptr):Bool {
 		return Chunk.free(ptr);
 	}
