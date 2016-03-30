@@ -54,13 +54,27 @@ class TestStruct extends haxe.unit.TestCase{
 		var file = haxe.Resource.getBytes("supermario");
 
 		var mario = new Nsfhd(Ram.malloc(file.length));
-		Ram.writeBytes(mario.ptr, file.length, file.getData());
+		Ram.writeBytes(mario.ptr, file.length, #if flash file.getData() #else file #end);
 		print(mario.toString() + "\n");
 
 		var fake = new Nsfhd(Ram.malloc(Nsfhd.CAPACITY));
-		for (key in Nsfhd.ALL_FIELDS()){
-			Reflect.setProperty(fake, key, Reflect.getProperty(mario, key));
-		}
+		// you can do: Ram.memcpy(fake.ptr, mario.ptr,  Nsfhd.CAPACITY);
+		fake.tag = mario.tag;
+		fake.ver = mario.ver;
+		fake.track_count = mario.track_count;
+		fake.track_intro_number = mario.track_intro_number;
+		fake.init_address = mario.init_address;
+		fake.data_address = mario.data_address;
+		fake.song_address = mario.song_address;
+		fake.title = mario.title;
+		fake.author = mario.author;
+		fake.copyright = mario.copyright;
+		fake.ntsc = mario.ntsc;
+		fake.bank = mario.bank;
+		fake.ntsc_loop_speed = mario.ntsc_loop_speed;
+		fake.sys = mario.sys;
+		fake.exra = mario.exra;
+
 		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.ptr, mario.ptr, Nsfhd.CAPACITY));
 
 		var endian = new EndianDetect();
@@ -74,16 +88,18 @@ class TestStruct extends haxe.unit.TestCase{
 	}
 
 	public static function main(){
+	#if flash
 		var stage = flash.Lib.current.stage;
 		stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
 		stage.align = flash.display.StageAlign.TOP_LEFT;
+	#end
 		Ram.select(Ram.create());
 
 		var runner = new TestRunner();
 		runner.add(new TestStruct());
 		runner.run();
-		@:privateAccess{
-			TestRunner.tf.textColor = 0xffffff;
-		}
+	#if flash
+		@:privateAccess{TestRunner.tf.textColor = 0xffffff; }
+	#end
 	}
 }
