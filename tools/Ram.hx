@@ -55,30 +55,19 @@ class Ram{
 		return i;
 	}
 
-	public static function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
-		while (len >= 4) {
-			dst.writeInt(Memory.getI32(ptr));
-			ptr += 4;
-			len -= 4;
-		}
-		while (0 != len--) {
-			dst.writeByte(Memory.getByte(ptr++));
-		}
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
+		dst.writeBytes(current, ptr, len);
 	}
 
-	public static function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
-		while (len >= 4) {
-			Memory.setI32(ptr, src.readInt());
-			ptr += 4;
-			len -= 4;
-		}
-		while (0 != len--) {
-			Memory.setByte(ptr++, src.readByte());
-		}
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
+		src.readBytes(current, ptr, len);
 	}
 
-	public static function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
+	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src) return;
+		current.position = src;
+		current.readBytes(current, dst, size);
+	/*  // slowly then above
 		if (dst < src){
 			while (size >= 4) {
 				Memory.setI32(dst, Memory.getI32(src));
@@ -102,6 +91,7 @@ class Ram{
 				Memory.setByte(--dst , Memory.getByte(--src));
 			}
 		}
+	*/
 	}
 
 	public static function memcmp(dst:Ptr, src: Ptr, size:Int):Bool{
