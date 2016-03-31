@@ -6,6 +6,7 @@ import mem.Ptr;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxe.macro.ExprTools;
 import haxe.macro.TypeTools;
 import haxe.macro.ComplexTypeTools;
 import haxe.macro.PositionTools.here;
@@ -21,7 +22,7 @@ typedef Param = {
 * new 方法应该定义成 **inline** 形式的
 
 ```
-<bytes=4>mem.Ptr            @idx(?offset)
+<bytes=4>mem.Ptr            @idx(?offset=0)
 <bytes=1>Bool:              @idx(?offset)
 <bytes=1>Enum               @idx(?offset)
 <bytes=1>String             @idx(length, ?offset)
@@ -52,7 +53,7 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
 		this.ptr = 0;
 	}
 
-	public inline function toOut():String{
+	public inline function __toOut():String{
 		return "long ....";
 	}
 
@@ -135,20 +136,12 @@ class StructBuild{
 			params = null;
 
 			for(meta in f.meta){
-				if(meta.name == IDX){
-					switch (meta.params) {
-						case [{expr: EConst(CInt(v))}, {expr: EConst(CInt(v2))}, {expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v), parseInt(v2), parseInt(v3)];
-
-						case [{expr: EConst(CInt(v2))}, {expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v2), parseInt(v3)];
-
-						case [{expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v3)];
-
-						default:
-							metaParams = [0];
+				if (meta.name == IDX){
+					metaParams = [];
+					for(ex in meta.params){
+						metaParams.push(parseInt(ExprTools.getValue(ex)));
 					}
+					if (metaParams.length == 0) metaParams.push(0);
 				}
 			}
 			if (metaParams == null) continue;
@@ -172,11 +165,12 @@ class StructBuild{
 					case TAbstract(a, _):
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
-						offset += params.dx;
 						switch (ts) {
 						case "Bool":
+							offset += params.dx;
 							[macro Memory.getByte($i{context}+ $v{offset}) != 0, macro Memory.setByte($i{context}+ $v{offset}, v ? 1 : 0)];
 						case "Int":
+							offset += params.dx;
 							var sget = "getByte", sset = "setByte";
 							switch (params.width) {
 							case 2: sget = "getUI16"; sset = "setI16";
@@ -185,6 +179,7 @@ class StructBuild{
 							}
 							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
 						case "Float":
+							offset += params.dx;
 							var sget = "getFloat", sset = "setFloat";
 							if (params.width == 2) params.width = 8;
 							if(params.width == 8){
@@ -194,6 +189,7 @@ class StructBuild{
 							}
 							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
 						case "haxe.EnumFlags":
+							offset += params.dx;
 							switch(arrType[0]){	// ComplexType
 							case TPType(ct):
 								var sget = "getByte", sset = "setByte";
@@ -210,9 +206,8 @@ class StructBuild{
 							}
 						default:
 							ts = TypeTools.toString(a.get().type);
-							if (abs_type != null && TypeTools.toString(abs_type.type) == ts){
+							if (abs_type != null && ts == "mem.Ptr"){
 								params = parseMeta(metaParams, ts);
-								params.width = 4;
 								offset += params.dx;
 								[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
 							}else{
@@ -430,21 +425,21 @@ class StructBuild{
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
 				var node = Reflect.field(attrs, k);
-				var _w = hexWidth(offset);
+				var _w = Ut.hexWidth(offset);
 				var _dx = StringTools.hex( node.offset, _w);
 				var _len = node.len * node.bytes;
 				var _end = StringTools.hex(node.offset + _len, _w);
 				block.push(macro buf.push("offset: 0x" + $v{_dx} + " - 0x" + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 			}
 			fields.push({
-				name : "toOut",
+				name : "__toOut",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
 					ret : macro :String,
 					expr: macro {
 						$prep;
-						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + "\n"];
+						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + ", addr: "+ $i{context} +"\n"];
 						$b{block};
 						return buf.join("");
 					}
@@ -453,17 +448,6 @@ class StructBuild{
 			});
 		//#end
 		return fields;
-	}
-
-	static function hexWidth(n){
-		var i = 0;
-		while (n >= 1) {
-			n = n >> 4;
-			i += 1;
-		}
-		if ((i & 1) == 1) i += 1;
-		if (i < 2) i = 2;
-		return i;
 	}
 	#end
 }

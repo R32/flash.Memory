@@ -6,7 +6,7 @@ import mem.Ptr;
 import haxe.io.Bytes;
 
 class Ram{
-	static inline var LB:Int = 16;						// LB 只能为 2 的 n 次幂,
+	static inline var LB:Int = 8;						// LB 只能为 2 的 n 次幂,
 	static inline var LLB:Int = 8192;					// pow(2,13)
 
 #if flash
@@ -20,16 +20,10 @@ class Ram{
 	}
 
 	public static function create(len = LLB):ByteArray{
-	#if flash
 		var ba = new ByteArray();
 		ba.length = len;
 		ba.endian = flash.utils.Endian.LITTLE_ENDIAN;
 		return ba;
-	#else
-		var b = Bytes.alloc(LLB);
-		return b.getData();
-	#end
-
 	}
 #else
 	static var stack = new Array<Bytes>();
@@ -48,27 +42,27 @@ class Ram{
 		if (current != null) Memory.select(current);
 	}
 	// in bytes
-	public static function malloc(size:UInt):Ptr {
-		size += (LB - (size & (LB - 1)	)) & (LB - 1);
+	public static function malloc(size:UInt, zero:Bool = false):Ptr {
+
+		size = mem.Ut.pad8(size, LB);
 
 		var ptr = Chunk.calc(size); // always ptr >= 16
 
 		if ((size + ptr) > current.length) {
 		#if flash
-			current.length = calcPad(ptr + size);
+			current.length = mem.Ut.pad8(ptr + size, LLB);
 		#else
-			var a = Bytes.alloc(calcPad(ptr + size));
+			var a = Bytes.alloc(mem.Ut.pad8(ptr + size, LLB));
 			a.blit(0, current, 0, current.length);
 			Memory.select(a);
 			current = a;
 		#end
 		}
 		new Chunk(ptr, size);
+		if (zero) memset(ptr, 0, size);
 		return ptr;
 	}
-	static inline function calcPad(u){
-		return LLB >= u ? LLB  : LLB + calcPad(u - LLB);
-	}
+
 	public static inline function free(ptr:Ptr):Bool {
 		return Chunk.free(ptr);
 	}
