@@ -52,7 +52,7 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
 		this.ptr = 0;
 	}
 
-	public inline function toString():String{
+	public inline function toOut():String{
 		return "long ....";
 	}
 
@@ -120,7 +120,6 @@ class StructBuild{
 		var constructor:Field = null;
 		var hasPtr = false;
 		var hasFree = false;
-		var hasToString = false;
 
 		for (f in fields.copy()){
 			if(abs_type != null){
@@ -131,7 +130,6 @@ class StructBuild{
 			}
 
 			if (f.name == "free") hasFree = true;
-			if (f.name == "toString") hasToString = true;
 
 			metaParams = null;
 			params = null;
@@ -408,7 +406,7 @@ class StructBuild{
 			fields.push({
 				name : "__toOrgin",
 				meta: [{name:":to", pos: here()}],
-				access: [APublic, AInline],
+				access: [AInline],
 				kind: FFun({
 					args: [],
 					ret : Context.toComplexType(abs_type.type),
@@ -427,7 +425,7 @@ class StructBuild{
 			});
 		}
 
-		if (!hasToString){
+		//#if (debug || watch)
 			var prep = abs_type == null ?  (macro null) : (macro if (0 >= this) return "null");
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
@@ -439,7 +437,7 @@ class StructBuild{
 				block.push(macro buf.push("offset: 0x" + $v{_dx} + " - 0x" + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 			}
 			fields.push({
-				name : "toString",
+				name : "toOut",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
@@ -453,7 +451,7 @@ class StructBuild{
 				}),
 				pos: here()
 			});
-		}
+		//#end
 		return fields;
 	}
 
