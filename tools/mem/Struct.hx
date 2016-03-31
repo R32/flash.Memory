@@ -6,6 +6,7 @@ import mem.Ptr;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxe.macro.ExprTools;
 import haxe.macro.TypeTools;
 import haxe.macro.ComplexTypeTools;
 import haxe.macro.PositionTools.here;
@@ -15,14 +16,13 @@ typedef Param = {
 	nums:Int,
 	dx:Int
 };
-#end
-
+#else
 /**
 * in bytes
 * new 方法应该定义成 **inline** 形式的
 
 ```
-<bytes=4>mem.Ptr            @idx(?offset)
+<bytes=4>mem.Ptr            @idx(?offset=0)
 <bytes=1>Bool:              @idx(?offset)
 <bytes=1>Enum               @idx(?offset)
 <bytes=1>String             @idx(length, ?offset)
@@ -34,24 +34,35 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
  - Float: if(bytes == 2 or 8) then 8 else 4
 ```
 */
-#if !macro
-@:autoBuild(mem.ZStructBuild.build())
+@:autoBuild(mem.StructBuild.make())
 #end
 @:remove interface Struct{
 	var ptr(default, null):mem.Ptr;
 
-/*  if not have, macro will be auto create below these:
+/*  make all @idx fields as inline getter/setter;
 
+	and if not have, macro will be auto create below these:
 	public var ptr(default, null):mem.Ptr;
-	public inline function new(p:Ptr) this.ptr = p;
-	public inline function free(p:Ptr){
-		Ram.free(ptr);
-		this.ptr = -1;
+
+	public inline function new(p:Ptr){
+		ptr = p;
 	}
+
+	public inline function free(p:Ptr){
+		mem.Chunk.free(ptr);
+		this.ptr = 0;
+	}
+
+	public inline function __toOut():String{
+		return "long ....";
+	}
+
+	static inline var CAPACITY:Int = typeof(this struct);
+	static inline var ALL_FIELDS:iterator = ["field_1_name", "field_2_name" .....];
 */
 }
 
-class ZStructBuild{
+class StructBuild{
 	#if macro
 	static inline var IDX = "idx";
 
@@ -60,9 +71,8 @@ class ZStructBuild{
 		var i = Std.parseInt(s);
 		return Math.isNaN(i) ? 0 : i;
 	}
-	static inline function notZero(v:Int, def:Int = 1):Int{
-		return v <= 0 ? def : v;
-	}
+
+	static inline function notZero(v:Int, def:Int = 1) return v <= 0 ? def : v;
 
 	static function parseMeta(arr:Array<Int>, type:String):Param{
 		var ret;
@@ -89,13 +99,21 @@ class ZStructBuild{
 		return ret;
 	}
 
-	static public function build(){
+	static public function make(context = "ptr"){
 		var cls:ClassType = Context.getLocalClass().get();
+		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
+
+		var abs_type  = null;
+		switch (cls.kind) {
+			case KAbstractImpl(_.get() => t):
+				abs_type = t;
+			default:
+		}
+		if (abs_type != null) context = "this";
 
 		var all_fields:Array<String> = [];
 		var attrs = {};
-
 		var offset = 0;
 		var params:Param;
 		var metaParams;
@@ -103,32 +121,27 @@ class ZStructBuild{
 		var constructor:Field = null;
 		var hasPtr = false;
 		var hasFree = false;
-		var hasToString = false;
 
 		for (f in fields.copy()){
-			if (f.name == "new") constructor = f;
-			if (f.name == "ptr") hasPtr = true;
+			if(abs_type != null){
+				if (f.name == "_new") constructor = f;
+			}else{
+				if (f.name == "new") constructor = f;
+				if (f.name == context) hasPtr = true;	// if is_abstruct, will be ignore this
+			}
+
 			if (f.name == "free") hasFree = true;
-			if (f.name == "toString") hasToString = true;
 
 			metaParams = null;
 			params = null;
 
 			for(meta in f.meta){
-				if(meta.name == IDX){
-					switch (meta.params) {
-						case [{expr: EConst(CInt(v))}, {expr: EConst(CInt(v2))}, {expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v), parseInt(v2), parseInt(v3)];
-
-						case [{expr: EConst(CInt(v2))}, {expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v2), parseInt(v3)];
-
-						case [{expr: EConst(CInt(v3))}]:
-							metaParams = [parseInt(v3)];
-
-						default:
-							metaParams = [0];
+				if (meta.name == IDX){
+					metaParams = [];
+					for(ex in meta.params){
+						metaParams.push(parseInt(ExprTools.getValue(ex)));
 					}
+					if (metaParams.length == 0) metaParams.push(0);
 				}
 			}
 			if (metaParams == null) continue;
@@ -145,26 +158,28 @@ class ZStructBuild{
 						if (ts == "mem.Ptr"){
 							params = parseMeta(metaParams, ts);
 							offset += params.dx;
-							[macro Memory.getI32(ptr + $v{offset}), macro (Memory.setI32(ptr + $v{offset}, v))];
+							[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
 						}else{
 							null;
 						}
 					case TAbstract(a, _):
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
-						offset += params.dx;
 						switch (ts) {
 						case "Bool":
-							[macro Memory.getByte(ptr+ $v{offset}) != 0, macro Memory.setByte(ptr+ $v{offset}, v ? 1 : 0)];
+							offset += params.dx;
+							[macro Memory.getByte($i{context}+ $v{offset}) != 0, macro Memory.setByte($i{context}+ $v{offset}, v ? 1 : 0)];
 						case "Int":
+							offset += params.dx;
 							var sget = "getByte", sset = "setByte";
 							switch (params.width) {
 							case 2: sget = "getUI16"; sset = "setI16";
 							case 4: sget = "getI32"; sset = "setI32";
 							default: params.width = 1;
 							}
-							[macro Memory.$sget(ptr + $v{offset}), macro (Memory.$sset(ptr + $v{offset}, v))];
+							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
 						case "Float":
+							offset += params.dx;
 							var sget = "getFloat", sset = "setFloat";
 							if (params.width == 2) params.width = 8;
 							if(params.width == 8){
@@ -172,8 +187,9 @@ class ZStructBuild{
 							}else{
 								params.width = 4;
 							}
-							[macro Memory.$sget(ptr + $v{offset}), macro (Memory.$sset(ptr + $v{offset}, v))];
+							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
 						case "haxe.EnumFlags":
+							offset += params.dx;
 							switch(arrType[0]){	// ComplexType
 							case TPType(ct):
 								var sget = "getByte", sset = "setByte";
@@ -184,11 +200,19 @@ class ZStructBuild{
 								}
 								if (params.width * 8 < TypeTools.getEnum(ComplexTypeTools.toType(ct)).names.length)
 									throw "Unsupported width for EnumFlags" + params.width;
-								[macro { new haxe.EnumFlags<$ct>(Memory.$sget(ptr + $v{offset}));}
-									, macro { Memory.$sset(ptr + $v{offset}, v.toInt());}];
+								[macro { new haxe.EnumFlags<$ct>(Memory.$sget($i{context} + $v{offset}));}
+									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
 							default: throw "EnumFlags instance expected";
 							}
-						default: null;
+						default:
+							ts = TypeTools.toString(a.get().type);
+							if (abs_type != null && ts == "mem.Ptr"){
+								params = parseMeta(metaParams, ts);
+								offset += params.dx;
+								[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
+							}else{
+								null;
+							}
 						}
 					case TEnum(e, _):
 						ts = Std.string(e);
@@ -196,8 +220,8 @@ class ZStructBuild{
 						offset += params.dx;
 						params.width = 1;
 						var epr = Context.getTypedExpr({expr:TTypeExpr(TEnumDecl(e)), t:t, pos:f.pos});
-						[macro haxe.EnumTools.createByIndex($epr, Memory.getByte(ptr + $v{offset})),
-							macro Memory.setByte(ptr + $v{offset}, Type.enumIndex(v))];
+						[macro haxe.EnumTools.createByIndex($epr, Memory.getByte($i{context} + $v{offset})),
+							macro Memory.setByte($i{context} + $v{offset}, Type.enumIndex(v))];
 
 					case TInst(s, _):
 						ts = Std.string(s);
@@ -205,8 +229,8 @@ class ZStructBuild{
 						offset += params.dx;
 							switch(ts) {
 							case "String":
-							[macro Ram.readUTFBytes(ptr + $v{offset}, $v{params.width})
-								,macro Ram.writeUTFBytes(ptr + $v{offset}, v)];
+							[macro Ram.readUTFBytes($i{context} + $v{offset}, $v{params.width})
+								,macro Ram.writeUTFBytes($i{context} + $v{offset}, v)];
 							case "Array":
 								switch (arrType[0]) {
 								case TPType(ct = TPath(at)):
@@ -233,8 +257,8 @@ class ZStructBuild{
 									if (sget == null || sset == null){
 										null;
 									}else{
-										[macro{[for (i in 0...$v{params.nums}) Memory.$sget(ptr + $v{offset} + i)];
-										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset(ptr + $v{offset} + i, v[i]); }];
+										[macro{[for (i in 0...$v{params.nums}) Memory.$sget($i{context} + $v{offset} + i)];
+										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset($i{context} + $v{offset} + i, v[i]); }];
 									}
 								default: null;
 								}
@@ -317,6 +341,7 @@ class ZStructBuild{
 			}
 
 		}
+		if (offset == 0) return null;
 		fields.push({
 			name : "CAPACITY",
 			doc:  "== " + $v{offset},
@@ -347,7 +372,7 @@ class ZStructBuild{
 					args: [{name: "p", type: macro :mem.Ptr}],
 					ret : null,
 					expr: macro {
-						ptr = p;
+						$i{context} = p;
 					}
 				}),
 				pos: here()
@@ -359,64 +384,70 @@ class ZStructBuild{
 		if (!hasFree)
 			fields.push({
 				name : "free",
+				doc: "call Pof.free() to release memory",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
 					ret : null,
 					expr: macro {
-						Ram.free(ptr);
-						ptr = -1;
+						mem.Chunk.free($i{context});
+						$i{context} = 0;
 					}
 				}),
 				pos: here()
 			});
 
-		if(!hasPtr)
+		if (abs_type != null){
 			fields.push({
-				name : "ptr",
+				name : "__toOrgin",
+				meta: [{name:":to", pos: here()}],
+				access: [AInline],
+				kind: FFun({
+					args: [],
+					ret : Context.toComplexType(abs_type.type),
+					expr: macro {
+						return this;
+					}
+				}),
+				pos: here()
+			});
+		}else if (!hasPtr){
+			fields.push({
+				name : context,
 				access: [APublic],
 				kind: FProp("default", "null",macro :mem.Ptr),
 				pos: here()
 			});
+		}
 
-		if (!hasToString){
+		//#if (debug || watch)
+			var prep = abs_type == null ?  (macro null) : (macro if (0 >= this) return "null");
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
 				var node = Reflect.field(attrs, k);
-				var _w = hexWidth(offset);
+				var _w = Ut.hexWidth(offset);
 				var _dx = StringTools.hex( node.offset, _w);
 				var _len = node.len * node.bytes;
 				var _end = StringTools.hex(node.offset + _len, _w);
 				block.push(macro buf.push("offset: 0x" + $v{_dx} + " - 0x" + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 			}
 			fields.push({
-				name : "toString",
+				name : "__toOut",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
 					ret : macro :String,
 					expr: macro {
-						var buf = ["--- " + $v{cls.name} + ".CAPACITY: " + $v{offset} + "\n"];
+						$prep;
+						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + ", addr: "+ $i{context} +"\n"];
 						$b{block};
-
 						return buf.join("");
 					}
 				}),
 				pos: here()
 			});
-		}
+		//#end
 		return fields;
-	}
-
-	static function hexWidth(n){
-		var i = 0;
-		while (n >= 1) {
-			n = n >> 4;
-			i += 1;
-		}
-		if ((i & 1) == 1) i += 1;
-		if (i < 2) i = 2;
-		return i;
 	}
 	#end
 }
