@@ -40,14 +40,26 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
 @:remove interface Struct{
 	var ptr(default, null):mem.Ptr;
 
-/*  if not have, macro will be auto create below these:
+/*  make all @idx fields as inline getter/setter;
 
+	and if not have, macro will be auto create below these:
 	public var ptr(default, null):mem.Ptr;
-	public inline function new(p:Ptr) this.ptr = p;
-	public inline function free(p:Ptr){
-		Ram.free(ptr);
-		this.ptr = -1;
+
+	public inline function new(p:Ptr){
+		ptr = p;
 	}
+
+	public inline function free(p:Ptr){
+		mem.Chunk.free(ptr);
+		this.ptr = 0;
+	}
+
+	public inline function toString():String{
+		return "long ....";
+	}
+
+	static inline var CAPACITY:Int = typeof(this struct);
+	static inline var ALL_FIELDS:iterator = ["field_1_name", "field_2_name" .....];
 */
 }
 
@@ -349,6 +361,7 @@ class ZStructBuild{
 					ret : null,
 					expr: macro {
 						ptr = p;
+						//trace(this); // keyword **this** -> analyzer.ml", line 827, characters 9-15: Assertion failed
 					}
 				}),
 				pos: here()
@@ -360,13 +373,14 @@ class ZStructBuild{
 		if (!hasFree)
 			fields.push({
 				name : "free",
+				doc: "call Pof.free() to release memory",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
 					ret : null,
 					expr: macro {
-						Ram.free(ptr);
-						ptr = -1;
+						mem.Chunk.free(ptr);
+						ptr = 0;
 					}
 				}),
 				pos: here()
