@@ -11,6 +11,9 @@
 -swf-version 10.3
 
 --next
+-js bin/test.js
+
+--next
 -neko bin/test.n
 
 --next

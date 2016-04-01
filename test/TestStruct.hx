@@ -48,6 +48,20 @@ class EndianDetect implements mem.Struct{
 	}
 }
 
+#if !macro
+@:build(mem.Struct.StructBuild.make())
+#end
+abstract AbsEndianDetect(Ptr) from Ptr{
+	@idx var littleEndian:Bool;		// 00
+	@idx(2, -1) var i:Int;			// 00~01
+	@idx(-1) var bigEndian:Bool;	// 01
+
+	public inline function new(){
+		this = Ram.malloc(CAPACITY);
+		i = 1;
+	}
+}
+
 class TestStruct extends haxe.unit.TestCase{
 	function testNsfhd(){
 		print("\n");
@@ -55,7 +69,7 @@ class TestStruct extends haxe.unit.TestCase{
 
 		var mario = new Nsfhd(Ram.malloc(file.length));
 		Ram.writeBytes(mario.ptr, file.length, #if flash file.getData() #else file #end);
-		print(mario.toString() + "\n");
+		print(mario.__toOut() + "\n");
 
 		var fake = new Nsfhd(Ram.malloc(Nsfhd.CAPACITY));
 		// you can do: Ram.memcpy(fake.ptr, mario.ptr,  Nsfhd.CAPACITY);
@@ -78,9 +92,12 @@ class TestStruct extends haxe.unit.TestCase{
 		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.ptr, mario.ptr, Nsfhd.CAPACITY));
 
 		var endian = new EndianDetect();
-		print(endian.toString() + "\n");
+		print(endian.__toOut() + "\n");
 		assertTrue(endian.littleEndian == true && endian.bigEndian == false);
 
+		var abs_endian:AbsEndianDetect = endian.ptr; // force cast
+		abs_endian.i = 101;
+		trace(endian.i);
 		mario.free();
 		fake.free();
 		endian.free();

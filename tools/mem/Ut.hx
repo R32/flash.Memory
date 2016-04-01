@@ -17,11 +17,7 @@ class Ut{
 	}
 
 	static public function pad8(n, p){
-		var i = p;
-		while( n > p){
-			n -= p;
-			i += p;
-		}
-		return i;
+		var i = p - (n % p);
+		return i == p ? p : n + i;
 	}
 }

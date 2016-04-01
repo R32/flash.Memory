@@ -10,6 +10,7 @@ class Ram{
 	static inline var LLB:Int = 8192;					// pow(2,13)
 
 #if flash
+	static var tmpb:ByteArray = new ByteArray();
 	static var stack = new Array<ByteArray>();
 	static var current:ByteArray = null;
 	public static function select(ba:ByteArray):Void{
@@ -77,21 +78,24 @@ class Ram{
 		return i;
 	}
 
-	public static inline function readBytes(ptr:Ptr, len:Int, #if flash dst:ByteArray #else dst:Bytes #end):Void {
-	#if flash
+#if flash
+	// read from Memory To Bytes
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
 		dst.writeBytes(current, ptr, len);
-	#else
-		dst.blit(0, current, ptr, len);
-	#end
 	}
 
-	public static inline function writeBytes(ptr:Ptr, len:Int, #if flash src:ByteArray #else src:Bytes #end):Void {
-	#if flash
+	// read from Bytes To Memory
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		src.readBytes(current, ptr, len);
-	#else
-		current.blit(ptr, src, 0, len);
-	#end
 	}
+#else
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
+		dst.blit(0, current, ptr, len);
+	}
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
+		current.blit(ptr, src, 0, len);
+	}
+#end
 
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src) return;
@@ -172,6 +176,23 @@ class Ram{
 	#end
 	}
 
+	public static function mallocFromString(str:String):Pts{
+	#if flash
+		tmpb.position = 0;
+		tmpb.writeUTFBytes(str);
+		tmpb.position = 0;
+	#else
+		var tmpb = haxe.io.Bytes.ofString(str);
+	#end
+		var len = tmpb.length;
+		var ptr = Ram.malloc(len, true);
+		writeBytes(ptr, len, tmpb);
+	#if flash
+		tmpb.clear();
+	#end
+		return {ptr:ptr, len: len};
+	}
+
 	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
 	#if flash
 		current.position = dst;
@@ -179,5 +200,24 @@ class Ram{
 	#else
 		return current.getString(dst, len);
 	#end
+	}
+
+	public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
+
+	public static function find(str:String, start:Ptr):Ptr{
+		if (start < 0) return 0;
+		var end:Int = Chunk.get_used();
+		var pts = mallocFromString(str);
+		var ptr = 0;
+		end -= pts.len;
+		while (end >= start){
+			if(memcmp(start, pts.ptr, pts.len)){
+				ptr = start;
+				break;
+			}
+			start += 1;
+		}
+		pts.free();
+		return ptr;
 	}
 }
