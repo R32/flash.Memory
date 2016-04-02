@@ -2,16 +2,6 @@ package mem;
 
 typedef Ptr = Int;
 
-@:structInit class Pts{
-	public var ptr:Ptr;
-	public var len:Int;
-	public inline function new(ptr:Ptr, len:Int):Void{
-		this.ptr = ptr;
-		this.len = len;
-	}
-	public inline function free():Void Chunk.free(ptr);
-}
-
 #if flash
 typedef Memory = flash.Memory;
 typedef ByteArray = flash.utils.ByteArray;
