@@ -1,9 +1,9 @@
 package;
 
-
-import mem.Chunk;
 import mem.Ptr;
+import mem.Malloc;
 import haxe.io.Bytes;
+import mem.struct.WString;
 
 class Ram{
 	static inline var LB:Int = 8;						// LB 只能为 2 的 n 次幂,
@@ -42,56 +42,50 @@ class Ram{
 		if (current != null) Memory.select(current);
 	}
 	// in bytes
-	public static function malloc(size:UInt, zero:Bool = false):Ptr {
+	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero);
 
-		size = mem.Ut.pad8(size, LB);
+	public static inline function free(ptr:Ptr) Malloc.free(ptr);
 
-		var ptr = Chunk.calc(size); // always ptr >= 16
-
-		if ((size + ptr) > current.length) {
+	static function req(len:UInt){
+		if(len > current.length){
 		#if flash
-			current.length = mem.Ut.pad8(ptr + size, LLB);
+			current.length = mem.Ut.pad8(len, LLB);
 		#else
-			var a = Bytes.alloc(mem.Ut.pad8(ptr + size, LLB));
+			var a = Bytes.alloc(mem.Ut.pad8(len, LLB));
 			a.blit(0, current, 0, current.length);
 			Memory.select(a);
 			current = a;
 		#end
 		}
-		new Chunk(ptr, size);
-		if (zero) memset(ptr, 0, size);
-		return ptr;
-	}
-
-	public static inline function free(ptr:Ptr):Bool {
-		return Chunk.free(ptr);
 	}
 
 	static inline var himagic = 0x80808080;
 	static inline var lomagic = 0x01010101;
 	public static function strlen(ptr:Ptr):Int{
 		var i = 0;
-		//TODO: 这段4字节检测, 在flash上似乎没有优势？？可以删除掉注释测试性能
 		//while ((Memory.getI32(ptr + i) - lomagic) & himagic != 0) i += 4;
 		while (Memory.getByte(ptr + i) != 0) i += 1;
 		return i;
 	}
 
-	public static inline function readBytes(ptr:Ptr, len:Int, #if flash dst:ByteArray #else dst:Bytes #end):Void {
-	#if flash
+#if flash
+	// read from Memory To Bytes
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
 		dst.writeBytes(current, ptr, len);
-	#else
-		dst.blit(0, current, ptr, len);
-	#end
 	}
 
-	public static inline function writeBytes(ptr:Ptr, len:Int, #if flash src:ByteArray #else src:Bytes #end):Void {
-	#if flash
+	// read from Bytes To Memory
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		src.readBytes(current, ptr, len);
-	#else
-		current.blit(ptr, src, 0, len);
-	#end
 	}
+#else
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
+		dst.blit(0, current, ptr, len);
+	}
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
+		current.blit(ptr, src, 0, len);
+	}
+#end
 
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src) return;
@@ -172,6 +166,10 @@ class Ram{
 	#end
 	}
 
+	public static inline function mallocFromString(str:String){
+		return new WString(str);
+	}
+
 	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
 	#if flash
 		current.position = dst;
@@ -180,4 +178,26 @@ class Ram{
 		return current.getString(dst, len);
 	#end
 	}
+
+	public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
+/*
+	public static function find(str:String, start:Ptr):Ptr{
+		if (start < 0) return 0;
+		var end:Int = Malloc.getUsed();
+		var wstr = mallocFromString(str);
+		var ptr = 0;
+		var len = wstr.length;
+		var dst = wstr.addr;
+		end -= len;
+		while (end >= start){
+			if(memcmp(start, dst, len)){
+				ptr = start;
+				break;
+			}
+			start += 1;
+		}
+		wstr.free();
+		return ptr;
+	}
+*/
 }

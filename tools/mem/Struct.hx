@@ -37,20 +37,20 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
 @:autoBuild(mem.StructBuild.make())
 #end
 @:remove interface Struct{
-	var ptr(default, null):mem.Ptr;
+	var addr(default, null):mem.Ptr;
 
 /*  make all @idx fields as inline getter/setter;
 
 	and if not have, macro will be auto create below these:
-	public var ptr(default, null):mem.Ptr;
+	public var addr(default, null):mem.Ptr;
 
 	public inline function new(p:Ptr){
 		ptr = p;
 	}
 
 	public inline function free(p:Ptr){
-		mem.Chunk.free(ptr);
-		this.ptr = 0;
+		mem.Malloc.free(ptr);
+		this.addr = 0;
 	}
 
 	public inline function __toOut():String{
@@ -99,7 +99,7 @@ class StructBuild{
 		return ret;
 	}
 
-	static public function make(context = "ptr"){
+	static public function make(context = "addr"){
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
@@ -369,10 +369,10 @@ class StructBuild{
 				name : "new",
 				access: [AInline, APublic],
 				kind: FFun({
-					args: [{name: "p", type: macro :mem.Ptr}],
+					args: [],
 					ret : null,
 					expr: macro {
-						$i{context} = p;
+						$i{context} = mem.Malloc.make(CAPACITY, true);
 					}
 				}),
 				pos: here()
@@ -390,7 +390,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						mem.Chunk.free($i{context});
+						mem.Malloc.free($i{context});
 						$i{context} = 0;
 					}
 				}),
