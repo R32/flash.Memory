@@ -36,7 +36,7 @@ class Example{
 }
 ```
 
-compile: `haxe -cp tools -main Example -swf exa.swf`,
+**compile**: `haxe -cp tools -main Example -swf exa.swf`,
 
 > it can also: `haxe -cp tools -main Example --interp`
 
@@ -50,7 +50,7 @@ offset: 0x01 - 0x02, bytes: 1, bigEndian: false
 Example.hx:18: true
 ```
 
-Directly read the file header:
+#### example: Directly read the file header:
 
 ```haxe
 import mem.Ptr;
@@ -107,7 +107,7 @@ class Example{
 }
 ```
 
-compile: `haxe -cp tools -main Example --interp -resource ./res/super_mario.nsf@supermario`
+**compile**: `haxe -cp tools -main Example --interp -resource ./res/super_mario.nsf@supermario`
 
 ```
 Example.hx:52: --- Nsfhd.CAPACITY: 128, addr: 32
@@ -129,7 +129,7 @@ offset: 0x7B - 0x7C, bytes: 1, spec: 0
 offset: 0x7C - 0x80, bytes: 4, exra: [0,0,0,0]
 ```
 
-Learn More, see: tools/mem/Struct.hx and tools/mem/Malloc(Block)
+Learn More, see: <./tools/mem/Malloc.hx> and  <./tools/mem/Struct.hx>
 
 
 <br />
