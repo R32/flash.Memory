@@ -7,20 +7,23 @@ import mem.Ptr;
 @:build(mem.Struct.StructBuild.make())
 #end
 abstract WString(Ptr){
-	@idx var length:Int;
+	@idx(4) var length:Int;
 	public inline function new(str:String){
 		this = Malloc.NUL;		// error if not hove this line: mission this = value;
 		var ba = WStrHelps.writeString(str);
-		length = ba.length;
 		this = Malloc.make(ba.length + CAPACITY, true);
-		Ram.writeBytes(this, ba.length, ba);
+		length = ba.length;
+		Ram.writeBytes(this + CAPACITY, ba.length, ba);
 		#if flash
 			ba.clear();
 		#end
 	}
 
+	public var c_ptr(get, never):Ptr;
+	inline function get_c_ptr():Ptr return this + CAPACITY;
+
 	public inline function toString():String{
-		return Ram.readUTFBytes(this, length);
+		return Ram.readUTFBytes(c_ptr, length);
 	}
 }
 
