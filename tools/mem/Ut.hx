@@ -18,6 +18,6 @@ class Ut{
 
 	static public function pad8(n, p){
 		var i = p - (n % p);
-		return i == p ? p : n + i;
+		return i == p && n > 0 ? n : n + i;
 	}
 }
