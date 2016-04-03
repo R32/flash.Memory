@@ -35,6 +35,7 @@ class Nsfhd implements mem.Struct{
 	@idx var sys:haxe.EnumFlags<NsfSys>;		// test EnumFlags
 	@idx var spec:Int;
 	@idx(4) var exra:Array<Int>;
+	public var addr(default, null):Ptr;
 	inline public function new(len){
 		addr = mem.Malloc.make(len, false);
 	}
@@ -66,6 +67,7 @@ abstract AbsEndianDetect(Ptr) from Ptr{
 }
 
 class TestStruct extends haxe.unit.TestCase{
+
 	function testNsfhd(){
 		print("\n");
 		var file = haxe.Resource.getBytes("supermario");
@@ -98,7 +100,7 @@ class TestStruct extends haxe.unit.TestCase{
 		print(endian.__toOut() + "\n");
 		assertTrue(endian.littleEndian == true && endian.bigEndian == false);
 
-		var abs_endian:AbsEndianDetect = endian.addr; // force cast
+		var abs_endian:AbsEndianDetect = @:privateAccess endian.addr; // force cast
 		abs_endian.i = 101;
 		trace(endian.i);
 		mario.free();
@@ -118,6 +120,7 @@ class TestStruct extends haxe.unit.TestCase{
 		runner.add(new TestStruct());
 		runner.run();
 	#if flash
+		stage.color = 0;
 		@:privateAccess{TestRunner.tf.textColor = 0xffffff; }
 	#end
 	}
