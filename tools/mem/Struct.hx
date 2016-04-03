@@ -37,20 +37,20 @@ Array<Int|Float>            @idx(length, ?bytes, ?offset)
 @:autoBuild(mem.StructBuild.make())
 #end
 @:remove interface Struct{
-	var addr(default, null):mem.Ptr;
+	private var addr(default, null):mem.Ptr;		// can overwrite as public
 
 /*  make all @idx fields as inline getter/setter;
 
 	and if not have, macro will be auto create below these:
 	public var addr(default, null):mem.Ptr;
 
-	public inline function new(p:Ptr){
-		ptr = p;
+	public inline function new(){
+		addr = mem.Malloc.make(CAPACITY, true);
 	}
 
 	public inline function free(p:Ptr){
 		mem.Malloc.free(ptr);
-		this.addr = 0;
+		this.addr = mem.Malloc.NUL;
 	}
 
 	public inline function __toOut():String{
@@ -414,13 +414,13 @@ class StructBuild{
 		}else if (!hasPtr){
 			fields.push({
 				name : context,
-				access: [APublic],
+				access: [APrivate],
 				kind: FProp("default", "null",macro :mem.Ptr),
 				pos: here()
 			});
 		}
 
-		//#if (debug || watch)
+		#if !no2out
 			var prep = abs_type == null ?  (macro null) : (macro if (0 >= this) return "null");
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
@@ -446,7 +446,7 @@ class StructBuild{
 				}),
 				pos: here()
 			});
-		//#end
+		#end
 		return fields;
 	}
 	#end

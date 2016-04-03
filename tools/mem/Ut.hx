@@ -1,5 +1,6 @@
 package mem;
 
+import mem.Ptr;
 
 class Ut{
 	/**
@@ -19,5 +20,16 @@ class Ut{
 	static public function pad8(n, p){
 		var i = p - (n % p);
 		return i == p && n > 0 ? n : n + i;
+	}
+
+	// [a,b,c,d] = [d,c,b,a] in bytes
+	static public function reverse(ptr:Ptr, len:Int):Void{
+		var right = ptr + len - 1;
+		var cc:Int;
+		while(ptr < right){
+			cc = Memory.getByte(ptr);
+			Memory.setByte(ptr++, Memory.getByte(right));
+			Memory.setByte(right--, cc);
+		}
 	}
 }

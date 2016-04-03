@@ -9,6 +9,16 @@ class Ram{
 	static inline var LB:Int = 8;						// LB 只能为 2 的 n 次幂,
 	static inline var LLB:Int = 8192;					// pow(2,13)
 
+	public static var on_init(default, null):Array<Void->Void> = []; // simple
+	public static function deInit(f:Void->Void){
+		for(i in 0...on_init.length){
+			if(on_init[i] == f){
+				on_init.splice(i, 1);
+				break;
+			}
+		}
+	}
+
 #if flash
 	static var stack = new Array<ByteArray>();
 	static var current:ByteArray = null;
@@ -17,6 +27,7 @@ class Ram{
 		Memory.select(ba);
 		if (current != null) stack.push(current);
 		current = ba;
+		for(f in on_init) f();
 	}
 
 	public static function create(len = LLB):ByteArray{
@@ -32,6 +43,7 @@ class Ram{
 		Memory.select(ba);
 		if (current != null) stack.push(current);
 		current = ba;
+		for(f in on_init) f();
 	}
 	public static function create(len = LLB):Bytes{
 		return Bytes.alloc(len);
@@ -166,9 +178,7 @@ class Ram{
 	#end
 	}
 
-	public static inline function mallocFromString(str:String){
-		return new WString(str);
-	}
+	public static inline function mallocFromString(str:String) return new WString(str);
 
 	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
 	#if flash
@@ -180,14 +190,14 @@ class Ram{
 	}
 
 	public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
-/*
+
 	public static function find(str:String, start:Ptr):Ptr{
 		if (start < 0) return 0;
 		var end:Int = Malloc.getUsed();
 		var wstr = mallocFromString(str);
 		var ptr = 0;
 		var len = wstr.length;
-		var dst = wstr.addr;
+		var dst = wstr.c_ptr;
 		end -= len;
 		while (end >= start){
 			if(memcmp(start, dst, len)){
@@ -199,5 +209,4 @@ class Ram{
 		wstr.free();
 		return ptr;
 	}
-*/
 }
