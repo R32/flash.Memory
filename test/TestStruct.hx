@@ -35,6 +35,9 @@ class Nsfhd implements mem.Struct{
 	@idx var sys:haxe.EnumFlags<NsfSys>;		// test EnumFlags
 	@idx var spec:Int;
 	@idx(4) var exra:Array<Int>;
+	inline public function new(len){
+		addr = mem.Malloc.make(len, false);
+	}
 }
 
 class EndianDetect implements mem.Struct{
@@ -43,7 +46,7 @@ class EndianDetect implements mem.Struct{
 	@idx(-1) var bigEndian:Bool;	// 01
 
 	public inline function new(){
-		ptr = Ram.malloc(CAPACITY);
+		addr = Ram.malloc(CAPACITY);
 		i = 1;
 	}
 }
@@ -67,12 +70,12 @@ class TestStruct extends haxe.unit.TestCase{
 		print("\n");
 		var file = haxe.Resource.getBytes("supermario");
 
-		var mario = new Nsfhd(Ram.malloc(file.length));
-		Ram.writeBytes(mario.ptr, file.length, #if flash file.getData() #else file #end);
+		var mario = new Nsfhd(file.length);
+		Ram.writeBytes(mario.addr, file.length, #if flash file.getData() #else file #end);
 		print(mario.__toOut() + "\n");
 
-		var fake = new Nsfhd(Ram.malloc(Nsfhd.CAPACITY));
-		// you can do: Ram.memcpy(fake.ptr, mario.ptr,  Nsfhd.CAPACITY);
+		var fake = new Nsfhd(Nsfhd.CAPACITY);
+		// you can do: Ram.memcpy(fake.addr, mario.addr,  Nsfhd.CAPACITY);
 		fake.tag = mario.tag;
 		fake.ver = mario.ver;
 		fake.track_count = mario.track_count;
@@ -89,19 +92,18 @@ class TestStruct extends haxe.unit.TestCase{
 		fake.sys = mario.sys;
 		fake.exra = mario.exra;
 
-		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.ptr, mario.ptr, Nsfhd.CAPACITY));
+		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.addr, mario.addr, Nsfhd.CAPACITY));
 
 		var endian = new EndianDetect();
 		print(endian.__toOut() + "\n");
 		assertTrue(endian.littleEndian == true && endian.bigEndian == false);
 
-		var abs_endian:AbsEndianDetect = endian.ptr; // force cast
+		var abs_endian:AbsEndianDetect = endian.addr; // force cast
 		abs_endian.i = 101;
 		trace(endian.i);
 		mario.free();
 		fake.free();
 		endian.free();
-		print("chunkfrag: " + @:privateAccess mem.Chunk.fragCount);
 	}
 
 	public static function main(){
