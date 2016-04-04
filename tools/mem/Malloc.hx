@@ -37,7 +37,7 @@ abstract Block(Ptr) from Ptr{
 	public var len(get, never):Int;
 	inline function get_len():Int return size - CAPACITY;
 
-	@:pure inline public function new(address:Ptr, length:Int, clear:Bool){
+	inline public function new(address:Ptr, length:Int, clear:Bool){
 		this = address;
 		Ram.memset(this, 0, clear ? length + CAPACITY : CAPACITY);
 		size = CAPACITY + length;	// Note: must after memset
@@ -92,12 +92,12 @@ class Malloc{
 	}
 
 	static function indexOf(p:Ptr):Block{
-		if (bottom == NUL) return NUL;
-		var cc = bottom;
-		do{
-			if (cc.entry == p) return cc;
-			cc = cc.prev;
-		}while (cc != NUL);
+		var b:Block = p - Block.CAPACITY;
+		if (b != NUL){
+			if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b)){
+				return b;
+			}
+		}
 		return NUL;
 	}
 
@@ -155,7 +155,7 @@ class Malloc{
 
 		frag_count++;
 
-		while (bottom != NUL && bottom.is_free){
+		while (bottom == prev && bottom.is_free){
 			prev = bottom.prev;
 			length--;
 			frag_count--;
