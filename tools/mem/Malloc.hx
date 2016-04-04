@@ -37,7 +37,7 @@ abstract Block(Ptr) from Ptr{
 	public var len(get, never):Int;
 	inline function get_len():Int return size - CAPACITY;
 
-	inline public function new(address:Ptr, length:Int, clear:Bool){
+	@:pure inline public function new(address:Ptr, length:Int, clear:Bool){
 		this = address;
 		Ram.memset(this, 0, clear ? length + CAPACITY : CAPACITY);
 		size = CAPACITY + length;	// Note: must after memset
@@ -91,7 +91,7 @@ class Malloc{
 		length++;
 	}
 
-	static function offsetof(p:Ptr):Block{
+	static function indexOf(p:Ptr):Block{
 		if (bottom == NUL) return NUL;
 		var cc = bottom;
 		do{
@@ -146,7 +146,7 @@ class Malloc{
 		return ret.entry;
 	}
 
-	public static inline function free(p:Ptr):Void freeBlock(offsetof(p));
+	public static inline function free(p:Ptr):Void freeBlock(indexOf(p));
 
 	static function freeBlock(prev:Block):Void{
 		if (prev == NUL || bottom == NUL || prev.is_free) return;
