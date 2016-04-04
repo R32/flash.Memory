@@ -230,7 +230,7 @@ class StructBuild{
 							switch(ts) {
 							case "String":
 							[macro Ram.readUTFBytes($i{context} + $v{offset}, $v{params.width})
-								,macro Ram.writeUTFBytes($i{context} + $v{offset}, v)];
+								,macro Ram.writeString($i{context} + $v{offset}, $v{params.width} ,v)];
 							case "Array":
 								switch (arrType[0]) {
 								case TPType(ct = TPath(at)):

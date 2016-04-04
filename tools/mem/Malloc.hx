@@ -15,7 +15,7 @@ offset: 0x0E - 0x0F, bytes: 1, unk_2: 0
 offset: 0x0F - 0x10, bytes: 1, unk_3: 0
 offset: 0x0C - 0x10, bytes: 4, info: 0
 
---- entry = (block_addr + CAPACITY), so block_addr = entry - CAPACITY
+--- entry = (block_addr + CAPACITY), then block_addr = entry - CAPACITY
 --- len = (size - CAPACITY)
 */
 #if !macro
@@ -166,26 +166,6 @@ class Malloc{
 			prev.next = NUL;
 			bottom = prev;
 		}
-	}
-
-
-
-	// TODO:
-	public static function initByFirstBlockPtr(block_addr:Ptr){
-	/*
-		var cc:Block = block_addr;
-		if (cc != NUL) {
-			top = cc;
-			bottom = cc;
-			frag_count = 0;
-			if (cc.is_free == true && cc.next != NUL) frag_count += 1;
-		}
-		while( cc.next != NUL){
-			cc = cc.next;
-			if (cc.is_free == true && cc.next != NUL) frag_count += 1;
-			bottom = cc;
-		}
-	*/
 	}
 
 	static function mergeFragment(){

@@ -178,6 +178,33 @@ class Ram{
 	#end
 	}
 
+
+	public static function writeString(dst:Ptr, len:Int, str:String):Void{
+		var jlen = str.length;
+		var i = 0, c = 0, j = 0;
+		while (i < len && j < jlen){
+			c = StringTools.fastCodeAt(str, j++);
+			// surrogate pair -- (copy from haxe.io.Bytes::getString)
+			if( 0xD800 <= c && c <= 0xDBFF )
+			       c = (c - 0xD7C0 << 10) | (StringTools.fastCodeAt(str, j++) & 0x3FF);
+			if( c <= 0x7F )
+				Memory.setByte(dst + i++, c);
+			else if ( c <= 0x7FF ) {
+				Memory.setByte(dst + i++, 0xC0 | (c >> 6) );
+				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63) );
+			} else if ( c <= 0xFFFF ) {
+				Memory.setByte(dst + i++, 0xE0 | (c >> 12) );
+				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 6) & 63) );
+				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63) );
+			} else {
+				Memory.setByte(dst + i++, 0xF0 | (c >> 18));
+				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 12) & 63));
+				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 6) & 63));
+				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63));
+			}
+		}
+	}
+
 	public static inline function mallocFromString(str:String) return new WString(str);
 
 	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
