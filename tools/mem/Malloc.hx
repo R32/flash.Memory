@@ -104,7 +104,7 @@ class Malloc{
 	public static function make(need:Int, zero:Bool):Ptr{
 		need = Ut.pad8(need, LB);
 
-		if (frag_count > 0) mergeFragment();
+		//if (frag_count > 0) mergeFragment();
 
 		var tmp_frag_count = frag_count;
 		var ret:Block = NUL;
