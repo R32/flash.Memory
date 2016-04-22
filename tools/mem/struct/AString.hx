@@ -19,7 +19,7 @@ class AString implements Struct{
 	public inline function toString(){
 		@:privateAccess {
 			Ram.current.position = c_ptr;
-			return Ram.current.readMultiByte(length, "us-ascii");
+			return Ram.current.readUTFBytes(length);
 		}
 	}
 #else
@@ -34,8 +34,8 @@ class AString implements Struct{
 #end
 
 	public static function fromString(str:String):AString{
-		var astr = new AString(str.length);
 		var length = str.length;
+		var astr = new AString(length);
 	#if flash
 		@:privateAccess {
 			Ram.current.position = astr.c_ptr;
@@ -48,6 +48,18 @@ class AString implements Struct{
 		}
 	#end
 		Memory.setByte(astr.c_ptr + length + 1, 0);
+		return astr;
+	}
+
+	public static function fromHexString(hex:String):AString{
+		var len = hex.length >> 1;
+		var astr = new AString(len);
+		var j:Int;
+		for (i in 0...len){
+			j = i + i;
+			Memory.setByte(astr.c_ptr + i, Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) ));
+		}
+		Memory.setByte(astr.c_ptr + len + 1, 0);
 		return astr;
 	}
 }

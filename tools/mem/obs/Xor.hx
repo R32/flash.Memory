@@ -7,7 +7,7 @@ class Xor{
 
 	public var astr(default, null):AString;
 
-	inline public function new(str:String) astr = AString.fromString(str);
+	inline public function new(a:AString) astr = a;
 
 	inline public function free():Void astr.free();
 
@@ -29,5 +29,13 @@ class Xor{
 			Memory.setByte(out + offset, Memory.getByte(dst + offset) ^ Memory.getByte(tpr + (offset % len) ));
 			offset += 1;
 		}
+	}
+
+	public inline static function fromHexString(hex:String):Xor{
+		return new Xor(AString.fromHexString(hex));
+	}
+
+	public inline static function fromString(str:String):Xor{
+		return new Xor(AString.fromString(str));
 	}
 }
