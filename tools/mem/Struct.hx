@@ -118,32 +118,24 @@ class StructBuild{
 		var params:Param;
 		var metaParams;
 
-		var constructor:Field = null;
-		var hasPtr = false;
-		var hasFree = false;
+		var all_in_map = new haxe.ds.StringMap<Field>();
 
-		for (f in fields.copy()){
-			if(abs_type != null){
-				if (f.name == "_new") constructor = f;
-			}else{
-				if (f.name == "new") constructor = f;
-				if (f.name == context) hasPtr = true;	// if is_abstruct, will be ignore this
-			}
+		for (f in fields) all_in_map.set(f.name, f);
 
-			if (f.name == "free") hasFree = true;
-
+		for (f in fields){
 			metaParams = null;
 			params = null;
 
-			for(meta in f.meta){
-				if (meta.name == IDX){
-					metaParams = [];
-					for(ex in meta.params){
-						metaParams.push(parseInt(ExprTools.getValue(ex)));
+			if(f.meta != null)
+				for(meta in f.meta){
+					if (meta.name == IDX){
+						metaParams = [];
+						for(ex in meta.params){
+							metaParams.push(parseInt(ExprTools.getValue(ex)));
+						}
+						if (metaParams.length == 0) metaParams.push(0);
 					}
-					if (metaParams.length == 0) metaParams.push(0);
 				}
-			}
 			if (metaParams == null) continue;
 
 			switch (f.kind) {
@@ -274,9 +266,12 @@ class StructBuild{
 					f.access = [APublic];
 					var getter = exprs[0];
 					var setter = exprs[1];
+					var getter_name = "get_" + f.name;
+					var setter_name = "set_" + f.name;
 
+					if (!all_in_map.exists(getter_name))
 					fields.push({
-						name : "get_" + f.name,
+						name : getter_name,
 						access: [AInline],
 						kind: FFun({
 							args: [],
@@ -288,8 +283,9 @@ class StructBuild{
 						pos: here()
 					});
 
+					if (!all_in_map.exists(setter_name))
 					fields.push({
-						name: "set_" + f.name,
+						name: setter_name,
 						access: [AInline],
 						kind: FFun({
 							args: [{name: "v", type: vt}],
@@ -364,6 +360,7 @@ class StructBuild{
 			pos: here()
 		});
 
+		var constructor = all_in_map.get(abs_type == null ? "new" : "_new");
 		if(constructor == null){
 			fields.push({
 				name : "new",
@@ -381,7 +378,7 @@ class StructBuild{
 			Context.warning("Suggestion: add **inline** for " + cls.name + "'s constructor new" , here());
 		}
 
-		if (!hasFree)
+		if (!all_in_map.exists("free"))
 			fields.push({
 				name : "free",
 				doc: "call Pof.free() to release memory",
@@ -411,7 +408,7 @@ class StructBuild{
 				}),
 				pos: here()
 			});
-		}else if (!hasPtr){
+		}else if (!all_in_map.exists(context)){
 			fields.push({
 				name : context,
 				access: [APrivate],
