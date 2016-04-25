@@ -102,6 +102,7 @@ class TestInFlash{
 		var stage = Lib.current.stage;
 		stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
 		stage.align = flash.display.StageAlign.TOP_LEFT;
+		stage.color = 0;
 		Log.setColor(0xffffff);
 		Ram.select(Ram.create());
 		var f = new TestInFlash();
