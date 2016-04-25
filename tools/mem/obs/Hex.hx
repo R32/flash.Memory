@@ -9,13 +9,10 @@ class Hex{
 	public static var hexchar(default, null):AString;
 
 	public static function init(){
-		Ram.deInit(onInit);
-		Ram.on_init.push(onInit);
+		hexchar = AString.fromString("0123456789ABCDEF");
 	}
 
 	static function free() hexchar.free();
-
-	public static function onInit() hexchar = AString.fromString("0123456789ABCDEF");
 
 	public static function export(ptr:Ptr, len:Int):AString{
 		if (hexchar == null)
