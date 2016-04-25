@@ -337,7 +337,7 @@ class StructBuild{
 			}
 
 		}
-		if (offset == 0) return null;
+		//if (offset == 0) return null;
 		fields.push({
 			name : "CAPACITY",
 			doc:  "== " + $v{offset},
@@ -346,6 +346,7 @@ class StructBuild{
 			pos: here()
 		});
 
+	if(offset > 0){
 		fields.push({
 			name : "ALL_FIELDS",
 			doc:  "== " + $v{offset},
@@ -416,7 +417,7 @@ class StructBuild{
 				pos: here()
 			});
 		}
-
+	}
 		#if !no2out
 			var prep = abs_type == null ?  (macro null) : (macro if (0 >= this) return "null");
 			var block:Array<Expr> = [];
@@ -436,7 +437,8 @@ class StructBuild{
 					ret : macro :String,
 					expr: macro {
 						$prep;
-						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + ", addr: "+ $i{context} +"\n"];
+						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + ", addr: " + $i{context} +
+							", BLOCK SPACE: "+ @:privateAccess (mem.Malloc.indexOf($i{context}).size - mem.Malloc.Block.CAPACITY) +"\n"];
 						$b{block};
 						return buf.join("");
 					}
