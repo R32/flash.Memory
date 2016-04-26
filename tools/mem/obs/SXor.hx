@@ -51,11 +51,22 @@ class SxBuild{
 		//trace(sx.toString() + ", md5: " + keys.toHex());
 
 		var fields = Context.getBuildFields();
-
 		var codes:Array<Expr> = [];
-		var chunk = SX_MAX >> 2;	// (256/4) = 64
-		for (i in 0...chunk) codes.push( macro Memory.setI32(sa.c_ptr + $v{i << 2}, $v{bytes.getInt32($v{i << 2})}) );
-		Ut.shuffle(codes, 3);
+		if (Context.defined("flash10_3")){
+			// 仅在 flash 这样初使化就行了, 但由于在 FFunc({expr: 处, 无法简单使用 #if flash 来添加这些
+			var chunk = SX_MAX >> 2;	// (256/4) = 64
+			for (i in 0...chunk) codes.push( macro Memory.setI32(sa.c_ptr + $v{i << 2}, $v{bytes.getInt32($v{i << 2})}) );
+			Ut.shuffle(codes, 3);
+		}else{
+			codes.push(macro {
+				var hex = $v{bytes.toHex()};
+				var i = 0;
+				while (i < $v{SX_MAX << 1}){ // 256 * 2
+					Memory.setByte(sa.c_ptr + (i >> 1), Std.parseInt("0x" + hex.charAt(i) + hex.charAt(i + 1)));
+					i += 2;
+				}
+			});
+		}
 
 		var pos = here();
 		fields.push({
@@ -105,6 +116,7 @@ import mem.obs.SxIntBuild;
 		var offset = 0;
 		var b4 = len - (len % 4);
 		var mod = 0;
+	#if !neko	// Uncaught exception $sset on neko
 		while (b4 > offset){
 			mod = offset >> 2;
 			switch(mod % 4){
@@ -115,6 +127,7 @@ import mem.obs.SxIntBuild;
 			}
 			offset += 4;
 		}
+	#end
 		while (len > offset) {
 			mod = offset % 16;
 			switch(mod >> 2){

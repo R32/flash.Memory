@@ -48,8 +48,19 @@ abstract SxInt(Ptr) from Ptr{
 
 	@:dce public static inline function fromInt2(l:Int, h:Int):SxInt{
 		var x = new SxInt();
+	#if !neko
 		x.low = l;
 		x.high = h;
+	#else
+		x.v_0 = l & 0xff;
+		x.v_1 = (l >> 8) & 0xff;
+		x.v_2 = (l >> 16) & 0xff;
+		x.v_3 = (l >>> 24) & 0xff;
+		x.v_4 = h & 0xff;
+		x.v_5 = (h >> 8) & 0xff;
+		x.v_6 = (h >> 16) & 0xff;
+		x.v_7 = (h >>> 24) & 0xff;
+	#end
 		return x;
 	}
 }
