@@ -32,4 +32,31 @@ class Ut{
 			Memory.setByte(right--, cc);
 		}
 	}
+
+	static public inline function rand(max:Int, start:Int = 0):Int return Std.int(Math.random() * (max - start)) + start;
+
+	public static function shuffle<T>(a : Array<T>,count:Int = 1, start:Int = 0) : Void{
+		var len = a.length;
+		var r:Int, t:T;
+		for (j in 0...count) {
+			for (i in start...len) {
+				r = rand(len, start);	// 0 ~ (len -1 )
+				t = a[r];
+				a[r] = a[i];
+				a[i] = t;
+			}
+		}
+	}
+
+	// xor for for macro build
+	public static function xxx(dst:haxe.io.Bytes, key:haxe.io.Bytes):Void{
+		var len = dst.length;
+		var kl = key.length;
+		var pos = 0;
+		while(len >0){
+			dst.set(pos, dst.get(pos) ^ key.get(pos % kl));
+			len --;
+			pos ++;
+		}
+	}
 }

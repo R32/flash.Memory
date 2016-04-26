@@ -27,6 +27,7 @@ class Ram{
 		Memory.select(ba);
 		if (current != null) stack.push(current);
 		current = ba;
+		//if (Malloc.getUsed() == 16) Malloc.make(mem.Ut.rand(64, 8), false); // random to prevent memory.....
 		for(f in on_init) f();
 	}
 
@@ -218,22 +219,25 @@ class Ram{
 
 	public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
 
-	public static function find(str:String, start:Ptr):Ptr{
-		if (start < 0) return 0;
-		var end:Int = Malloc.getUsed();
+	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL):Ptr{
+		if (start < 0) return Malloc.NUL;
+		if (end == Malloc.NUL) end = Malloc.getUsed();
 		var wstr = mallocFromString(str);
-		var ptr = 0;
-		var len = wstr.length;
-		var dst = wstr.c_ptr;
+		var ptr = findA(wstr.c_ptr, wstr.length, start, end);
+		wstr.free();
+		return ptr;
+	}
+
+	public static function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr{
+		var ptr = Malloc.NUL;
 		end -= len;
-		while (end >= start){
-			if(memcmp(start, dst, len)){
+		while(end >= start){
+			if(memcmp(start, src, len)){
 				ptr = start;
 				break;
 			}
 			start += 1;
 		}
-		wstr.free();
 		return ptr;
 	}
 }
