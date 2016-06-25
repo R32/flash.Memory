@@ -6,29 +6,22 @@ import haxe.io.Bytes;
 import mem.struct.WString;
 
 class Ram{
+
 	static inline var LB:Int = 8;						// LB 只能为 2 的 n 次幂,
 	static inline var LLB:Int = 8192;					// pow(2,13)
 
-	public static var on_init(default, null):Array<Void->Void> = []; // simple
-	public static function deInit(f:Void->Void){
-		for(i in 0...on_init.length){
-			if(on_init[i] == f){
-				on_init.splice(i, 1);
-				break;
-			}
-		}
-	}
-
 #if flash
-	static var stack = new Array<ByteArray>();
+	static var tmp:ByteArray = null;
 	static var current:ByteArray = null;
-	public static function select(ba:ByteArray):Void{
-		if (ba.length < 1024) ba.length = 1024;
+	public static function select(?ba:ByteArray):Void{
+		if (ba == null)
+			ba = create(LLB);
+		else if (ba.length < 1024)
+			ba.length = 1024;
+		tmp = flash.system.ApplicationDomain.currentDomain.domainMemory;
 		Memory.select(ba);
-		if (current != null) stack.push(current);
 		current = ba;
-		//if (Malloc.getUsed() == 16) Malloc.make(mem.Ut.rand(64, 8), false); // random to prevent memory.....
-		for(f in on_init) f();
+		if (tmp == current) tmp = null;
 	}
 
 	public static function create(len = LLB):ByteArray{
@@ -37,23 +30,22 @@ class Ram{
 		ba.endian = flash.utils.Endian.LITTLE_ENDIAN;
 		return ba;
 	}
+
+	public static function detach():Void{
+		flash.system.ApplicationDomain.currentDomain.domainMemory = tmp;
+	}
 #else
-	static var stack = new Array<Bytes>();
 	static var current:Bytes = null;
-	public static function select(ba:Bytes):Void{
+	public static function select(?ba:Bytes):Void{
+		if (ba == null) ba = create(LLB);
 		Memory.select(ba);
-		if (current != null) stack.push(current);
 		current = ba;
-		for(f in on_init) f();
 	}
 	public static function create(len = LLB):Bytes{
 		return Bytes.alloc(len);
 	}
+	public static function detach():Void{}
 #end
-	public static function end():Void{
-		current = stack.pop();
-		if (current != null) Memory.select(current);
-	}
 	// in bytes
 	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero);
 
