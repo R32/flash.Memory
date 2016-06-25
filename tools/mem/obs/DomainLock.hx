@@ -8,13 +8,16 @@ import haxe.macro.PositionTools.here;
 import haxe.crypto.Md5;
 import haxe.io.Bytes;
 import mem.Ut;
-
+using StringTools;
 
 class DLockBuild{
 	public static function make(dm = "dm-lock"){
 		var dms:String = Context.definedValue(dm);
-		if (dms == null || dms == "" || dms == "1") Context.error("Must provide -D " + dm + "=domain_1,domain_2", here());
-		dms = "file://," + ~/\s/g.replace(dms, "");
+		if (dms == null || dms == "" || dms == "1") {
+			Context.warning("Can Only be run locally. Maybe you need to define: -D " + dm + "=domain_1,domain_2", here());
+			dms = "";
+		}
+		dms = dms.trim().urlDecode() +  ",localhost,file://,mk:@,"; // CHM URI prefix is "mk:@MSITStore"
 
 		//  use "^" for split
 		var bytes = Bytes.ofString(dms + "^loaderInfo.url");
@@ -25,6 +28,7 @@ class DLockBuild{
 
 		var fields = Context.getBuildFields();
 		var pos = here();
+
 		fields.push({
 			name: "check",
 			access: [APublic, AStatic, AInline],
@@ -36,11 +40,10 @@ class DLockBuild{
 					var s_0:AString = AString.fromHexString($v{bytes.toHex()});
 					for (i in 0...s_0.length)
 						Memory.setByte(s_0.c_ptr + i, Memory.getByte(s_0.c_ptr + i) ^ "a".code);
-					var p = $v{split};
-					var s_1:AString = AString.fromString(filter(rec(Ram.readUTFBytes(s_0.c_ptr + p + 1, s_0.length - p - 1))));
-
+					var len = $v{split};
+					var s_1:AString = AString.fromString(filter(rec(Ram.readUTFBytes(s_0.c_ptr + len + 1, s_0.length - len - 1))));
 					try{
-						match(s_0, s_1, p);
+						match(s_0, s_1, len);
 						trace("TODO: some func to crash here ");
 					}catch(err:String){
 						trace("TODO: have done!");
@@ -70,7 +73,7 @@ only in flash - DomainLock.check()
 */
 @:build(mem.obs.DomainLock.DLockBuild.make())
 @:dce class DomainLock{
-
+	// if s == "a.b" then return Lib.current.a.b
 	static inline function rec(s:String):String{
 		var a = s.split(".");
 		var o:Dynamic = Lib.current;
@@ -79,32 +82,25 @@ only in flash - DomainLock.check()
 	}
 
 	static inline function filter(s:String):String{
-		var dot = s.indexOf(".");
-		if(dot != -1){
-			var slash = s.indexOf("/", dot);
-			if (slash != -1) s = s.substr(0, slash);
+		var ds = s.indexOf("//");
+		if(ds != -1){
+			var slash = s.indexOf("/", ds + 3); // file:///
+			if (slash != -1) s = s.substr(0, slash + 1);
 		}
 		return s;
 	}
 
-	static inline function match(dms:AString, url:AString, len:Int):Bool{
+	static inline function match(dms:AString, url:AString, len:Int):Void{
 		var left:Ptr = dms.c_ptr;
-		var w:Int = 0;
-		var ret = false;
+		// parse domain from url
 		for (p in left...left + len){
-			if(Memory.getByte(p) == ",".code){
-				w = p - left;
-				//trace(Ram.readUTFBytes(left, w));
-				//trace(url.toString());
-				//trace(findA(left, w, url.c_ptr, url.c_ptr + url.length));
-				//trace(Ram.findA(left, w, url.c_ptr, url.c_ptr + url.length));
-				if (findA(left, w, url.c_ptr, url.c_ptr + url.length) != Malloc.NUL)
+			if(Memory.getByte(p) == ",".code && p - left > 1){
+				//trace(Ram.readUTFBytes(left, p - left));
+				if (findA(left, p - left, url.c_ptr, url.c_ptr + url.length) != Malloc.NUL)
 					throw "no";		// in fact, it have done without nothing error.
 				left = p + 1;
-				w = 0;
 			}
 		}
-		return ret;
 	}
 
 	// Same as Ram.findA except inline
@@ -115,13 +111,14 @@ only in flash - DomainLock.check()
 			var size = len;
 			var cc = src;
 			var cs = start;
-			var ct = 0;
+			var eq = true;
 			while (0 != size--)
 				if (Memory.getByte(cs++) != Memory.getByte(cc++)){
 					start += 1;
-					ct = 1;
+					eq = false;
+					break;
 				}
-			if (ct == 1) continue;
+			if (!eq) continue;
 			ptr = start;
 			break;
 		}
