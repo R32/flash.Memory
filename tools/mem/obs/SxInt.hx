@@ -40,10 +40,7 @@ abstract SxInt(Ptr) from Ptr{
 	@:dce public inline  function calc_3():Int return v_1 ^ v_0 | (v_3 & v_0) ^ v_2 | (v_5 & v_2) ^ v_4 | (v_7 & v_4) ^ v_6;
 
 	@:dce public static inline function fromInt64(v:Int64):SxInt{
-		var x = new SxInt();
-		x.low = v.low;
-		x.high = v.high;
-		return x;
+		return fromInt2(v.low, v.high);
 	}
 
 	@:dce public static inline function fromInt2(l:Int, h:Int):SxInt{
