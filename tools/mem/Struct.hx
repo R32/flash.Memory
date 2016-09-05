@@ -263,7 +263,7 @@ class StructBuild{
 					Context.warning("Type (" + ts +") is not supported for field: " + f.name ,here());
 				}else{
 					f.kind = FProp("get", "set", vt, null);
-					f.access = [APublic];
+					if (f.access.length == 0) f.access = [APublic];
 					var getter = exprs[0];
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
