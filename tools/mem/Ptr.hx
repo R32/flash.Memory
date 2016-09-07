@@ -2,6 +2,59 @@ package mem;
 
 typedef Ptr = Int;
 
+/**
+ Array<Unsigned Char>
+*/
+abstract AU8(Ptr) to Ptr {
+	@:arrayAccess inline function get(k:Int):Int {
+		return Memory.getByte(this + k);
+	}
+
+	@:arrayAccess inline function set(k:Int, v:Int):Void {
+		return Memory.setByte(this + k, v);
+	}
+}
+
+abstract AU16(Ptr) to Ptr{
+	@:arrayAccess inline function get(k:Int):Int {
+		return Memory.getUI16(this + (k + k));
+	}
+
+	@:arrayAccess inline function set(k:Int, v:Int):Void {
+		return Memory.setI16(this + (k + k), v);
+	}
+}
+
+abstract AI32(Ptr) to Ptr{
+	@:arrayAccess inline function get(k:Int):Int {
+		return Memory.getI32(this + (k << 2));
+	}
+
+	@:arrayAccess inline function set(k:Int, v:Int):Void {
+		return Memory.setI32(this + (k << 2), v);
+	}
+}
+
+abstract AF4(Ptr) to Ptr{
+	@:arrayAccess inline function get(k:Int):Float {
+		return Memory.getFloat(this + (k << 2));
+	}
+
+	@:arrayAccess inline function set(k:Int, v:Float):Void {
+		return Memory.setFloat(this + (k << 2), v);
+	}
+}
+
+abstract AF8(Ptr) to Ptr{
+	@:arrayAccess inline function get(k:Int):Float {
+		return Memory.getDouble(this + (k << 3));
+	}
+
+	@:arrayAccess inline function set(k:Int, v:Float):Void {
+		return Memory.setDouble(this + (k << 3), v);
+	}
+}
+
 #if flash
 typedef Memory = flash.Memory;
 typedef ByteArray = flash.utils.ByteArray;

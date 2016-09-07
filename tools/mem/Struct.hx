@@ -12,7 +12,7 @@ import haxe.macro.ComplexTypeTools;
 import haxe.macro.PositionTools.here;
 
 typedef Param = {
-	width:Int,
+	width:Int, // sizeof
 	nums:Int,
 	dx:Int
 };
@@ -32,6 +32,11 @@ haxe.EnumFlags: (1), 2, 4   @idx(?bytes, ?offset)
 Array<Int|Float>            @idx(length, ?bytes, ?offset)
  - Int: (1), 2, 4
  - Float: if(bytes == 2 or 8) then 8 else 4
+AU8                         @idx(length, ?offset)
+AU16                        ......
+AI32
+AF4
+AF8
 ```
 */
 @:autoBuild(mem.StructBuild.make())
@@ -68,8 +73,8 @@ class StructBuild{
 
 	static function parseInt(s:String):Int{
 		if (s == null) return 0;
-		var i = Std.parseInt(s);
-		return Math.isNaN(i) ? 0 : i;
+		var i:Int = Std.parseInt(s);
+		return i == null || Math.isNaN(i) ? 0 : i;
 	}
 
 	static inline function notZero(v:Int, def:Int = 1) return v <= 0 ? def : v;
@@ -79,27 +84,32 @@ class StructBuild{
 		var len = arr.length;
 		switch(type){
 			case "Bool", "Enum":
-				ret = {width:1, dx: arr[0], nums: 0};
+				ret = {width:1, dx: arr[0], nums: 1};
 			case "Array":
-				switch(len){
-					case 1: ret = {width:1, dx: 0, nums: notZero(arr[0])};
-					case 2: ret = {width:notZero(arr[1]), dx: 0, nums: notZero(arr[0])};
-					case 3: ret = {width:notZero(arr[1]), dx: arr[2], nums: notZero(arr[0])};
-					default: Context.warning("array idx data?????", here()); // 0,
-				}
+				ret = {
+					width: len > 1 ? notZero(arr[1]) : 1,
+					dx: len > 2 ? arr[2] : 0,
+					nums: notZero(arr[0])
+				};
 			case "mem.Ptr":
-				ret = {width:4, dx: arr[0], nums: 0};
+				ret = { width:4, dx: arr[0], nums: 1 };
+			case "mem.AU8":
+				ret = { width:1, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+			case "mem.AU16":
+				ret = { width:2, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+			case "mem.AI32":
+				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+			case "mem.AF4":
+				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+			case "mem.AF8":
+				ret = { width:8, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
 			default: // Float, String, Int, haxe.EnumFlags
-				switch(len){
-				case 1: ret = {width:notZero(arr[0]), dx: 0, nums: 0};
-				case 2: ret = {width:notZero(arr[0]), dx: arr[1], nums: 0};
-				default: ret = {width:0, dx: 0, nums: 0};	// width=0;
-				}
+				ret = { width: notZero(arr[0]), dx: (len > 1 ? arr[1] : 0), nums: 1 };
 		}
 		return ret;
 	}
 
-	static public function make(context = "addr"){
+	static public function make(context = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
@@ -122,7 +132,8 @@ class StructBuild{
 
 		for (f in fields) all_in_map.set(f.name, f);
 
-		for (f in fields){
+		for (f in fields) {
+			var is_array = false;
 			metaParams = null;
 			params = null;
 
@@ -130,7 +141,7 @@ class StructBuild{
 				for(meta in f.meta){
 					if (meta.name == IDX){
 						metaParams = [];
-						for(ex in meta.params){
+						for (ex in meta.params) {
 							metaParams.push(parseInt(ExprTools.getValue(ex)));
 						}
 						if (metaParams.length == 0) metaParams.push(0);
@@ -196,6 +207,10 @@ class StructBuild{
 									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
 							default: throw "EnumFlags instance expected";
 							}
+						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8":
+							is_array = true;
+							offset += params.dx;
+							[(macro cast $i{ context } + $v{ offset }), null]; // null is never
 						default:
 							ts = TypeTools.toString(a.get().type);
 							if (abs_type != null && ts == "mem.Ptr"){
@@ -224,6 +239,7 @@ class StructBuild{
 							[macro Ram.readUTFBytes($i{context} + $v{offset}, $v{params.width})
 								,macro Ram.writeString($i{context} + $v{offset}, $v{params.width} ,v)];
 							case "Array":
+								is_array = true;
 								switch (arrType[0]) {
 								case TPType(ct = TPath(at)):
 									var sget = null, sset = null;
@@ -262,12 +278,12 @@ class StructBuild{
 				if(exprs == null){
 					Context.warning("Type (" + ts +") is not supported for field: " + f.name ,here());
 				}else{
-					f.kind = FProp("get", "set", vt, null);
-					if (f.access.length == 0) f.access = [APublic];
 					var getter = exprs[0];
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
 					var setter_name = "set_" + f.name;
+					f.kind = FProp("get", (setter == null ? "never" : "set"), vt, null);
+					if (f.access.length == 0) f.access = [APublic];
 
 					if (!all_in_map.exists(getter_name))
 					fields.push({
@@ -283,7 +299,7 @@ class StructBuild{
 						pos: here()
 					});
 
-					if (!all_in_map.exists(setter_name))
+					if (setter!= null && !all_in_map.exists(setter_name))
 					fields.push({
 						name: setter_name,
 						access: [AInline],
@@ -306,7 +322,6 @@ class StructBuild{
 						pos: here()
 					});
 
-					var is_array = ts == "Array";
 					fields.push({
 						name : "__" + f.name.toUpperCase() + "_LEN",
 						doc: " == " + $v{is_array ? params.nums : params.width},
@@ -319,12 +334,12 @@ class StructBuild{
 						fields.push({
 							name : "__" + f.name.toUpperCase() + "_BYTE",
 							access: [AStatic, AInline, APublic],
-							doc: " == " + $v{params.width},
-							kind: FVar(macro :Int, macro $v{params.width}),
+							doc: " == " + $v{params.width * params.nums},
+							kind: FVar(macro :Int, macro $v{params.width * params.nums}),
 							pos: here()
 						});
 
-						Reflect.setField(attrs, f.name, {offset: offset,bytes: params.width,len: params.nums});
+						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width,len: params.nums});
 						offset += params.nums * params.width;
 					}else{
 						Reflect.setField(attrs, f.name, {offset: offset, len: params.width, bytes: 1});
