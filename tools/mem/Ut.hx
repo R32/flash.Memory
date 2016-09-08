@@ -20,7 +20,8 @@ class Ut{
 		return i == p && n > 0 ? n : n + i;
 	}
 
-	static public inline function rand(max:Int, start:Int = 0):Int return Std.int(Math.random() * (max - start)) + start;
+	static public inline function rand(max:Int, start:Int = 0):Int
+		return Std.int(Math.random() * (max - start)) + start;
 
 	public static function shuffle<T>(a : Array<T>,count:Int = 1, start:Int = 0) : Void{
 		var len = a.length;

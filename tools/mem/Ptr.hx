@@ -61,7 +61,7 @@ typedef ByteArray = flash.utils.ByteArray;
 #else
 class Memory {
 
-	public static var b(default, null):haxe.io.Bytes;
+	public static var b(default, null): haxe.io.Bytes;
 
 	public static inline function select( o : haxe.io.Bytes ) : Void {
 		b = o;
@@ -88,7 +88,7 @@ class Memory {
 	}
 
 	public static inline function getByte( addr : Int ) : Int {
-		return b.get(addr);
+		return haxe.io.Bytes.fastGet(b.getData(), addr);
 	}
 
 	public static inline function getUI16( addr : Int ) : Int {

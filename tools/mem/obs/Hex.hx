@@ -8,8 +8,9 @@ class Hex{
 
 	public static var hexchar(default, null):AString;
 
-	public static function init(){
-		hexchar = AString.fromString("0123456789ABCDEF");
+	public static function init() {
+		if (hexchar == null)
+			hexchar = AString.fromString("0123456789ABCDEF");
 	}
 
 	static function free() hexchar.free();
@@ -27,5 +28,14 @@ class Hex{
 				Memory.getByte(((c >>> 4) & 15) + base));
 		}
 		return ret;
+	}
+
+	public static function trace(ptr: Ptr, len: Int, lower = true): Void {
+		var as = export(ptr, len);
+		if (lower)
+			trace(as.toString().toLowerCase());
+		else
+			trace(as.toString());
+		as.free();
 	}
 }
