@@ -100,7 +100,7 @@ class Ram{
 	#else
 		current.blit(dst, current, src, size);
 	#end
-	/*  // slowly then above
+	/*  // slower than above
 		if (dst < src){
 			while (size >= 4) {
 				Memory.setI32(dst, Memory.getI32(src));
@@ -120,7 +120,7 @@ class Ram{
 				size -= 4;
 				Memory.setI32(dst, Memory.getI32(src));
 			}
-			while (0 != size--) {
+			while (0 < size--) {
 				Memory.setByte(--dst , Memory.getByte(--src));
 			}
 		}
@@ -137,7 +137,7 @@ class Ram{
 			size -= 4;
 		}
 	#end
-		while (0 != size--) {
+		while (0 < size--) {
 			if (Memory.getByte(dst++) != Memory.getByte(src++)) return false;
 		}
 		return true;
@@ -145,13 +145,13 @@ class Ram{
 
 	public static function memset(dst:Ptr, v:Int, size:Int):Void {
 	#if flash
-		var w:Int = v | (v << 8) | (v << 16) | (v << 24);
+		var w:Int = v == 0 ? 0 : v | (v << 8) | (v << 16) | (v << 24);
 		while (size >= 4 ) {
 			Memory.setI32(dst, w);
 			dst	+= 4;
 			size -= 4;
 		}
-		while (0 != size--) {
+		while (0 < size--) {
 			Memory.setByte(dst++, v);
 		}
 	#else
@@ -198,7 +198,17 @@ class Ram{
 		}
 	}
 
-	public static inline function mallocFromString(str:String) return new WString(str);
+	public static inline function mallocFromString(str:String):WString return new WString(str);
+
+	public static function mallocFromBytes(b:Bytes): Ptr {
+		var ret = Malloc.make(b.length, false);
+	#if flash
+		writeBytes(ret, b.length, b.getData());
+	#else
+		writeBytes(ret, b.length, b);
+	#end
+		return ret;
+	}
 
 	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
 	#if flash
