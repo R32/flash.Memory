@@ -72,9 +72,10 @@ class StructBuild{
 	static inline var IDX = "idx";
 
 	static function parseInt(s:String):Int{
-		if (s == null) return 0;
 		var i:Int = Std.parseInt(s);
-		return i == null || Math.isNaN(i) ? 0 : i;
+		if (s == null || i == null || Math.isNaN(i))
+			throw "todo";
+		return i;
 	}
 
 	static inline function notZero(v:Int, def:Int = 1) return v <= 0 ? def : v;
@@ -142,7 +143,11 @@ class StructBuild{
 					if (meta.name == IDX){
 						metaParams = [];
 						for (ex in meta.params) {
-							metaParams.push(parseInt(ExprTools.getValue(ex)));
+							try {
+								metaParams.push(parseInt(ExprTools.getValue(ex)));
+							}catch(err: Dynamic) {
+								Context.error("Invalid Meta value for @" + IDX, f.pos);
+							}
 						}
 						if (metaParams.length == 0) metaParams.push(0);
 					}
