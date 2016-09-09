@@ -2,64 +2,69 @@ package mem.struct;
 
 import mem.Ptr;
 
-class AString implements Struct{
+class AString{
 
-	@idx(2) var length:Int;				// MAX 65536
+	public var length(default, null):Int;
+	public var addr(default, null):Ptr;
 
-	public inline function new(len:Int) {
-		addr = Malloc.make(len + CAPACITY + 1, false);
+	public function new(len:Int) {
+		addr = Malloc.make(len + 1, false);
 		length = len;
+		Memory.setByte(addr + len, 0);
 	}
 
+	@:deprecated("use \"addr\"")
 	public var c_ptr(get, never):Ptr;
-	inline function get_c_ptr():Ptr return addr + CAPACITY;
+	inline function get_c_ptr():Ptr return addr;
 
+	public inline function free():Void {
+		Malloc.free(addr);
+		addr = Malloc.NUL;
+	};
 
-#if flash
-	public inline function toString(){
-		@:privateAccess {
-			Ram.current.position = c_ptr;
+	public function toString() {
+	#if flash
+		@:privateAccess @:mergeBlock{
+			Ram.current.position = addr;
 			return Ram.current.readUTFBytes(length);
 		}
-	}
-#else
-	public function toString(){
-		var cc = c_ptr;
+	#elseif (neko || cpp || lua)
+		return Ram.readUTFBytes(addr, length);
+	#else
+		var cc = addr;
 		var buf = new StringBuf();
 		for (i in 0...length){
 			buf.addChar(Memory.getByte(cc + i));
 		}
 		return buf.toString();
+	#end
 	}
-#end
 
-	public static function fromString(str:String):AString{
-		var length = str.length;
-		var astr = new AString(length);
+	public static function fromString(str:String): AString{
+		var sa = new AString(str.length);
 	#if flash
 		@:privateAccess {
-			Ram.current.position = astr.c_ptr;
+			Ram.current.position = sa.addr;
 			Ram.current.writeMultiByte(str, "us-ascii");
 		}
+	#elseif (neko || cpp || lua)
+		Ram.writeUTFBytes(sa.addr, str);
 	#else
-		var cc = astr.c_ptr;
-		for(i in 0...length){
-			Memory.setByte(cc + i, StringTools.fastCodeAt(str, i));
+		for(i in 0...sa.length){
+			Memory.setByte(sa.addr + i, StringTools.fastCodeAt(str, i));
 		}
 	#end
-		Memory.setByte(astr.c_ptr + length + 1, 0);
-		return astr;
+		return sa;
 	}
 
 	public static function fromHexString(hex:String):AString{
 		var len = hex.length >> 1;
-		var astr = new AString(len);
+		var sa = new AString(len);
 		var j:Int;
 		for (i in 0...len){
 			j = i + i;
-			Memory.setByte(astr.c_ptr + i, Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) ));
+			Memory.setByte(sa.addr + i, Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) ));
 		}
-		Memory.setByte(astr.c_ptr + len + 1, 0);
-		return astr;
+		return sa;
 	}
 }

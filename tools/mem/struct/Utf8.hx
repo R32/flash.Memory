@@ -29,18 +29,12 @@ import mem.Ptr;
 /**
 ported from http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
 */
-class Utf8 implements Struct {
+class Utf8 {
 
-	@idx(400, 1) private var _utf8_data: Array<Int>;
+	public var utf8d(default, null): AU8;
 
-	var utf8d(get, never): Ptr;
-	inline function get_utf8d() return addr; // Utf8.___UTF8_DATA_OF == 0
-
-	private inline function new() {
-
-		addr = Malloc.make(Utf8.CAPACITY, false);
-
-		_utf8_data = [
+	private function new() {
+		var data = [
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 40..5f
@@ -56,6 +50,14 @@ class Utf8 implements Struct {
 			1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, // s5..s6
 			1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
 		];
+		utf8d = cast Malloc.make(data.length, false);
+		for (i in 0...data.length)
+			utf8d[i] = data[i];
+	}
+
+	function free(): Void {
+		Malloc.free(utf8d);
+		utf8d = cast Malloc.NUL;
 	}
 
 	static var inst:Utf8 = null;
@@ -68,9 +70,9 @@ class Utf8 implements Struct {
 		var state = 0;
 		for (i in 0...byteLength) {
 			var byte = Memory.getByte(dst + i);
-			var type = Memory.getByte(utf8d + byte);
+			var type = utf8d[byte];
 
-			state = Memory.getByte(utf8d + 256 + (state << 4) + type);
+			state = utf8d[256 + (state << 4) + type];
 
 			if (state == UTF8_REJECT) return false;
 		}
@@ -84,9 +86,9 @@ class Utf8 implements Struct {
 
 		for (i in 0...byteLength) {
 			var byte = Memory.getByte(dst + i);
-			var type = Memory.getByte(utf8d + byte);
+			var type = utf8d[byte];
 
-			state = Memory.getByte(utf8d + 256 + (state << 4) + type);
+			state = utf8d[256 + (state << 4) + type];
 
 			if (state == UTF8_REJECT)
 				return -1; //throw "Invalid utf8 string";
@@ -96,19 +98,18 @@ class Utf8 implements Struct {
 		return len;
 	}
 
-
 	public static function iter(dst:Ptr, byteLength: Int, chars : Int -> Void ):Bool {
 		var utf8d = inst.utf8d;
 		var state = 0, codep = 0;
 		for (i in 0...byteLength) {
 			var byte = Memory.getByte(dst + i);
-			var type = Memory.getByte(utf8d + byte);
+			var type = utf8d[byte];
 
 			codep = state != UTF8_ACCEPT ?
 				(byte & 0x3f) | (codep << 6) :
 				(0xff >> type) & (byte);
 
-			state = Memory.getByte(utf8d + 256 + (state << 4) + type);
+			state = utf8d[256 + (state << 4) + type];
 
 			if (state == UTF8_REJECT)
 				return false;

@@ -19,8 +19,8 @@ class Hex{
 		if (hexchar == null)
 			throw "have not initialization the hexchar";
 		var ret = new AString(len + len);
-		var dst = ret.c_ptr;
-		var base = hexchar.c_ptr;
+		var dst = ret.addr;
+		var base = hexchar.addr;
 		var c:Int;
 		for(i in 0...len){
 			c = Memory.getByte(ptr + i);

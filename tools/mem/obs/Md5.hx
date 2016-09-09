@@ -60,8 +60,6 @@ class Md5{
 
 
 	static function starts(ctx: Md5Context):Void {
-		ctx.total[0] = 0;
-		ctx.total[1] = 0;
 		ctx.state[0] = 0x67452301;
 		ctx.state[1] = 0xEFCDAB89;
 		ctx.state[2] = 0x98BADCFE;
@@ -82,29 +80,29 @@ class Md5{
 
 		if (left > 0 && ilen >= fill) {
 			Ram.memcpy((left + ctx.buffer), input, fill);
-			process(ctx, ctx.buffer);
+			process(ctx.state, ctx.buffer);
 			input += fill;
 			ilen -= fill;
 			left = 0;
 		}
 
 		while (ilen >= 64) {
-			process(ctx, input);
+			process(ctx.state, input);
 			input += 64;
 			ilen -= 64;
 		}
 		if (ilen > 0) Ram.memcpy((left + ctx.buffer), input, ilen);
 	}
 
-	static function process(ctx: Md5Context, data: Ptr):Void {
+	static function process(state: AI32, data: Ptr):Void {
 		var A = 0, B = 0, C = 0, D = 0;
 
 		var X:AI32 = cast data;
 
-		A = ctx.state[0];
-		B = ctx.state[1];
-		C = ctx.state[2];
-		D = ctx.state[3];
+		A = state[0];
+		B = state[1];
+		C = state[2];
+		D = state[3];
 
 		P( A, B, C, D,  0,  7, 0xD76AA478, X, F1 );
 		P( D, A, B, C,  1, 12, 0xE8C7B756, X, F1 );
@@ -174,10 +172,10 @@ class Md5{
 		P( C, D, A, B,  2, 15, 0x2AD7D2BB, X, F4 );
 		P( B, C, D, A,  9, 21, 0xEB86D391, X, F4 );
 
-		ctx.state[0] += A;
-		ctx.state[1] += B;
-		ctx.state[2] += C;
-		ctx.state[3] += D;
+		state[0] += A;
+		state[1] += B;
+		state[2] += C;
+		state[3] += D;
 	}
 
 

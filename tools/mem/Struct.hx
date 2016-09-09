@@ -395,8 +395,8 @@ class StructBuild{
 				}),
 				pos: here()
 			});
-		}else if (constructor.access.indexOf(AInline) == -1){
-			Context.warning("Suggestion: add **inline** for " + cls.name + "'s constructor new" , here());
+		}else if (abs_type != null && constructor.access.indexOf(AInline) == -1){
+			Context.warning("Suggestion: add **inline** for " + cls.name + "'s constructor new" , constructor.pos);
 		}
 
 		if (!all_in_map.exists("free"))

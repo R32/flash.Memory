@@ -8,7 +8,7 @@ class Md5Macros {
 	}
 
 	macro public static function P(a, b, c, d, k, s, t, X, F) {
-		return macro { $a += $F($b, $c, $d) + ($X[$k]) + $t; $a = S($a, $s) + $b; }
+		return macro @:mergeBlock{ $a += $F($b, $c, $d) + ($X[$k]) + $t; $a = S($a, $s) + $b; }
 	}
 
 	macro public static function F1(x, y, z) return macro ($z ^ ($x & ($y ^ $z)));
