@@ -56,8 +56,39 @@ abstract AF8(Ptr) to Ptr{
 }
 
 #if flash
+
 typedef Memory = flash.Memory;
 typedef ByteArray = flash.utils.ByteArray;
+
+#elseif(js && (js_es > 3))
+class Memory {
+	public static var b(default, null): haxe.io.Bytes;
+	public static var u8(default, null): js.html.Uint8Array;
+	public static var u16(default, null): js.html.Uint16Array;
+	public static var i32(default, null): js.html.Int32Array;
+	public static var f4(default, null): js.html.Float32Array;
+	public static var f8(default, null): js.html.Float64Array;
+
+	public static inline function select( o : haxe.io.Bytes ) : Void {
+		b = o;
+		var data = b.getData();
+		u8 = new js.html.Uint8Array(data);
+		u16 = new js.html.Uint16Array(data);
+		i32 = new js.html.Int32Array(data);
+		f4 = new js.html.Float32Array(data);
+		f8 = new js.html.Float64Array(data);
+	}
+	public static inline function setByte( addr : Int, v : Int ): Void  u8[addr] = v;
+	public static inline function setI16( addr : Int, v : Int ) : Void  u16[addr >> 1] = v;
+	public static inline function setI32( addr : Int, v : Int ) : Void  i32[addr >> 2] = v;
+	public static inline function setFloat( addr : Int, v : Float ) : Void  f4[addr >> 2] = v;
+	public static inline function setDouble( addr : Int, v : Float ): Void  f8[addr >> 3] = v;
+	public static inline function getByte( addr : Int ): Int return u8[addr];
+	public static inline function getUI16( addr : Int ): Int return u16[addr >> 1];
+	public static inline function getI32( addr : Int ) : Int return i32[addr >> 2];
+	public static inline function getFloat( addr : Int ) : Float return f4[addr >> 2];
+	public static inline function getDouble( addr : Int ) :Float return f8[addr >> 3];
+}
 #else
 class Memory {
 
