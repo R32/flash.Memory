@@ -4,6 +4,12 @@ import mem.Ptr;
 import mem.Malloc;
 import haxe.io.Bytes;
 import mem.struct.WString;
+#if (cpp && unsafe_cpp)
+import cpp.Star;
+import mem.cpp.BytesData;
+import mem.cpp.NRam;
+#end
+
 
 class Ram{
 
@@ -34,16 +40,33 @@ class Ram{
 	public static function detach():Void{
 		flash.system.ApplicationDomain.currentDomain.domainMemory = tmp;
 	}
+#elseif (cpp && unsafe_cpp)
+	static var current: Star<BytesData> = null;
+
+	public static function select(?ba:Star<BytesData>): Void {
+		if (ba == null) ba = BytesData.createStar(LLB);
+		Memory.select(ba);
+		current = ba;
+	}
+
+	public static function create(len = LLB): Star<BytesData>{
+		return BytesData.createStar(len);
+	}
+
+	public static function detach():Void { }
 #else
 	static var current:Bytes = null;
+
 	public static function select(?ba:Bytes):Void{
 		if (ba == null) ba = create(LLB);
 		Memory.select(ba);
 		current = ba;
 	}
+
 	public static function create(len = LLB):Bytes{
 		return Bytes.alloc(len);
 	}
+
 	public static function detach():Void{}
 #end
 	// in bytes
@@ -55,6 +78,8 @@ class Ram{
 		if(len > current.length){
 		#if flash
 			current.length = mem.Ut.pad8(len, LLB);
+		#elseif (cpp && unsafe_cpp)
+			current.resize(mem.Ut.pad8(len, LLB));
 		#else
 			var a = Bytes.alloc(mem.Ut.pad8(len, LLB));
 			a.blit(0, current, 0, current.length);
@@ -83,6 +108,19 @@ class Ram{
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		src.readBytes(current, ptr, len);
 	}
+#elseif (cpp && unsafe_cpp)
+
+	// hxcpp/include/Array.h -- "inline char * getBase() const..."
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
+		var b:Star<cpp.Char> = untyped dst.getData().getBase();
+		NRam.memcpy(b, current.cs() + ptr, len);
+	}
+
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
+		var b:Star<cpp.Char> = untyped src.getData().getBase();
+		NRam.memcpy(current.cs() + ptr, b, len);
+	}
+
 #else
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
 		dst.blit(0, current, ptr, len);
@@ -136,6 +174,8 @@ class Ram{
 			src += 4;
 			size -= 4;
 		}
+	#elseif (cpp && unsafe_cpp)
+		return NRam.memcmp(current.cs() + dst, current.cs() + src, size) == 0;
 	#end
 		while (0 < size--) {
 			if (Memory.getByte(dst++) != Memory.getByte(src++)) return false;
@@ -164,6 +204,11 @@ class Ram{
 		current.position = dst;
 		current.writeUTFBytes(str);
 		return current.position - dst;
+	#elseif (cpp && unsafe_cpp)
+		// write string to mem
+		var b:Star<cpp.Char> = cpp.NativeString.c_str(str).ptr;
+		NRam.memcpy(current.cs() + dst, b, str.length);
+		return str.length;
 	#else
 		var a = Bytes.ofString(str);
 		current.blit(dst, a, 0, a.length);
@@ -172,7 +217,11 @@ class Ram{
 	}
 
 
-	public static function writeString(dst:Ptr, len:Int, str:String):Void{
+	public static function writeString(dst:Ptr, len:Int, str:String):Void {
+	#if (neko || cpp || lua)
+		for (i in 0...len)
+			Memory.setByte(dst + i, StringTools.fastCodeAt(str, i));
+	#else
 		var jlen = str.length;
 		var i = 0, c = 0, j = 0;
 		while (i < len && j < jlen){
@@ -196,6 +245,7 @@ class Ram{
 				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63));
 			}
 		}
+	#end
 	}
 
 	public static inline function mallocFromString(str:String):WString return new WString(str);
@@ -214,6 +264,8 @@ class Ram{
 	#if flash
 		current.position = dst;
 		return current.readUTFBytes(len);
+	#elseif (cpp && unsafe_cpp)
+		return untyped __cpp__("_hx_string_create({0}, {1})", current.cs() + dst, len);
 	#else
 		return current.getString(dst, len);
 	#end
@@ -225,7 +277,7 @@ class Ram{
 		if (start < 0) return Malloc.NUL;
 		if (end == Malloc.NUL) end = Malloc.getUsed();
 		var wstr = mallocFromString(str);
-		var ptr = findA(wstr.c_ptr, wstr.length, start, end);
+		var ptr = findA(wstr.addr, wstr.length, start, end);
 		wstr.free();
 		return ptr;
 	}
