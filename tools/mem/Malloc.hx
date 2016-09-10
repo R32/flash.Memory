@@ -47,7 +47,7 @@ abstract Block(Ptr) from Ptr{
 }
 
 class Malloc{
-	public static inline var NUL = 0;
+	public static inline var NUL:Ptr = cast 0;
 	public static inline var LB = 8;
 
 	static var top(default, null):Block = NUL;
@@ -55,7 +55,7 @@ class Malloc{
 	public static var frag_count(default, null):Int = 0;
 	public static var length(default, null):Int = 0;
 
-	public static inline function getUsed():Int {
+	public static function getUsed():Int {
 		return bottom == NUL ? Block.CAPACITY : bottom.entry + bottom.size;
 	}
 
@@ -129,7 +129,7 @@ class Malloc{
 		if(ret == NUL){
 			var p = getUsed();
 			@:privateAccess Ram.req(p + block_need);	// check
-			ret = new Block(p, need, zero);
+			ret = new Block(cast p, need, zero);
 			add(ret);
 		}else{
 			capacity = ret.len;

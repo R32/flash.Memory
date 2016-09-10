@@ -275,11 +275,11 @@ class Ram{
 	#end
 	}
 
-	public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
-
-	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL):Ptr{
-		if (start < 0) return Malloc.NUL;
-		if (end == Malloc.NUL) end = Malloc.getUsed();
+	// public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
+	// below only for test
+	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL): Ptr{
+		if ((start:Int) < 0) return Malloc.NUL;
+		if (end == Malloc.NUL) end = cast Malloc.getUsed();
 		var wstr = mallocFromString(str);
 		var ptr = findA(wstr.addr, wstr.length, start, end);
 		wstr.free();

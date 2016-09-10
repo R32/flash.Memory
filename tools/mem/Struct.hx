@@ -298,7 +298,7 @@ class StructBuild{
 							args: [],
 							ret : vt,
 							expr: macro {
-								return $getter;
+								return cast $getter;
 							}
 						}),
 						pos: here()
@@ -409,7 +409,7 @@ class StructBuild{
 					ret : null,
 					expr: macro {
 						mem.Malloc.free($i{context});
-						$i{context} = 0;
+						$i{context} = mem.Malloc.NUL;
 					}
 				}),
 				pos: here()
@@ -439,7 +439,7 @@ class StructBuild{
 		}
 	}
 		#if !no2out
-			var prep = abs_type == null ?  (macro null) : (macro if (0 >= this) return "null");
+			var prep = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return "null");
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
 				var node = Reflect.field(attrs, k);

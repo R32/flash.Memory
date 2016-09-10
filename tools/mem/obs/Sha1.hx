@@ -80,7 +80,7 @@ class Sha1{
 
 			i = 64 - j;
 
-			Ram.memcpy(ctx.Buffer + j, input, i);
+			Ram.memcpy((ctx.Buffer:Ptr) + j, input, i);
 
 			process(ctx.State, ctx.Buffer);
 
@@ -97,7 +97,7 @@ class Sha1{
 		if (ilen == 1)
 			Memory.setByte(ctx.Buffer + j, Memory.getByte(input + i));
 		else if (ilen > 0)
-			Ram.memcpy(ctx.Buffer + j, input + i, ilen);
+			Ram.memcpy((ctx.Buffer:Ptr) + j, input + i, ilen);
 	}
 
 	static function process(state: AI32/*uint32_t state[5]*/, data: AU8/*const uint8_t buffer[64]*/):Void {

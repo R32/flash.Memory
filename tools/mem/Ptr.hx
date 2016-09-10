@@ -1,6 +1,31 @@
 package mem;
 
-typedef Ptr = Int;
+abstract Ptr(Int) to Int {
+
+	@:arrayAccess public inline function get(i: Int):Int return Memory.getByte(i);
+	@:arrayAccess public inline function set(i: Int, v:Int):Void Memory.setByte(i, v);
+
+	@:op(A + B) private inline function addInt(b : Int ): Ptr
+		return cast ((this:Int) + b);
+
+	@:op(A - B) private inline function sub(b : Int ): Ptr
+		return cast ((this:Int) - b);
+
+	@:op(A < B) private static inline function lt( a : Ptr, b : Ptr ) : Bool
+		return (a:Int) < (b:Int);
+
+	@:op(A <= B) private static inline function lte( a : Ptr, b : Ptr ) : Bool
+		return (a:Int) <= (b:Int);
+
+	@:op(A > B) private static inline function gt( a : Ptr, b : Ptr ) : Bool
+		return (a:Int) > (b:Int);
+
+	@:op(A >= B) private static inline function gte( a : Ptr, b : Ptr ) : Bool
+		return (a:Int) >= (b:Int);
+
+	@:op(A == B) private static inline function eqInt( a : Ptr, b : Ptr ) : Bool
+		return (a:Int) == (b:Int);
+}
 
 /**
  Array<Unsigned Char>

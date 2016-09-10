@@ -79,7 +79,7 @@ class Md5{
 		if (ctx.total[0] < ilen) ctx.total[1] += 1;
 
 		if (left > 0 && ilen >= fill) {
-			Ram.memcpy((left + ctx.buffer), input, fill);
+			Ram.memcpy((ctx.buffer:Ptr) + left, input, fill);
 			process(ctx.state, ctx.buffer);
 			input += fill;
 			ilen -= fill;
@@ -91,7 +91,7 @@ class Md5{
 			input += 64;
 			ilen -= 64;
 		}
-		if (ilen > 0) Ram.memcpy((left + ctx.buffer), input, ilen);
+		if (ilen > 0) Ram.memcpy((ctx.buffer:Ptr) + left, input, ilen);
 	}
 
 	static function process(state: AI32, data: Ptr):Void {

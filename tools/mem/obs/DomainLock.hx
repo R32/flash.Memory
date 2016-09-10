@@ -98,7 +98,7 @@ only in flash - DomainLock.check()
 				//trace(Ram.readUTFBytes(left, p - left));
 				if (findA(left, p - left, url.addr, url.addr + url.length) != Malloc.NUL)
 					throw "no";		// in fact, it have done without nothing error.
-				left = p + 1;
+				left = cast p + 1;
 			}
 		}
 	}
