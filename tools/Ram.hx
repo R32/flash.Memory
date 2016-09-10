@@ -133,12 +133,17 @@ class Ram{
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src || size <= 0) return;
 	#if flash
-		current.position = src;
-		current.readBytes(current, dst, size);
+		if (size <= 40) {
+			memcpy_pure(dst, src, size);
+		} else {
+			current.position = src;
+			current.readBytes(current, dst, size);
+		}
 	#else
 		current.blit(dst, current, src, size);
 	#end
-	/*  // slower than above
+	}
+	static function memcpy_pure(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst < src){
 			while (size >= 4) {
 				Memory.setI32(dst, Memory.getI32(src));
@@ -162,7 +167,6 @@ class Ram{
 				Memory.setByte(--dst , Memory.getByte(--src));
 			}
 		}
-	*/
 	}
 
 	public static function memcmp(dst:Ptr, src: Ptr, size:Int):Bool{

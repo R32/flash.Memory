@@ -30,12 +30,12 @@ class Hex{
 		return ret;
 	}
 
-	public static function trace(ptr: Ptr, len: Int, lower = true): Void {
+	public static function trace(ptr: Ptr, len: Int, lower = true, prefix = ""): Void {
 		var as = export(ptr, len);
 		if (lower)
-			trace(as.toString().toLowerCase());
+			trace(prefix + as.toString().toLowerCase());
 		else
-			trace(as.toString());
+			trace(prefix + as.toString());
 		as.free();
 	}
 }

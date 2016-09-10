@@ -11,7 +11,7 @@ abstract AU8(Ptr) to Ptr {
 	}
 
 	@:arrayAccess inline function set(k:Int, v:Int):Void {
-		return Memory.setByte(this + k, v);
+		Memory.setByte(this + k, v);
 	}
 }
 
@@ -21,7 +21,7 @@ abstract AU16(Ptr) to Ptr{
 	}
 
 	@:arrayAccess inline function set(k:Int, v:Int):Void {
-		return Memory.setI16(this + (k + k), v);
+		Memory.setI16(this + (k + k), v);
 	}
 }
 
@@ -31,7 +31,7 @@ abstract AI32(Ptr) to Ptr{
 	}
 
 	@:arrayAccess inline function set(k:Int, v:Int):Void {
-		return Memory.setI32(this + (k << 2), v);
+		Memory.setI32(this + (k << 2), v);
 	}
 }
 
@@ -41,7 +41,7 @@ abstract AF4(Ptr) to Ptr{
 	}
 
 	@:arrayAccess inline function set(k:Int, v:Float):Void {
-		return Memory.setFloat(this + (k << 2), v);
+		Memory.setFloat(this + (k << 2), v);
 	}
 }
 
@@ -51,7 +51,7 @@ abstract AF8(Ptr) to Ptr{
 	}
 
 	@:arrayAccess inline function set(k:Int, v:Float):Void {
-		return Memory.setDouble(this + (k << 3), v);
+		Memory.setDouble(this + (k << 3), v);
 	}
 }
 

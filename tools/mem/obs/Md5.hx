@@ -28,7 +28,7 @@ import mem.obs.Md5Macros.*;
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #if !macro @:build(mem.Struct.StructBuild.make()) #end
-abstract Md5Context(Ptr) to Ptr {
+private abstract Md5Context(Ptr) to Ptr {
 	@idx(2) var total: AI32;   // [len: 2, bytes: 4]
 	@idx(4) var state: AI32;
 	@idx(64) var buffer: AU8;
