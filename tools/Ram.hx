@@ -131,7 +131,7 @@ class Ram{
 #end
 
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
-		if (dst == src) return;
+		if (dst == src || size <= 0) return;
 	#if flash
 		current.position = src;
 		current.readBytes(current, dst, size);
