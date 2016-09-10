@@ -41,7 +41,7 @@ class TestInFlash{
 		shuffle(ar, 2);
 
 		for (i in 0...half) {
-			Ram.free(ar[i]);
+			Ram.free(cast ar[i]);
 			draw(MC_H * i);
 		}
 		trace("**in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length+ "\n");
@@ -53,7 +53,7 @@ class TestInFlash{
 		shuffle(ar, 2);
 
 		for (i in 0...ar.length) {
-			Ram.free(ar[i]);
+			Ram.free(cast ar[i]);
 			draw(MC_H * i);
 			if (i % 6 == 0)
 				trace("index: "+ i +" **in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length + "\n");

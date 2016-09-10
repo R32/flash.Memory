@@ -1,51 +1,42 @@
 -dce full
 -cp ../tools
--resource ../res/super_mario.nsf@supermario
+-main Test
+-resource Test.hx@testjs
+-D sx-pwd=hello
+-D dm-lock=test.com,helloworld.com,example.com
 #--connect 6000
 --each
 
--main TestStruct
 -swf bin/test.swf
 -swf-header 550:410:24:000000
 --flash-strict
 -swf-version 10.3
 
 --next
--swf-header 960:720:24:000000
---flash-strict
--swf-version 10.3
--main TestInFlash
--swf malloc.swf
-
---next
--main TestStruct
 -js bin/test.js
 
---next
--main TestStruct
--neko bin/test.n
+#--next
+#-neko bin/test.n
 
 --next
--main TestStruct
--java bin/jav
+-python bin/test.py
 
 --next
--main TestStruct
 -cs bin/cs
 
 --next
--main TestStruct
--php bin/php
+-lua bin/test.lua
 
 --next
--main TestStruct
--python bin/pyt
+-java bin/java
 
 --next
--main TestStruct
--hl bin/hl/hl.c
+-hl bin/test.c
 
-#--next
-#-main TestStruct
-#-cpp bin/cpp
+--next
+-D unsafe_cpp
+-cpp bin/cpp
+
+
+
 
