@@ -2,8 +2,8 @@ package mem;
 
 abstract Ptr(Int) to Int {
 
-	@:arrayAccess public inline function get(i: Int):Int return Memory.getByte(i);
-	@:arrayAccess public inline function set(i: Int, v:Int):Void Memory.setByte(i, v);
+	@:arrayAccess public inline function get(i: Int):Int return Memory.getByte(this + i);
+	@:arrayAccess public inline function set(i: Int, v:Int):Void Memory.setByte(this + i, v);
 
 	@:op(A + B) private inline function addInt(b : Int ): Ptr
 		return cast ((this:Int) + b);
@@ -30,7 +30,7 @@ abstract Ptr(Int) to Int {
 /**
  Array<Unsigned Char>
 */
-abstract AU8(Ptr) to Ptr {
+abstract AU8(Ptr) to Ptr from Ptr {
 	@:arrayAccess inline function get(k:Int):Int {
 		return Memory.getByte(this + k);
 	}
