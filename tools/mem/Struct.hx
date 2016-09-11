@@ -161,15 +161,6 @@ class StructBuild{
 				var t = Context.getType(path.join("."));
 				var ts = "";
 				var exprs = switch (t) {
-					case TType(a, _):
-						ts = Std.string(a);
-						if (ts == "mem.Ptr"){
-							params = parseMeta(metaParams, ts);
-							offset += params.dx;
-							[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
-						}else{
-							null;
-						}
 					case TAbstract(a, _):
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
@@ -216,9 +207,12 @@ class StructBuild{
 							is_array = true;
 							offset += params.dx;
 							[(macro cast $i{ context } + $v{ offset }), null]; // null is never
+						case "mem.Ptr":  // legacy
+							offset += params.dx;
+							[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
 						default:
 							ts = TypeTools.toString(a.get().type);
-							if (abs_type != null && ts == "mem.Ptr"){
+							if (abs_type != null && ts == "mem.Ptr"){  // for abstruct Other(Ptr) {}
 								params = parseMeta(metaParams, ts);
 								offset += params.dx;
 								[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];

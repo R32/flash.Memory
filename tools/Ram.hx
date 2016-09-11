@@ -113,12 +113,12 @@ class Ram{
 	// hxcpp/include/Array.h -- "inline char * getBase() const..."
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
 		var b:Star<cpp.Char> = untyped dst.getData().getBase();
-		NRam.memcpy(b, current.cs() + ptr, len);
+		NRam.memcpy(b, current.cs() + (ptr:Int), len);
 	}
 
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
 		var b:Star<cpp.Char> = untyped src.getData().getBase();
-		NRam.memcpy(current.cs() + ptr, b, len);
+		NRam.memcpy(current.cs() + (ptr:Int), b, len);
 	}
 
 #else
@@ -179,7 +179,7 @@ class Ram{
 			size -= 4;
 		}
 	#elseif (cpp && unsafe_cpp)
-		return NRam.memcmp(current.cs() + dst, current.cs() + src, size) == 0;
+		return NRam.memcmp(current.cs() + (dst:Int), current.cs() + (src:Int), size) == 0;
 	#end
 		while (0 < size--) {
 			if (Memory.getByte(dst++) != Memory.getByte(src++)) return false;
@@ -211,7 +211,7 @@ class Ram{
 	#elseif (cpp && unsafe_cpp)
 		// write string to mem
 		var b:Star<cpp.Char> = cpp.NativeString.c_str(str).ptr;
-		NRam.memcpy(current.cs() + dst, b, str.length);
+		NRam.memcpy(current.cs() + (dst:Int), b, str.length);
 		return str.length;
 	#else
 		var a = Bytes.ofString(str);
@@ -269,7 +269,7 @@ class Ram{
 		current.position = dst;
 		return current.readUTFBytes(len);
 	#elseif (cpp && unsafe_cpp)
-		return untyped __cpp__("_hx_string_create({0}, {1})", current.cs() + dst, len);
+		return untyped __cpp__("_hx_string_create({0}, {1})", current.cs() + (dst:Int), len);
 	#else
 		return current.getString(dst, len);
 	#end
