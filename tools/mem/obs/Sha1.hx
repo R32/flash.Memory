@@ -4,7 +4,7 @@ import mem.Ptr;
 import mem.obs.Sha1Macros.*;
 
 #if !macro @:build(mem.Struct.StructBuild.make()) #end
-private abstract Sha1Context(Ptr) to Ptr {
+@:dce private abstract Sha1Context(Ptr) to Ptr {
 	@idx(8)  var finalcount:AU8;   // local variable, in "finish"
 
 	@idx(5)  var State: AI32;      // Sha1Context begin
@@ -38,9 +38,15 @@ private abstract Sha1Context(Ptr) to Ptr {
 //
 //  This is free and unencumbered software released into the public domain - June 2013 waterjuice.org
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if cpp
+@:nativeGen @:headerCode("#define Sha1hx Sha1hx_obj") @:native("mem.obs.Sha1hx") // for names conflict
+#end
 class Sha1{
-
+	#if cpp
+	static var sa: Sha1Context;  // no default value, To prevent creating __register()
+	#else
 	static var sa: Sha1Context = cast Malloc.NUL;
+	#end
 
 	public static function init():Void {
 		if (sa == Malloc.NUL) sa = new Sha1Context();
@@ -100,6 +106,7 @@ class Sha1{
 			Ram.memcpy((ctx.Buffer:Ptr) + j, input + i, ilen);
 	}
 
+	// this function is too large for neko
 	static function process(state: AI32/*uint32_t state[5]*/, data: AU8/*const uint8_t buffer[64]*/):Void {
 		var a = state[0];
 		var b = state[1];
@@ -162,6 +169,4 @@ class Sha1{
 		}
 
 	}
-
-	static inline var SHA1_HASH_SIZE = 160 >> 3;
 }

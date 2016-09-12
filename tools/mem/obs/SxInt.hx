@@ -7,7 +7,7 @@ import mem.obs.SXor;
 #if !macro
 @:build(mem.Struct.StructBuild.make())
 #end
-abstract SxKeys(Ptr) from Ptr{
+@:dce abstract SxKeys(Ptr) from Ptr{
 	public inline function new(len:Int) {
 		this = Malloc.make(len, false);
 	}

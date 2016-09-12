@@ -1,14 +1,13 @@
 package mem.obs;
 
 
-
-class Md5Macros {
+@:dce class Md5Macros {
 	macro public static function S(x, n) {
 		return macro (($x << $n) | ($x >>> (32 - $n)));
 	}
 
-	macro public static function P(a, b, c, d, k, s, t, X, F) {
-		return macro @:mergeBlock{ $a += $F($b, $c, $d) + ($X[$k]) + $t; $a = S($a, $s) + $b; }
+	macro public static function P(a, b, c, d, k, s, t, F) { // X is local variable
+		return macro @:mergeBlock{ $a += $F($b, $c, $d) + (X[$k]) + $t; $a = S($a, $s) + $b; }
 	}
 
 	macro public static function F1(x, y, z) return macro ($z ^ ($x & ($y ^ $z)));

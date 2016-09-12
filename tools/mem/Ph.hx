@@ -5,6 +5,9 @@ import mem.Ptr;
 /**
 PtrHelper
 */
+#if cpp
+@:nativeGen @:headerCode("#define Ph_hx Ph_hx_obj") @:native("mem.Ph_hx")
+#end
 class Ph{
 	// [a,b,c,d] = [d,c,b,a] in bytes
 	static public function reverse(ptr:Ptr, len:Int):Void {

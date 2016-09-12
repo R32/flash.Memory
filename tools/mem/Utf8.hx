@@ -1,4 +1,4 @@
-package mem.struct;
+package mem;
 
 import mem.Ptr;
 
@@ -21,55 +21,36 @@ import mem.Ptr;
  DEALINGS IN THE SOFTWARE.
 */
 
-@:enum private abstract UTF8Valid(Int) to Int {
+@:dce @:enum private abstract UTF8Valid(Int) to Int {
 	var UTF8_ACCEPT = 0;
 	var UTF8_REJECT = 1;
 }
-
-/**
-ported from http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
-*/
+#if cpp
+@:nativeGen @:headerCode("#define Utf8hx Utf8hx_obj") @:native("mem.obs.Utf8hx") // for names conflict
+#end
 class Utf8 {
+	#if cpp
+	static var utf8d(default, null):AU8;
+	#else
+	static var utf8d(default, null):AU8 = cast Malloc.NUL;
+	#end
 
-	public var utf8d(default, null): AU8;
-
-	private function new() {
-		var data = [
-			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
-			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
-			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 40..5f
-			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 60..7f
-			1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9, // 80..9f
-			7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7, // a0..bf
-			8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, // c0..df
-			0xa,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x4,0x3,0x3, // e0..ef
-			0xb,0x6,0x6,0x6,0x5,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8, // f0..ff
-			0x0,0x1,0x2,0x3,0x5,0x8,0x7,0x1,0x1,0x1,0x4,0x6,0x1,0x1,0x1,0x1, // s0..s0
-			1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, // s1..s2
-			1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, // s3..s4
-			1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, // s5..s6
-			1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
-		];
-		utf8d = cast Malloc.make(data.length, false);
-		for (i in 0...data.length)
-			utf8d[i] = data[i];
-	}
-
-	function free(): Void {
-		Malloc.free(utf8d);
-		utf8d = cast Malloc.NUL;
-	}
-
-	static var inst:Utf8 = null;
 	public static function init() {
-		if (inst == null) inst = new Utf8();
+		if (utf8d != Malloc.NUL) return;
+
+		var data = Mt.utf8DataTo32(); // I32, 100 * 4
+
+		utf8d = cast Malloc.make(400, false);
+
+		var u32:AI32 = cast utf8d;
+
+		for (i in 0...100) u32[i] = data[i];
 	}
 
 	public static function validate(dst:Ptr, byteLength: Int): Bool {
-		var utf8d = inst.utf8d;
 		var state = 0;
 		for (i in 0...byteLength) {
-			var byte = Memory.getByte(dst + i);
+			var byte = dst[i];
 			var type = utf8d[byte];
 
 			state = utf8d[256 + (state << 4) + type];
@@ -81,11 +62,10 @@ class Utf8 {
 
 
 	public static function length(dst:Ptr, byteLength: Int):Int {
-		var utf8d = inst.utf8d;
 		var len = 0, state = 0;
 
 		for (i in 0...byteLength) {
-			var byte = Memory.getByte(dst + i);
+			var byte = dst[i];
 			var type = utf8d[byte];
 
 			state = utf8d[256 + (state << 4) + type];
@@ -99,10 +79,9 @@ class Utf8 {
 	}
 
 	public static function iter(dst:Ptr, byteLength: Int, chars : Int -> Void ):Bool {
-		var utf8d = inst.utf8d;
 		var state = 0, codep = 0;
 		for (i in 0...byteLength) {
-			var byte = Memory.getByte(dst + i);
+			var byte = dst[i];
 			var type = utf8d[byte];
 
 			codep = state != UTF8_ACCEPT ?

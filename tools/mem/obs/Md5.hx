@@ -28,7 +28,7 @@ import mem.obs.Md5Macros.*;
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #if !macro @:build(mem.Struct.StructBuild.make()) #end
-private abstract Md5Context(Ptr) to Ptr {
+@:dce private abstract Md5Context(Ptr) to Ptr {
 	@idx(2) var total: AI32;   // [len: 2, bytes: 4]
 	@idx(4) var state: AI32;
 	@idx(64) var buffer: AU8;
@@ -44,9 +44,17 @@ private abstract Md5Context(Ptr) to Ptr {
 	}
 }
 
-class Md5{
+#if cpp
+@:nativeGen @:headerCode("#define Md5hx Md5hx_obj") @:native("mem.obs.Md5hx") // for names conflict
+#end
+class Md5 {
 
+	#if cpp
+	static var m5:Md5Context;  // no default value, To prevent creating __register()
+	#else
 	static var m5:Md5Context = cast Malloc.NUL;
+	#end
+
 	public static function init():Void {
 		if (m5 == Malloc.NUL) m5 = new Md5Context();
 	}
@@ -57,7 +65,6 @@ class Md5{
 		update(m5, input, ilen);
 		finish(m5, output);
 	}
-
 
 	static function starts(ctx: Md5Context):Void {
 		ctx.state[0] = 0x67452301;
@@ -94,6 +101,7 @@ class Md5{
 		if (ilen > 0) Ram.memcpy((ctx.buffer:Ptr) + left, input, ilen);
 	}
 
+	// N.B: crash on Neko, becouse this function is too large after macro expansion... Sha1 is the same.
 	static function process(state: AI32, data: Ptr):Void {
 		var A = 0, B = 0, C = 0, D = 0;
 
@@ -104,73 +112,73 @@ class Md5{
 		C = state[2];
 		D = state[3];
 
-		P( A, B, C, D,  0,  7, 0xD76AA478, X, F1 );
-		P( D, A, B, C,  1, 12, 0xE8C7B756, X, F1 );
-		P( C, D, A, B,  2, 17, 0x242070DB, X, F1 );
-		P( B, C, D, A,  3, 22, 0xC1BDCEEE, X, F1 );
-		P( A, B, C, D,  4,  7, 0xF57C0FAF, X, F1 );
-		P( D, A, B, C,  5, 12, 0x4787C62A, X, F1 );
-		P( C, D, A, B,  6, 17, 0xA8304613, X, F1 );
-		P( B, C, D, A,  7, 22, 0xFD469501, X, F1 );
-		P( A, B, C, D,  8,  7, 0x698098D8, X, F1 );
-		P( D, A, B, C,  9, 12, 0x8B44F7AF, X, F1 );
-		P( C, D, A, B, 10, 17, 0xFFFF5BB1, X, F1 );
-		P( B, C, D, A, 11, 22, 0x895CD7BE, X, F1 );
-		P( A, B, C, D, 12,  7, 0x6B901122, X, F1 );
-		P( D, A, B, C, 13, 12, 0xFD987193, X, F1 );
-		P( C, D, A, B, 14, 17, 0xA679438E, X, F1 );
-		P( B, C, D, A, 15, 22, 0x49B40821, X, F1 );
+		P( A, B, C, D,  0,  7, 0xD76AA478, F1 );
+		P( D, A, B, C,  1, 12, 0xE8C7B756, F1 );
+		P( C, D, A, B,  2, 17, 0x242070DB, F1 );
+		P( B, C, D, A,  3, 22, 0xC1BDCEEE, F1 );
+		P( A, B, C, D,  4,  7, 0xF57C0FAF, F1 );
+		P( D, A, B, C,  5, 12, 0x4787C62A, F1 );
+		P( C, D, A, B,  6, 17, 0xA8304613, F1 );
+		P( B, C, D, A,  7, 22, 0xFD469501, F1 );
+		P( A, B, C, D,  8,  7, 0x698098D8, F1 );
+		P( D, A, B, C,  9, 12, 0x8B44F7AF, F1 );
+		P( C, D, A, B, 10, 17, 0xFFFF5BB1, F1 );
+		P( B, C, D, A, 11, 22, 0x895CD7BE, F1 );
+		P( A, B, C, D, 12,  7, 0x6B901122, F1 );
+		P( D, A, B, C, 13, 12, 0xFD987193, F1 );
+		P( C, D, A, B, 14, 17, 0xA679438E, F1 );
+		P( B, C, D, A, 15, 22, 0x49B40821, F1 );
 
-		P( A, B, C, D,  1,  5, 0xF61E2562, X, F2 );
-		P( D, A, B, C,  6,  9, 0xC040B340, X, F2 );
-		P( C, D, A, B, 11, 14, 0x265E5A51, X, F2 );
-		P( B, C, D, A,  0, 20, 0xE9B6C7AA, X, F2 );
-		P( A, B, C, D,  5,  5, 0xD62F105D, X, F2 );
-		P( D, A, B, C, 10,  9, 0x02441453, X, F2 );
-		P( C, D, A, B, 15, 14, 0xD8A1E681, X, F2 );
-		P( B, C, D, A,  4, 20, 0xE7D3FBC8, X, F2 );
-		P( A, B, C, D,  9,  5, 0x21E1CDE6, X, F2 );
-		P( D, A, B, C, 14,  9, 0xC33707D6, X, F2 );
-		P( C, D, A, B,  3, 14, 0xF4D50D87, X, F2 );
-		P( B, C, D, A,  8, 20, 0x455A14ED, X, F2 );
-		P( A, B, C, D, 13,  5, 0xA9E3E905, X, F2 );
-		P( D, A, B, C,  2,  9, 0xFCEFA3F8, X, F2 );
-		P( C, D, A, B,  7, 14, 0x676F02D9, X, F2 );
-		P( B, C, D, A, 12, 20, 0x8D2A4C8A, X, F2 );
+		P( A, B, C, D,  1,  5, 0xF61E2562, F2 );
+		P( D, A, B, C,  6,  9, 0xC040B340, F2 );
+		P( C, D, A, B, 11, 14, 0x265E5A51, F2 );
+		P( B, C, D, A,  0, 20, 0xE9B6C7AA, F2 );
+		P( A, B, C, D,  5,  5, 0xD62F105D, F2 );
+		P( D, A, B, C, 10,  9, 0x02441453, F2 );
+		P( C, D, A, B, 15, 14, 0xD8A1E681, F2 );
+		P( B, C, D, A,  4, 20, 0xE7D3FBC8, F2 );
+		P( A, B, C, D,  9,  5, 0x21E1CDE6, F2 );
+		P( D, A, B, C, 14,  9, 0xC33707D6, F2 );
+		P( C, D, A, B,  3, 14, 0xF4D50D87, F2 );
+		P( B, C, D, A,  8, 20, 0x455A14ED, F2 );
+		P( A, B, C, D, 13,  5, 0xA9E3E905, F2 );
+		P( D, A, B, C,  2,  9, 0xFCEFA3F8, F2 );
+		P( C, D, A, B,  7, 14, 0x676F02D9, F2 );
+		P( B, C, D, A, 12, 20, 0x8D2A4C8A, F2 );
 
-		P( A, B, C, D,  5,  4, 0xFFFA3942, X, F3 );
-		P( D, A, B, C,  8, 11, 0x8771F681, X, F3 );
-		P( C, D, A, B, 11, 16, 0x6D9D6122, X, F3 );
-		P( B, C, D, A, 14, 23, 0xFDE5380C, X, F3 );
-		P( A, B, C, D,  1,  4, 0xA4BEEA44, X, F3 );
-		P( D, A, B, C,  4, 11, 0x4BDECFA9, X, F3 );
-		P( C, D, A, B,  7, 16, 0xF6BB4B60, X, F3 );
-		P( B, C, D, A, 10, 23, 0xBEBFBC70, X, F3 );
-		P( A, B, C, D, 13,  4, 0x289B7EC6, X, F3 );
-		P( D, A, B, C,  0, 11, 0xEAA127FA, X, F3 );
-		P( C, D, A, B,  3, 16, 0xD4EF3085, X, F3 );
-		P( B, C, D, A,  6, 23, 0x04881D05, X, F3 );
-		P( A, B, C, D,  9,  4, 0xD9D4D039, X, F3 );
-		P( D, A, B, C, 12, 11, 0xE6DB99E5, X, F3 );
-		P( C, D, A, B, 15, 16, 0x1FA27CF8, X, F3 );
-		P( B, C, D, A,  2, 23, 0xC4AC5665, X, F3 );
+		P( A, B, C, D,  5,  4, 0xFFFA3942, F3 );
+		P( D, A, B, C,  8, 11, 0x8771F681, F3 );
+		P( C, D, A, B, 11, 16, 0x6D9D6122, F3 );
+		P( B, C, D, A, 14, 23, 0xFDE5380C, F3 );
+		P( A, B, C, D,  1,  4, 0xA4BEEA44, F3 );
+		P( D, A, B, C,  4, 11, 0x4BDECFA9, F3 );
+		P( C, D, A, B,  7, 16, 0xF6BB4B60, F3 );
+		P( B, C, D, A, 10, 23, 0xBEBFBC70, F3 );
+		P( A, B, C, D, 13,  4, 0x289B7EC6, F3 );
+		P( D, A, B, C,  0, 11, 0xEAA127FA, F3 );
+		P( C, D, A, B,  3, 16, 0xD4EF3085, F3 );
+		P( B, C, D, A,  6, 23, 0x04881D05, F3 );
+		P( A, B, C, D,  9,  4, 0xD9D4D039, F3 );
+		P( D, A, B, C, 12, 11, 0xE6DB99E5, F3 );
+		P( C, D, A, B, 15, 16, 0x1FA27CF8, F3 );
+		P( B, C, D, A,  2, 23, 0xC4AC5665, F3 );
 
-		P( A, B, C, D,  0,  6, 0xF4292244, X, F4 );
-		P( D, A, B, C,  7, 10, 0x432AFF97, X, F4 );
-		P( C, D, A, B, 14, 15, 0xAB9423A7, X, F4 );
-		P( B, C, D, A,  5, 21, 0xFC93A039, X, F4 );
-		P( A, B, C, D, 12,  6, 0x655B59C3, X, F4 );
-		P( D, A, B, C,  3, 10, 0x8F0CCC92, X, F4 );
-		P( C, D, A, B, 10, 15, 0xFFEFF47D, X, F4 );
-		P( B, C, D, A,  1, 21, 0x85845DD1, X, F4 );
-		P( A, B, C, D,  8,  6, 0x6FA87E4F, X, F4 );
-		P( D, A, B, C, 15, 10, 0xFE2CE6E0, X, F4 );
-		P( C, D, A, B,  6, 15, 0xA3014314, X, F4 );
-		P( B, C, D, A, 13, 21, 0x4E0811A1, X, F4 );
-		P( A, B, C, D,  4,  6, 0xF7537E82, X, F4 );
-		P( D, A, B, C, 11, 10, 0xBD3AF235, X, F4 );
-		P( C, D, A, B,  2, 15, 0x2AD7D2BB, X, F4 );
-		P( B, C, D, A,  9, 21, 0xEB86D391, X, F4 );
+		P( A, B, C, D,  0,  6, 0xF4292244, F4 );
+		P( D, A, B, C,  7, 10, 0x432AFF97, F4 );
+		P( C, D, A, B, 14, 15, 0xAB9423A7, F4 );
+		P( B, C, D, A,  5, 21, 0xFC93A039, F4 );
+		P( A, B, C, D, 12,  6, 0x655B59C3, F4 );
+		P( D, A, B, C,  3, 10, 0x8F0CCC92, F4 );
+		P( C, D, A, B, 10, 15, 0xFFEFF47D, F4 );
+		P( B, C, D, A,  1, 21, 0x85845DD1, F4 );
+		P( A, B, C, D,  8,  6, 0x6FA87E4F, F4 );
+		P( D, A, B, C, 15, 10, 0xFE2CE6E0, F4 );
+		P( C, D, A, B,  6, 15, 0xA3014314, F4 );
+		P( B, C, D, A, 13, 21, 0x4E0811A1, F4 );
+		P( A, B, C, D,  4,  6, 0xF7537E82, F4 );
+		P( D, A, B, C, 11, 10, 0xBD3AF235, F4 );
+		P( C, D, A, B,  2, 15, 0x2AD7D2BB, F4 );
+		P( B, C, D, A,  9, 21, 0xEB86D391, F4 );
 
 		state[0] += A;
 		state[1] += B;

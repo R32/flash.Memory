@@ -1,6 +1,8 @@
 package mem.obs;
 
-class Sha1Macros{
+@:dce class Sha1Macros{
+
+	public static inline var SHA1_HASH_SIZE = 160 >> 3;
 
 	macro public static function rol(value, bits) {
 		return macro ($value << $bits) | ($value >>> (32 - $bits));

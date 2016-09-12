@@ -77,11 +77,11 @@ class Ram{
 	static function req(len:UInt){
 		if(len > current.length){
 		#if flash
-			current.length = mem.Ut.pad8(len, LLB);
+			current.length = mem.Ut.padmul(len, LLB);
 		#elseif (cpp && unsafe_cpp)
-			current.resize(mem.Ut.pad8(len, LLB));
+			current.resize(mem.Ut.padmul(len, LLB));
 		#else
-			var a = Bytes.alloc(mem.Ut.pad8(len, LLB));
+			var a = Bytes.alloc(mem.Ut.padmul(len, LLB));
 			a.blit(0, current, 0, current.length);
 			Memory.select(a);
 			current = a;

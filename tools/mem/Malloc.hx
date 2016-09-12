@@ -21,7 +21,7 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 #if !macro
 @:build(mem.Struct.StructBuild.make())
 #end
-abstract Block(Ptr) from Ptr{
+@:dce abstract Block(Ptr) from Ptr{
 	@idx(4) var size:Int;
 	@idx(0, 4) var prev:Block;
 	@idx(0, 4) var next:Block;
@@ -45,15 +45,25 @@ abstract Block(Ptr) from Ptr{
 
 	inline public function free() @:privateAccess Malloc.freeBlock(this);
 }
+#if cpp
+@:nativeGen @:headerCode("#define Mallochx Mallochx_obj") @:native("mem.Mallochx")
+#end
+class Malloc {
 
-class Malloc{
 	public static inline var NUL:Ptr = cast 0;
 	public static inline var LB = 8;
-
+	#if cpp
+	static var top(default, null):Block;
+	static var bottom(default, null):Block;
+	public static var frag_count(default, null):Int;
+	public static var length(default, null):Int;
+	public static function __register():Void {}
+	#else
 	static var top(default, null):Block = NUL;
 	static var bottom(default, null):Block = NUL;
 	public static var frag_count(default, null):Int = 0;
 	public static var length(default, null):Int = 0;
+	#end
 
 	public static function getUsed():Int {
 		return bottom == NUL ? Block.CAPACITY : bottom.entry + bottom.size;
@@ -78,15 +88,15 @@ class Malloc{
 		length++;
 	}
 
-	// a != bottom, so a.next != NUL
+	// b after a
 	static function insertAfter(b:Block, a:Block):Void{
 		var cc = a.next;
 		a.next = b;
 		b.prev = a;
 		b.next = cc;
-		//if (cc == NUL)
-		//	bottom = cc;
-		//else
+		if (cc == NUL)
+			bottom = b;
+		else
 			cc.prev = b;
 		length++;
 	}
@@ -102,7 +112,7 @@ class Malloc{
 	}
 
 	public static function make(need:Int, zero:Bool):Ptr{
-		need = Ut.pad8(need, LB);
+		need = Ut.padmul(need, LB);
 
 		//if (frag_count > 0) mergeFragment();
 
@@ -191,7 +201,7 @@ class Malloc{
 		}
 	}
 
-	// WARING: ONLY FOR DEBUG
+	// ONLY FOR DEBUG
 	static function iterator():BlockIterator{
 		return new BlockIterator(top);
 	}
