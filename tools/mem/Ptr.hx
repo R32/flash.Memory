@@ -114,7 +114,7 @@ class Memory {
 	public static inline function getFloat( addr : Int ) : Float return f4[addr >> 2];
 	public static inline function getDouble( addr : Int ) :Float return f8[addr >> 3];
 }
-#elseif (cpp && unsafe_cpp)
+#elseif (cpp && !keep_bytes)
 
 typedef ByteArray = mem.cpp.BytesData;
 

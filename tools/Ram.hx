@@ -4,7 +4,7 @@ import mem.Ptr;
 import mem.Malloc;
 import haxe.io.Bytes;
 import mem.struct.WString;
-#if (cpp && unsafe_cpp)
+#if (cpp && !keep_bytes)
 import cpp.Star;
 import mem.cpp.BytesData;
 import mem.cpp.NRam;
@@ -40,7 +40,7 @@ class Ram{
 	public static function detach():Void{
 		flash.system.ApplicationDomain.currentDomain.domainMemory = tmp;
 	}
-#elseif (cpp && unsafe_cpp)
+#elseif (cpp && !keep_bytes)
 	static var current: Star<BytesData> = null;
 
 	public static function select(?ba:Star<BytesData>): Void {
@@ -78,7 +78,7 @@ class Ram{
 		if(len > current.length){
 		#if flash
 			current.length = mem.Ut.padmul(len, LLB);
-		#elseif (cpp && unsafe_cpp)
+		#elseif (cpp && !keep_bytes)
 			current.resize(mem.Ut.padmul(len, LLB));
 		#else
 			var a = Bytes.alloc(mem.Ut.padmul(len, LLB));
@@ -108,7 +108,7 @@ class Ram{
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		src.readBytes(current, ptr, len);
 	}
-#elseif (cpp && unsafe_cpp)
+#elseif (cpp && !keep_bytes)
 
 	// hxcpp/include/Array.h -- "inline char * getBase() const..."
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
@@ -178,7 +178,7 @@ class Ram{
 			src += 4;
 			size -= 4;
 		}
-	#elseif (cpp && unsafe_cpp)
+	#elseif (cpp && !keep_bytes)
 		return NRam.memcmp(current.cs() + (dst:Int), current.cs() + (src:Int), size) == 0;
 	#end
 		while (0 < size--) {
@@ -208,7 +208,7 @@ class Ram{
 		current.position = dst;
 		current.writeUTFBytes(str);
 		return current.position - dst;
-	#elseif (cpp && unsafe_cpp)
+	#elseif (cpp && !keep_bytes)
 		// write string to mem
 		var b:Star<cpp.Char> = cpp.NativeString.c_str(str).ptr;
 		NRam.memcpy(current.cs() + (dst:Int), b, str.length);
@@ -268,7 +268,7 @@ class Ram{
 	#if flash
 		current.position = dst;
 		return current.readUTFBytes(len);
-	#elseif (cpp && unsafe_cpp)
+	#elseif (cpp && !keep_bytes)
 		return untyped __cpp__("_hx_string_create({0}, {1})", current.cs() + (dst:Int), len);
 	#else
 		return current.getString(dst, len);

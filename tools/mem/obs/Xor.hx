@@ -22,7 +22,7 @@ class Xor{
 		var len = x.astr.length;
 		var tpr:Int = x.astr.c_ptr;
 		var offset = 0;
-	#if (flash || (cpp && unsafe_cpp))
+	#if (flash || (cpp && !keep_bytes))
 		var b4 = size - (size % 4);
 		while (b4 > offset){
 			Memory.setI32(dst + offset, Memory.getI32(src + offset) ^ Memory.getI32(tpr + (offset % len) ));
