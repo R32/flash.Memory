@@ -117,6 +117,8 @@ class Sha1{
 		var L:AI32 = sa.l;  // L is associated with macros
 		Ram.memcpy(sa.c, data, 64);
 
+		var La = 0, Lb = 0, Lc = 0, Ld = 0;
+
 		R0(a,b,c,d,e, 0); R0(e,a,b,c,d, 1); R0(d,e,a,b,c, 2); R0(c,d,e,a,b, 3);
 		R0(b,c,d,e,a, 4); R0(a,b,c,d,e, 5); R0(e,a,b,c,d, 6); R0(d,e,a,b,c, 7);
 		R0(c,d,e,a,b, 8); R0(b,c,d,e,a, 9); R0(a,b,c,d,e,10); R0(e,a,b,c,d,11);
@@ -148,14 +150,16 @@ class Sha1{
 	static function finish(ctx: Sha1Context, output: AU8/* SHA1_HASH* Digest */): Void {
 
 		var finalcount:AU8 = ctx.finalcount;
+		var Count:AI32 = ctx.Count;
+
 		for (i in 0...8) {
-			finalcount[i] = ctx.Count[(i >= 4 ? 0 : 1)]
+			finalcount[i] = Count[(i >= 4 ? 0 : 1)]
 				>> (((3 - (i & 3)) * 8)  & 255);
 		}
 
 		update(ctx, ctx.x80, 1);
 
-		var Count:AI32 = ctx.Count;
+
 		var x0 = ctx.x0;
 		while ((Count[0] & 504) != 448) {
 			update(ctx, x0, 1);
