@@ -3,11 +3,7 @@ package mem;
 /**
 some macro or inline values
 */
-@:dce class Mt{
-
-
-
-
+@:dce class Mt {
 
 	macro static public function utf8DataTo32() {
 		var len = utf8_init_data.length;

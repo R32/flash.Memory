@@ -13,10 +13,6 @@ class AString{
 		Memory.setByte(addr + len, 0);
 	}
 
-	@:deprecated("use \"addr\"")
-	public var c_ptr(get, never):Ptr;
-	inline function get_c_ptr():Ptr return addr;
-
 	public inline function free():Void {
 		Malloc.free(addr);
 		addr = Malloc.NUL;

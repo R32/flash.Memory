@@ -21,7 +21,7 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 #if !macro
 @:build(mem.Struct.StructBuild.make())
 #end
-@:dce abstract Block(Ptr) from Ptr{
+@:dce abstract Block(Ptr) from Ptr {
 	@idx(4) var size:Int;
 	@idx(0, 4) var prev:Block;
 	@idx(0, 4) var next:Block;

@@ -26,7 +26,7 @@ class Ut{
 	static public function pad16(size) {
 		return 16 - (size & (16 - 1));
 	}
-
+	// start <= (value) < max
 	static public inline function rand(max:Int, start:Int = 0):Int
 		return Std.int(Math.random() * (max - start)) + start;
 

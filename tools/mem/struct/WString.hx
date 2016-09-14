@@ -9,7 +9,7 @@ class WString {
 
 	public var addr(default, null):Ptr;
 
-	public inline function new(str:String) {
+	public function new(str:String) {
 
 	#if (neko || cpp || lua) // it's not utf
 		length = str.length;
@@ -27,10 +27,6 @@ class WString {
 		Memory.setByte(addr + length, 0);
 	}
 
-	@:deprecated("use \"addr\"")
-	public var c_ptr(get, never):Ptr;
-	inline function get_c_ptr():Ptr return addr;
-
 	public inline function free():Void {
 		Malloc.free(this.addr);
 		addr = Malloc.NUL;
@@ -43,7 +39,7 @@ class WString {
 #if flash
 	static var tmpb = new flash.utils.ByteArray();
 
-	static public function writeString(s:String): flash.utils.ByteArray{
+	static function writeString(s:String): flash.utils.ByteArray{
 		tmpb.writeUTFBytes(s);
 		tmpb.position = 0;
 		return tmpb;

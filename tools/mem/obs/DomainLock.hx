@@ -71,7 +71,9 @@ only in flash - DomainLock.check()
  - 不支持通配符
  - 不支持转义字符
 */
+#if !macro
 @:build(mem.obs.DomainLock.DLockBuild.make())
+#end
 @:dce class DomainLock{
 	// if s == "a.b" then return Lib.current.a.b
 	static inline function rec(s:String):String{

@@ -144,7 +144,7 @@ class Ram{
 	#end
 	}
 	static function memcpy_pure(dst:Ptr, src:Ptr, size:Int):Void {
-		if (dst < src){
+		if (dst < src) {
 			while (size >= 4) {
 				Memory.setI32(dst, Memory.getI32(src));
 				dst += 4;
@@ -154,7 +154,7 @@ class Ram{
 			while (0 != size--) {
 				Memory.setByte( dst++, Memory.getByte( src++ ));
 			}
-		}else {// 逆序复制
+		} else {// 逆序复制
 			dst += size;
 			src += size;
 			while (size >= 4 ) {
