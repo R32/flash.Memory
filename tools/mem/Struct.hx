@@ -42,7 +42,7 @@ AF8
 @:autoBuild(mem.StructBuild.make())
 #end
 @:remove interface Struct{
-	private var addr(default, null):mem.Ptr;		// can overwrite as public
+	var addr(default, null): mem.Ptr;		// can overwrite as public
 
 /*  make all @idx fields as inline getter/setter;
 
@@ -137,7 +137,6 @@ class StructBuild{
 			var is_array = false;
 			metaParams = null;
 			params = null;
-
 			if(f.meta != null)
 				for(meta in f.meta){
 					if (meta.name == IDX){
@@ -153,6 +152,8 @@ class StructBuild{
 					}
 				}
 			if (metaParams == null) continue;
+
+			if (f.access.indexOf(AStatic) > -1) Context.error("Does not support static properties", f.pos);
 
 			switch (f.kind) {
 			case FVar(vt = TPath({pack: pack, name: name, params:arrType}), init):
@@ -206,16 +207,16 @@ class StructBuild{
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8":
 							is_array = true;
 							offset += params.dx;
-							[(macro cast $i{ context } + $v{ offset }), null]; // null is never
-						case "mem.Ptr":  // legacy
+							[(macro (cast $i{ context } + $v{ offset })), null]; // null is never
+						case "mem.Ptr":
 							offset += params.dx;
-							[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
+							[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
 						default:
 							ts = TypeTools.toString(a.get().type);
 							if (abs_type != null && ts == "mem.Ptr"){  // for abstruct Other(Ptr) {}
 								params = parseMeta(metaParams, ts);
 								offset += params.dx;
-								[macro Memory.getI32($i{context} + $v{offset}), macro (Memory.setI32($i{context} + $v{offset}, v))];
+								[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
 							}else{
 								null;
 							}
@@ -292,10 +293,10 @@ class StructBuild{
 							args: [],
 							ret : vt,
 							expr: macro {
-								return cast $getter;
+								return $getter;
 							}
 						}),
-						pos: here()
+						pos: f.pos
 					});
 
 					if (setter!= null && !all_in_map.exists(setter_name))
@@ -310,7 +311,7 @@ class StructBuild{
 								return v;
 							}
 						}),
-						pos: here()
+						pos: f.pos
 					});
 
 					fields.push({
@@ -351,7 +352,8 @@ class StructBuild{
 			}
 
 		}
-		//if (offset == 0) return null;
+	if (offset > 0) {
+
 		fields.push({
 			name : "CAPACITY",
 			doc:  "== " + $v{offset},
@@ -360,7 +362,6 @@ class StructBuild{
 			pos: here()
 		});
 
-	if(offset > 0){
 		fields.push({
 			name : "ALL_FIELDS",
 			doc:  "== " + $v{offset},
@@ -376,7 +377,7 @@ class StructBuild{
 		});
 
 		var constructor = all_in_map.get(abs_type == null ? "new" : "_new");
-		if(constructor == null){
+		if (constructor == null) {
 			fields.push({
 				name : "new",
 				access: [AInline, APublic],
@@ -384,19 +385,19 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						$i{context} = mem.Malloc.make(CAPACITY, true);
+						$i{context} = untyped mem.Malloc.make(CAPACITY, true);
 					}
 				}),
 				pos: here()
 			});
 		}else if (abs_type != null && constructor.access.indexOf(AInline) == -1){
-			Context.warning("Suggestion: add **inline** for " + cls.name + "'s constructor new" , constructor.pos);
+			Context.warning("Suggestion: add **inline** for " + cls.name, constructor.pos);
 		}
 
 		if (!all_in_map.exists("free"))
 			fields.push({
 				name : "free",
-				doc: "call Pof.free() to release memory",
+				doc: "to release memory",
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
@@ -409,29 +410,15 @@ class StructBuild{
 				pos: here()
 			});
 
-		if (abs_type != null){
-			fields.push({
-				name : "__toOrgin",
-				meta: [{name:":to", pos: here()}],
-				access: [AInline],
-				kind: FFun({
-					args: [],
-					ret : Context.toComplexType(abs_type.type),
-					expr: macro {
-						return this;
-					}
-				}),
-				pos: here()
-			});
-		}else if (!all_in_map.exists(context)){
+		if (abs_type == null && !all_in_map.exists(context)) { //  for class Some implements Struct{}
 			fields.push({
 				name : context,
-				access: [APrivate],
+				access: [APublic],
 				kind: FProp("default", "null",macro :mem.Ptr),
 				pos: here()
 			});
 		}
-	}
+
 		#if !no2out
 			var prep = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return "null");
 			var block:Array<Expr> = [];
@@ -460,6 +447,7 @@ class StructBuild{
 				pos: here()
 			});
 		#end
+		}
 		return fields;
 	}
 	#end
