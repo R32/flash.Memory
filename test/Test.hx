@@ -5,13 +5,22 @@ import mem.obs.Hex;
 import mem.Ptr;
 import mem.Ut;
 import mem.Ph;
-import mem.obs.DomainLock;
 import mem.obs.Md5;
-import Type;
+import mem.obs.Sha1;
+import mem.obs.AES128;
 import mem.struct.WString;
 import mem.struct.AString;
-import mem.struct.Utf8;
-
+import mem.Utf8;
+#if cpp
+import mem.cpp.Gbk;
+	#if !keep_bytes
+	import mem.cpp.BytesData;
+	import mem.cpp.NRam;
+	#end
+#end
+#if flash
+import mem.obs.DomainLock;
+#end
 
 class Test {
 
@@ -19,49 +28,191 @@ class Test {
 	public static function main(){
 		Ram.select(Ram.create());
 		Ram.malloc(Ut.rand(128, 1), false);
-
 		Hex.init();
 		SXor.init();
 		Utf8.init();
 		Md5.init();
-
-		//test_utf8();
-		//test_xor_domainLock();
+		Sha1.init();
+		AES128.init();
+		testStringCopy();
+		test_utf8();
+		test_cppblock();
 		ASS.test();
-		test_md5();
+		#if (!neko || !lua)
+			test_md5();
+			test_sha1();
+		#end
+		test_aes128();
+
+		#if flash
+		//	test_xor_domainLock();
+		#end
 	}
 
-	public static function test_md5() {
-		var output = Ram.malloc(16, true);
+	static function test_aes128() {
+		trace("----------- AES EBC -----------");
+		var as1 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172a");// 3ad77bb40d7a3660a89ecaf32466ef97
+		var as2 = AString.fromHexString("ae2d8a571e03ac9c9eb76fac45af8e51");// f5d3d58503b9699de785895a96fdbaaf
+		var as3 = AString.fromHexString("30c81c46a35ce411e5fbc1191a0a52ef");// 43b1cd7f598ece23881b00e3ed030688
+		var key = AString.fromHexString("2b7e151628aed2a6abf7158809cf4f3c");//
+		Hex.trace(key.addr, key.length, true, "the key  : ");
 
-		var as = AString.fromString("hello world");
-		Md5.make(as.c_ptr, as.length, output);
-		Hex.trace(output, 16);
-		trace(haxe.crypto.Md5.encode(as.toString()));
+		AES128.ecbEncrypt(as1.addr, key.addr, as1.addr);
+		AES128.ecbEncrypt(as2.addr, key.addr, as2.addr);
+		AES128.ecbEncrypt(as3.addr, key.addr, as3.addr);
+		Hex.trace(as1.addr, as1.length, true, "ebc enc 1: ");
+		Hex.trace(as2.addr, as2.length, true, "ebc enc 2: ");
+		Hex.trace(as3.addr, as3.length, true, "ebc enc 3: ");
+
+		AES128.ecbDecrypt(as1.addr, key.addr, as1.addr);
+		AES128.ecbDecrypt(as2.addr, key.addr, as2.addr);
+		AES128.ecbDecrypt(as3.addr, key.addr, as3.addr);
+		Hex.trace(as1.addr, as1.length, true, "ebc dec 1: ");
+		Hex.trace(as2.addr, as2.length, true, "ebc dec 2: ");
+		Hex.trace(as3.addr, as3.length, true, "ebc dec 3: ");
+
+		trace("----------- AES CBC -----------");
+		var as4 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
+		Hex.trace(as4.addr, as4.length, true, "cbc org str: ");
+
+		var as4out = new AString(as4.length);
+		AES128.cbcEncryptBuff(as4.addr, cast 0, as4.addr, as4.length, cast 0);
+		AES128.cbcDecryptBuff(as4.addr, cast 0, as4out.addr, as4out.length, cast 0);
+		Hex.trace(as4out.addr, as4.length, true, "cbc dec out: ");
+
+		// input==output
+		AES128.cbcDecryptBuffIO(as4.addr, cast 0, as4.length, cast 0);
+		Hex.trace(as4.addr, as4.length, true, "cbc dec i=o: ");
+
+		var file = haxe.Resource.getBytes("testjs");
+		var org = Ram.malloc(Ut.padmul(file.length, 16));
+		var out = Ram.malloc(Ut.padmul(file.length, 16));
+	  #if flash
+		Ram.writeBytes(org, file.length, file.getData());
+	  #else
+		Ram.writeBytes(org, file.length, file);
+	  #end
+		AES128.cbcEncryptBuff(org, key.addr, org, file.length, cast 0);
+		var last = haxe.Timer.stamp();
+		AES128.cbcDecryptBuff(org, key.addr, out, file.length, cast 0);
+		var sec = haxe.Timer.stamp() - last;
+		Hex.trace(out + Ut.padmul(file.length, 16) - 16, 16, true,
+			'file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec, end of file 16: ');
+
+		last = haxe.Timer.stamp();
+		AES128.cbcDecryptBuffIO(org, key.addr, file.length, cast 0);
+		sec = haxe.Timer.stamp() - last;
+		Hex.trace(org + Ut.padmul(file.length, 16) - 16, 16, true,
+			'file: ${file.length/1024}Kb, DEC(output == input) sec: $sec, end of file 16: ');
+	}
+
+	static function test_sha1() {
+		trace("----------- SHA1 ------------");
+		var output = Ram.malloc(20, true);
+		var as = AString.fromString("helloworld");
+		mem.obs.Sha1.make(as.addr, as.length, output);
+		Hex.trace(output, 20, true, "SHA1 mem : ");
+		trace("SHA1 std :"  + haxe.crypto.Sha1.encode(as.toString()));
 
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
 
 		var now = haxe.Timer.stamp();
-
-		for (i in 0...3) Md5.make(filePtr, file.length, output);
-		var aend = haxe.Timer.stamp() - now;
+		for(i in 0...5) Sha1.make(filePtr, file.length, output);
+		var time0 = haxe.Timer.stamp() - now;
 
 		var hout:haxe.io.Bytes = null;
 		now = haxe.Timer.stamp();
-		for (i in 0...3) hout = haxe.crypto.Md5.make(file);
-		var bend = haxe.Timer.stamp() - now;
+		for(i in 0...5) hout = haxe.crypto.Sha1.make(file);
+		var time1 = haxe.Timer.stamp() - now;
 
-		trace('time aaa: $aend, bbb: $bend');
-
-		Hex.trace(output, 16);
-		trace(hout.toHex());
-		as.free();
+		trace('filesize: ${file.length/1024}Kb *** vs *** std: $time1, mem: $time0');
+		Hex.trace(output, 20, true, "SHA1 mem : ");
+		trace("SHA1 std : "  + hout.toHex());
 	}
 
+	static function test_cppblock():Void {
+	#if cpp
+		var p:cpp.Pointer<BytesData> = BytesData.create(1024);
+
+		p.ptr.blit(0, p.ptr, 0, 100);
+
+		BytesData.destory(p.ptr);
+
+		var s:cpp.Star<BytesData> = BytesData.createStar(1024);
+		s.I32[0] = 0x11223344;
+		s.I32[1] = 0x55667788;
+		s.resize(2048); // copy to new data
+		NRam.memcpy(s.star() + 1024, s.star(), 8);
+		Sys.println("0x" +StringTools.hex(s.get(1024)));
+		Sys.println("0x" +StringTools.hex(s.U16[1024 >> 1]));
+		Sys.println("0x" +StringTools.hex(s.I32[1024 >> 2]));
+		Sys.println(s.getInt32(1024) == s.I32[1024 >> 2]);
+
+		s.fill(8, 4,  0x66);
+		s.fill(12, 4, 0x99);
+		var i64:haxe.Int64 = s.I64[8 >> 3]; // 1 * 8
+		Sys.println(i64.low == s.getInt32(8) && i64.high == s.getInt32(12));
+		Sys.println("0x" + StringTools.hex(i64.low) + " -- 0x" +StringTools.hex(i64.high));
+
+		NRam.memset(s.star() + 32, 0x22, 4);
+		NRam.memset(s.star() + 36, 0x77, 4);
+		i64 = s.I64[32 >> 3]; // 1 * 8
+		Sys.println("0x" + StringTools.hex(i64.low) + " -- 0x" +StringTools.hex(i64.high));
+		BytesData.destory(s);
+	#end
+	}
+
+
+	public static function test_md5():Void {
+		trace("----------- MD5 ------------");
+		var output = Ram.malloc(16, true);
+
+		var as = AString.fromString("hello world");
+		Md5.make(as.addr, as.length, output);
+		Hex.trace(output, 16, true, "MD5 mem: ");
+		trace("MD5 std: " + haxe.crypto.Md5.encode(as.toString()));
+
+		var file = haxe.Resource.getBytes("testjs");
+		var filePtr = Ram.mallocFromBytes(file);
+
+		var now = haxe.Timer.stamp();
+		Md5.make(filePtr, file.length, output);
+		var time0 = haxe.Timer.stamp() - now;
+
+		var hout:haxe.io.Bytes = null;
+		now = haxe.Timer.stamp();
+		hout = haxe.crypto.Md5.make(file);
+		var time1 = haxe.Timer.stamp() - now;
+
+		trace('filesize: ${file.length/1024}Kb *** vs *** std : $time1, mem: $time0');
+		Hex.trace(output, 16, true, "mem: ");
+		trace("MD5 std: " + hout.toHex());
+	}
+
+	public static function testStringCopy():Void {
+		var str = "hello world! 你好世界";
+		var byte = haxe.io.Bytes.ofString(str);
+		var sa = Ram.mallocFromString(str);
+		#if flash byte.getData().position = 0; #end
+		var sb:Ptr = Ram.mallocFromBytes(byte);
+
+
+		trace("copy str: " + (sa.toString() == str));
+		var sc = haxe.io.Bytes.alloc(byte.length);
+		#if flash
+		Ram.readBytes(sb, byte.length, sc.getData());
+		#else
+		Ram.readBytes(sb, byte.length, sc);
+		#end
+		trace("copy byte: " + (byte.compare(sc) == 0));
+	}
 	public static function test_utf8() {
 		trace("values of utf8d...");
-		var t = @:privateAccess Utf8.inst._utf8_data;  // duplicate copy
+		var utf8d = @:privateAccess Utf8.utf8d;
+		var t = [];
+		for (i in 0...400)
+			t[i] = utf8d[i];
 		var p = 0;
 		for (i in 0...7) {
 			trace(t.slice(p, p + 0x20).join(", "));
@@ -76,19 +227,30 @@ class Test {
 			p += 0x20;
 		}
 		trace("");
+
 		var str = "这里有几a个中b文c字符";
-		trace('str: $str, utf-length: ${str.length}');
+		#if cpp
+		trace(Gbk.u2Gbk('str: $str, utf-length: ${str.length}'));
+		#else
+		trace(('str: $str, utf-length: ${str.length}'));
+		#end
 
 		var as = Ram.mallocFromString(str);
 
-		trace("Utf8.length(str): " + Utf8.length(as.c_ptr, as.length));
-		Utf8.iter(as.c_ptr, as.length, function(ch) {
-			trace(String.fromCharCode(ch));
+		trace("Utf8.length(str): " + Utf8.length(as.addr, as.length));
+		var a = [];
+		Utf8.iter(as.addr, as.length, function(ch) {
+		#if (neko || cpp)
+			a.push(ch);
+		#else
+			a.push(String.fromCharCode(ch));
+		#end
 		} );
+		trace(a.join(" "));
 		as.free();
 
 		var ba = haxe.io.Bytes.ofString(str);
-		trace(haxe.crypto.Crc32.make(ba));
+		trace("crc: " + StringTools.hex(haxe.crypto.Crc32.make(ba)));
 		var p = Ram.malloc(ba.length);
 	#if flash
 		ba.getData().position = 0;
@@ -96,15 +258,18 @@ class Test {
 	#else
 		Ram.writeBytes(p, ba.length, ba);
 	#end
-		trace(Ph.crc32(p, ba.length));
-		Ram.free(p);
+		trace("crc: " +  StringTools.hex(Ph.crc32(p, ba.length)));
 	}
 
 	public static function test_xor_domainLock(){
-		var sa:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬, 如果你不想要, 想退出要趁早, 就算迷恋你的微笑..ABC");
-		SXor.make(sa.c_ptr, sa.length, sa.c_ptr);
-		SXor.make(sa.c_ptr, sa.length, sa.c_ptr);
-		trace(sa.toString());
+		var sa:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
+		SXor.make(sa.addr, sa.length, sa.addr);
+		SXor.make(sa.addr, sa.length, sa.addr);
+		#if cpp
+		trace(Gbk.u2Gbk(sa.toString()));
+		#else
+		trace("XOR: " + (sa.toString()));
+		#end
 		sa.free();
 #if flash
 		DomainLock.check();
