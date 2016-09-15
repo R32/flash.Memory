@@ -22,7 +22,7 @@ class Ut{
 		var i = p - (n % p);
 		return i == p && n > 0 ? n : n + i;
 	}
-	// (7 => 16-7), (17 => 32-17), (16 => 16), (0 => 16)
+	// (7 => 16-7), (17 => 32-17), (16 => 16), (0 => 16), for AES padding
 	static public function pad16(size) {
 		return 16 - (size & (16 - 1));
 	}
