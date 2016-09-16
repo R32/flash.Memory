@@ -24,7 +24,7 @@ class Ph{
 		var init = 0xFFFFFFFF;
 		var crc = init;
 		for (i in 0...len) {
-			var tmp = (crc ^ Memory.getByte(ptr + i)) & 0xFF;
+			var tmp = (crc ^ ptr[i]) & 0xFF;
 			for (j in 0...8) {
 				if (tmp & 1 == 1)
 					tmp = (tmp >>> 1) ^ 0xEDB88320;
@@ -34,5 +34,15 @@ class Ph{
 			crc = (crc >>> 8) ^ tmp;
 		}
 		return crc ^ init;
+	}
+
+	static public function adler32(ptr:Ptr, len:Int):Int {
+		var a = 1, b = 0, i = 0;
+		while (i < len) {
+			a = (a + ptr[i]) % 65521;
+			b = (b + a) % 65521;
+		++i;
+		}
+		return (b << 16) | a;
 	}
 }
