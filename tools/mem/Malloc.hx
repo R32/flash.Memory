@@ -145,7 +145,7 @@ class Malloc {
 			add(ret);
 		}else{
 			capacity = ret.len;
-			if (capacity >= (block_need + block_need)){
+			if (capacity >= 128 && capacity >= (block_need + block_need)) {
 				ret.size = block_need;					// resize for split
 				var newly = new Block(ret.entry + need, capacity - block_need, false);
 				newly.is_free = true;
