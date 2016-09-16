@@ -13,18 +13,11 @@ import mem.struct.AString;
 import mem.Utf8;
 #if cpp
 import mem.cpp.Gbk;
-	#if !keep_bytes
-	import mem.cpp.BytesData;
-	import mem.cpp.NRam;
-	#end
-#end
-#if flash
-import mem.obs.DomainLock;
+import mem.cpp.BytesData;
+import mem.cpp.NRam;
 #end
 
 class Test {
-
-
 	public static function main(){
 		Ram.select(Ram.create());
 		Ram.malloc(Ut.rand(128, 1), false);
@@ -38,23 +31,20 @@ class Test {
 		test_utf8();
 		test_cppblock();
 		ASS.test();
-		#if (!neko || !lua)
-			test_md5();
-			test_sha1();
-		#end
+		test_md5();
+		test_sha1();
 		test_aes128();
-
-		#if flash
-		//	test_xor_domainLock();
-		#end
+	#if flash
+		test_xor_domainLock();
+	#end
 	}
 
 	static function test_aes128() {
 		trace("----------- AES EBC -----------");
-		var as1 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172a");// 3ad77bb40d7a3660a89ecaf32466ef97
-		var as2 = AString.fromHexString("ae2d8a571e03ac9c9eb76fac45af8e51");// f5d3d58503b9699de785895a96fdbaaf
-		var as3 = AString.fromHexString("30c81c46a35ce411e5fbc1191a0a52ef");// 43b1cd7f598ece23881b00e3ed030688
-		var key = AString.fromHexString("2b7e151628aed2a6abf7158809cf4f3c");//
+		var as1 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172a");// 3ad77bb40d7a3660a89ecaf32466ef97
+		var as2 = AStrImpl.fromHexString("ae2d8a571e03ac9c9eb76fac45af8e51");// f5d3d58503b9699de785895a96fdbaaf
+		var as3 = AStrImpl.fromHexString("30c81c46a35ce411e5fbc1191a0a52ef");// 43b1cd7f598ece23881b00e3ed030688
+		var key = AStrImpl.fromHexString("2b7e151628aed2a6abf7158809cf4f3c");//
 		Hex.trace(key.addr, key.length, true, "the key  : ");
 
 		AES128.ecbEncrypt(as1.addr, key.addr, as1.addr);
@@ -72,10 +62,10 @@ class Test {
 		Hex.trace(as3.addr, as3.length, true, "ebc dec 3: ");
 
 		trace("----------- AES CBC -----------");
-		var as4 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
+		var as4 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
 		Hex.trace(as4.addr, as4.length, true, "cbc org str: ");
 
-		var as4out = new AString(as4.length);
+		var as4out = AStrImpl.alloc(as4.length);
 		AES128.cbcEncryptBuff(as4.addr, cast 0, as4.addr, as4.length, cast 0);
 		AES128.cbcDecryptBuff(as4.addr, cast 0, as4out.addr, as4out.length, cast 0);
 		Hex.trace(as4out.addr, as4.length, true, "cbc dec out: ");
@@ -109,7 +99,7 @@ class Test {
 	static function test_sha1() {
 		trace("----------- SHA1 ------------");
 		var output = Ram.malloc(20, true);
-		var as = AString.fromString("helloworld");
+		var as = AStrImpl.fromString("helloworld");
 		mem.obs.Sha1.make(as.addr, as.length, output);
 		Hex.trace(output, 20, true, "SHA1 mem : ");
 		trace("SHA1 std :"  + haxe.crypto.Sha1.encode(as.toString()));
@@ -168,7 +158,7 @@ class Test {
 		trace("----------- MD5 ------------");
 		var output = Ram.malloc(16, true);
 
-		var as = AString.fromString("hello world");
+		var as = AStrImpl.fromString("hello world");
 		Md5.make(as.addr, as.length, output);
 		Hex.trace(output, 16, true, "MD5 mem: ");
 		trace("MD5 std: " + haxe.crypto.Md5.encode(as.toString()));
@@ -247,18 +237,6 @@ class Test {
 		#end
 		} );
 		trace(a.join(" "));
-		as.free();
-
-		var ba = haxe.io.Bytes.ofString(str);
-		trace("crc: " + StringTools.hex(haxe.crypto.Crc32.make(ba)));
-		var p = Ram.malloc(ba.length);
-	#if flash
-		ba.getData().position = 0;
-		Ram.writeBytes(p, ba.length, ba.getData());
-	#else
-		Ram.writeBytes(p, ba.length, ba);
-	#end
-		trace("crc: " +  StringTools.hex(Ph.crc32(p, ba.length)));
 	}
 
 	public static function test_xor_domainLock(){
@@ -272,7 +250,7 @@ class Test {
 		#end
 		sa.free();
 #if flash
-		DomainLock.check();
+		mem.obs.DomainLock.check();
 		//trace(DomainLock.filter("http://cn.bing.com/search?q=i+have+no+idea+for+this&go=%E6%8F%90%E4%BA%A4&qs=n&form=QBLH&pq=i+have+no+idea+for+this&sc=0-23&sp=-1&sk=&cvid=CBE4556873664FCE8D1E1E8B4418FA47"));
 #end
 	}

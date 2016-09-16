@@ -8,33 +8,14 @@
 --each
 
 -swf bin/test.swf
--swf-header 550:410:24:000000
+-swf-header 800:500:24:000000
 --flash-strict
 -swf-version 10.3
 
 --next
 -js bin/test.js
 
-#--next
-#-neko bin/test.n
-
 --next
--python bin/test.py
-
---next
--cs bin/cs
-
---next
--lua bin/test.lua
-
---next
--java bin/java
-
---next
--hl bin/test.c
-
---next
--D unsafe_cpp
 -cpp bin/cpp
 
 
