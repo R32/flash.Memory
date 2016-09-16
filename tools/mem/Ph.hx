@@ -11,9 +11,9 @@ PtrHelper
 class Ph{
 	// [a,b,c,d] = [d,c,b,a] in bytes
 	static public function reverse(ptr:Ptr, len:Int):Void {
-		var right = ptr + len - 1;
+		var right:Int = ptr + len - 1;
 		var cc:Int;
-		while(ptr < right){
+		while((ptr:Int) < right){
 			cc = Memory.getByte(ptr);
 			Memory.setByte(ptr++, Memory.getByte(right));
 			Memory.setByte(right--, cc);
@@ -44,5 +44,28 @@ class Ph{
 		++i;
 		}
 		return (b << 16) | a;
+	}
+
+
+	/////////////////////////////
+
+
+	static public function toAscii(ptr: Ptr, len:Int): String {
+	#if flash
+		@:privateAccess @:mergeBlock {
+			Ram.current.position = ptr;
+			return Ram.current.readMultiByte(len, "us-ascii");
+		}
+	#elseif (neko || cpp || lua)
+		return Ram.readUTFBytes(ptr, len);
+	#elseif (js && (js_es > 3))
+		return untyped __js__("String.fromCharCode.apply(null, {0})", Memory.u8.slice(ptr, ptr + len));
+	#else
+		var buf = new StringBuf();
+		for (i in 0...len){
+			buf.addChar(ptr[i]);
+		}
+		return buf.toString();
+	#end
 	}
 }

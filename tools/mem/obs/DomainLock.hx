@@ -37,11 +37,11 @@ class DLockBuild{
 				ret: macro :Void,
 				args:[],
 				expr: macro {
-					var s_0:AString = AString.fromHexString($v{bytes.toHex()});
+					var s_0:AString = AStrImpl.fromHexString($v{bytes.toHex()});
 					for (i in 0...s_0.length)
 						Memory.setByte(s_0.addr + i, Memory.getByte(s_0.addr + i) ^ "a".code);
 					var len = $v{split};
-					var s_1:AString = AString.fromString(filter(rec(Ram.readUTFBytes(s_0.addr + len + 1, s_0.length - len - 1))));
+					var s_1:AString = AStrImpl.fromString(filter(rec(Ram.readUTFBytes(s_0.addr + len + 1, s_0.length - len - 1))));
 					try{
 						match(s_0, s_1, len);
 						trace("TODO: some func to crash here ");

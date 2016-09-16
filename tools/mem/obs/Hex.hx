@@ -1,24 +1,24 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.Malloc;
+import mem.Malloc.NUL;
 import mem.struct.AString;
 
 class Hex{
 
-	public static var hexchar(default, null):AString;
+	public static var hexchar(default, null): AString;
 
 	public static function init() {
-		if (hexchar == null)
-			hexchar = AString.fromString("0123456789ABCDEF");
+		if (hexchar == NUL)
+			hexchar = AStrImpl.fromString("0123456789ABCDEF");
 	}
 
 	static function free() hexchar.free();
 
-	public static function export(ptr:Ptr, len:Int):AString{
-		if (hexchar == null)
-			throw "have not initialization the hexchar";
-		var ret = new AString(len + len);
+	public static function export(ptr:Ptr, len:Int):AString {
+		if (hexchar == NUL)
+			throw "TODO";
+		var ret = AStrImpl.alloc(len + len);
 		var dst = ret.addr;
 		var base = hexchar.addr;
 		var c:Int;

@@ -1,43 +1,37 @@
 package mem.struct;
 
 import mem.Ptr;
+import mem.Malloc.NUL;
+import mem.struct.AString.AStrImpl.PADD;
 
-class AString{
+abstract AString(Ptr) to Ptr {
 
-	public var length(default, null):Int;
-	public var addr(default, null):Ptr;
+	public var length(get, never): Int;
+	private inline function get_length() return Memory.getI32((this:Int) - PADD);
 
-	public function new(len:Int) {
-		addr = Malloc.make(len + 1, false);
-		length = len;
-		Memory.setByte(addr + len, 0);
+	public var addr(get, never): Ptr;
+	private inline function get_addr() return this;
+
+	private inline function new(addr: Ptr) this = cast addr;
+
+	public inline function free(): Void { Ram.free(cast ((this:Int) - PADD)); this = NUL; }
+
+	public inline function toString(): String return Ph.toAscii(this, length);
+}
+
+class AStrImpl {
+
+	public static inline var PADD = 4; // for variable length
+
+	public static function alloc(len: Int):AString {
+		var addr = Ram.malloc(len + PADD + 1);
+		Memory.setI32(addr, len);
+		Memory.setByte(addr + len + PADD, 0);
+		return @:privateAccess new AString(addr + PADD);
 	}
 
-	public inline function free():Void {
-		Malloc.free(addr);
-		addr = Malloc.NUL;
-	};
-
-	public function toString() {
-	#if flash
-		@:privateAccess @:mergeBlock{
-			Ram.current.position = addr;
-			return Ram.current.readUTFBytes(length);
-		}
-	#elseif (neko || cpp || lua)
-		return Ram.readUTFBytes(addr, length);
-	#else
-		var cc = addr;
-		var buf = new StringBuf();
-		for (i in 0...length){
-			buf.addChar(Memory.getByte(cc + i));
-		}
-		return buf.toString();
-	#end
-	}
-
-	public static function fromString(str:String): AString{
-		var sa = new AString(str.length);
+	public static function fromString(str:String):AString {
+		var sa = alloc(str.length);
 	#if flash
 		@:privateAccess {
 			Ram.current.position = sa.addr;
@@ -53,9 +47,9 @@ class AString{
 		return sa;
 	}
 
-	public static function fromHexString(hex:String):AString{
+	public static function fromHexString(hex:String):AString {
 		var len = hex.length >> 1;
-		var sa = new AString(len);
+		var sa = alloc(len);
 		var j:Int;
 		for (i in 0...len){
 			j = i + i;

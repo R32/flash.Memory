@@ -106,6 +106,7 @@ class Ram{
 
 	// read from Bytes To Memory
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
+		src.position = 0;
 		src.readBytes(current, ptr, len);
 	}
 #elseif (cpp && !keep_bytes)
@@ -252,7 +253,7 @@ class Ram{
 	#end
 	}
 
-	public static inline function mallocFromString(str:String):WString return new WString(str);
+	public static inline function mallocFromString(str:String):WString return WStrImpl.fromString(str);
 
 	public static function mallocFromBytes(b:Bytes): Ptr {
 		var ret = Malloc.make(b.length, false);

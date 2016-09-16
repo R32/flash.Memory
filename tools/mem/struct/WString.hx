@@ -1,48 +1,55 @@
 package mem.struct;
 
-import mem.Malloc;
 import mem.Ptr;
+import mem.Malloc.NUL;
+import mem.struct.AString.AStrImpl.PADD;
 
-class WString {
+abstract WString(Ptr) to Ptr {
 
-	public var length(default, null):Int;
+	public var length(get, never): Int;
+	private inline function get_length() return Memory.getI32((this:Int) - PADD);
 
-	public var addr(default, null):Ptr;
+	public var addr(get, never): Ptr;
+	private inline function get_addr() return this;
 
-	public function new(str:String) {
+	private inline function new(addr: Ptr) this = cast addr;
 
-	#if (neko || cpp || lua) // it's not utf
+	public inline function free(): Void { Ram.free(cast ((this:Int) - PADD)); this = NUL; }
+
+	public inline function toString(): String return Ram.readUTFBytes(this, length);
+}
+
+class WStrImpl {
+
+	public static inline var PADD = 4; // for variable length
+
+	public static function fromString(str:String):WString {
+		var addr:Ptr;
+		var base:Ptr;
+		var length:Int;
+	#if (neko || cpp || lua) // have not utf
 		length = str.length;
-		addr = Malloc.make(length + 1, false);
-		Ram.writeString(addr, length, str);
+		addr = Ram.malloc(length + PADD + 1, false);
+		Ram.writeString(addr + PADD, length, str);
 	#else
 		var ba = writeString(str);
-		addr = Malloc.make(ba.length, false);
 		length = ba.length;
-		Ram.writeBytes(addr, length, ba);
-		#if flash
-			ba.clear();
-		#end
+		addr = Ram.malloc(length + PADD + 1, false);
+		Ram.writeBytes(addr + PADD, length, ba);
 	#end
-		Memory.setByte(addr + length, 0);
-	}
-
-	public inline function free():Void {
-		Malloc.free(this.addr);
-		addr = Malloc.NUL;
-	}
-
-	public inline function toString(): String {
-		return Ram.readUTFBytes(addr, length);
+		Memory.setI32(addr, length);
+		base = addr + PADD;
+		Memory.setByte(base + length, 0);
+		return @:privateAccess new WString(base);
 	}
 
 #if flash
-	static var tmpb = new flash.utils.ByteArray();
-
-	static function writeString(s:String): flash.utils.ByteArray{
-		tmpb.writeUTFBytes(s);
-		tmpb.position = 0;
-		return tmpb;
+	static var tba:flash.utils.ByteArray;
+	static function writeString(s:String): flash.utils.ByteArray {
+		if (tba == null) tba = new flash.utils.ByteArray();
+		tba.clear();
+		tba.writeUTFBytes(s);
+		return tba;
 	}
 #else
 	static function writeString(s:String):haxe.io.Bytes return haxe.io.Bytes.ofString(s);
