@@ -21,7 +21,7 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 #if !macro
 @:build(mem.Struct.StructBuild.make())
 #end
-@:dce abstract Block(Ptr) from Ptr {
+@:dce abstract Block(Ptr) to Ptr {
 	@idx(4) var size:Int;
 	@idx(0, 4) var prev:Block;
 	@idx(0, 4) var next:Block;
@@ -43,7 +43,10 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 		size = CAPACITY + length;	// Note: must after memset
 	}
 
-	inline public function free() @:privateAccess Malloc.freeBlock(this);
+	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
+
+	@:op(A == B) private static inline function eqInt( a : Block, b : Block ) : Bool
+		return (a:Int) == (b:Int);
 }
 #if cpp
 @:nativeGen @:headerCode("#define Mallochx Mallochx_obj") @:native("mem.Mallochx")
@@ -59,8 +62,8 @@ class Malloc {
 	public static var length(default, null):Int;
 	public static function __register():Void {}
 	#else
-	static var top(default, null):Block = NUL;
-	static var bottom(default, null):Block = NUL;
+	static var top(default, null):Block = cast NUL;
+	static var bottom(default, null):Block = cast NUL;
 	public static var frag_count(default, null):Int = 0;
 	public static var length(default, null):Int = 0;
 	#end
@@ -70,8 +73,8 @@ class Malloc {
 	}
 
 	static function clear(){
-		top = NUL;
-		bottom = NUL;
+		top = cast NUL;
+		bottom = cast NUL;
 		frag_count = 0;
 		length = 0;
 	}
@@ -101,14 +104,13 @@ class Malloc {
 		length++;
 	}
 
-	static function indexOf(p:Ptr):Block{
-		var b:Block = p - Block.CAPACITY;
-		if (b != NUL){
-			if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b)){
+	static function indexOf(p:Ptr):Block {
+		if (p > NUL) {
+			var b:Block = cast p - Block.CAPACITY;
+			if (b > NUL && (b == bottom || b == top || (b.prev.next == b && b.next.prev == b)))
 				return b;
-			}
 		}
-		return NUL;
+		return cast NUL;
 	}
 
 	public static function make(need:Int, zero:Bool):Ptr{
@@ -117,7 +119,7 @@ class Malloc {
 		//if (frag_count > 0) mergeFragment();
 
 		var tmp_frag_count = frag_count;
-		var ret:Block = NUL;
+		var ret:Block = cast NUL;
 		var capacity = 0;
 		var cc:Block = top;
 		while (tmp_frag_count > 0 && cc != NUL){
@@ -170,16 +172,16 @@ class Malloc {
 			length--;
 			frag_count--;
 			if (prev == NUL){
-				top = bottom = NUL;
+				top = bottom = cast NUL;
 				break;
 			}
-			prev.next = NUL;
+			prev.next = cast NUL;
 			bottom = prev;
 		}
 	}
-
+/*
 	static function mergeFragment(){
-		var next:Block = NUL;
+		var next:Block = cast NUL;
 		var head:Block = top;
 		while (head != NUL && frag_count > 0){		// if head == null, Is empty
 			if(head.is_free){
@@ -200,7 +202,7 @@ class Malloc {
 			head = head.next;
 		}
 	}
-
+*/
 	// ONLY FOR DEBUG
 	static function iterator():BlockIterator{
 		return new BlockIterator(top);
