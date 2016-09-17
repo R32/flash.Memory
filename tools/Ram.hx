@@ -134,12 +134,12 @@ class Ram{
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src || size <= 0) return;
 	#if flash
-		if (size <= 40) {
-			memcpy_pure(dst, src, size);
-		} else {
+	//	if (size <= 40) {
+	//		memcpy_pure(dst, src, size);
+	//	} else {
 			current.position = src;
 			current.readBytes(current, dst, size);
-		}
+	//	}
 	#else
 		current.blit(dst, current, src, size);
 	#end

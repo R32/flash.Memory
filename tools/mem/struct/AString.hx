@@ -40,9 +40,8 @@ class AStrImpl {
 	#elseif (neko || cpp || lua)
 		Ram.writeUTFBytes(sa.addr, str);
 	#else
-		for(i in 0...sa.length){
-			Memory.setByte(sa.addr + i, StringTools.fastCodeAt(str, i));
-		}
+		for (i in 0...sa.length)
+			sa.addr[i] = StringTools.fastCodeAt(str, i);
 	#end
 		return sa;
 	}
@@ -53,7 +52,7 @@ class AStrImpl {
 		var j:Int;
 		for (i in 0...len){
 			j = i + i;
-			Memory.setByte(sa.addr + i, Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) ));
+			sa.addr[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) );
 		}
 		return sa;
 	}

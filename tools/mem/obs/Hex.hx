@@ -6,7 +6,7 @@ import mem.struct.AString;
 
 class Hex{
 
-	public static var hexchar(default, null): AString;
+	public static var hexchar(default, null): AString = cast NUL;
 
 	public static function init() {
 		if (hexchar == NUL)
@@ -18,24 +18,23 @@ class Hex{
 	public static function export(ptr:Ptr, len:Int):AString {
 		if (hexchar == NUL)
 			throw "TODO";
-		var ret = AStrImpl.alloc(len + len);
-		var dst = ret.addr;
-		var base = hexchar.addr;
+		var sa = AStrImpl.alloc(len + len);
+		var u16:AU16 = cast sa;
+		var hex:AU8 = cast hexchar;
 		var c:Int;
-		for(i in 0...len){
-			c = Memory.getByte(ptr + i);
-			Memory.setI16(dst + i + i, (Memory.getByte(((c&15) + base)) << 8) |
-				Memory.getByte(((c >>> 4) & 15) + base));
+		for (i in 0...len) {
+			c = ptr[i];
+			u16[i] = hex[c & 15] << 8 | hex[(c >> 4) & 15];
 		}
-		return ret;
+		return sa;
 	}
 
 	public static function trace(ptr: Ptr, len: Int, lower = true, prefix = ""): Void {
-		var as = export(ptr, len);
+		var sa = export(ptr, len);
 		if (lower)
-			trace(prefix + as.toString().toLowerCase());
+			trace(prefix + sa.toString().toLowerCase());
 		else
-			trace(prefix + as.toString());
-		as.free();
+			trace(prefix + sa.toString());
+		sa.free();
 	}
 }
