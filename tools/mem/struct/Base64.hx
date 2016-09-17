@@ -12,7 +12,7 @@ import StringTools.hex;
 
 	private inline function new(addr: Ptr) this = cast addr;
 
-	public inline function free(): Void { Ram.free(cast ((this:Int) - PADD)); this = NUL; }
+	public inline function free(): Void Ram.free(cast ((this:Int) - PADD));
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 

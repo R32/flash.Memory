@@ -404,7 +404,6 @@ class StructBuild{
 					ret : null,
 					expr: macro {
 						mem.Malloc.free($i{context});
-						$i{context} = mem.Malloc.NUL;
 					}
 				}),
 				pos: here()
