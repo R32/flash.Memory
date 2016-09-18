@@ -10,6 +10,7 @@ import haxe.macro.ExprTools;
 import haxe.macro.TypeTools;
 import haxe.macro.ComplexTypeTools;
 import haxe.macro.PositionTools.here;
+import StringTools.hex;
 
 typedef Param = {
 	width:Int, // sizeof
@@ -125,6 +126,8 @@ class StructBuild{
 
 		var all_fields:Array<String> = [];
 		var attrs = {};
+		var offset_first = 0;
+		var offset_first_ready = false;
 		var offset = 0;
 		var params:Param;
 		var metaParams;
@@ -330,6 +333,12 @@ class StructBuild{
 						pos: here()
 					});
 
+					if (offset_first_ready == false) {
+						if (offset < 0) offset_first = offset;
+						offset_first_ready = true;
+					}
+					if (offset < offset_first) Context.error("Out of range", f.pos);
+
 					if(is_array){
 						fields.push({
 							name : "__" + f.name.toUpperCase() + "_BYTE",
@@ -339,7 +348,7 @@ class StructBuild{
 							pos: here()
 						});
 
-						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width,len: params.nums});
+						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width, len: params.nums});
 						offset += params.nums * params.width;
 					}else{
 						Reflect.setField(attrs, f.name, {offset: offset, len: params.width, bytes: 1});
@@ -352,19 +361,28 @@ class StructBuild{
 			}
 
 		}
-	if (offset > 0) {
+	if (offset - offset_first > 0) {
 
 		fields.push({
 			name : "CAPACITY",
-			doc:  "== " + $v{offset},
+			doc:  "== " + $v{offset - offset_first},
 			access: [AStatic, AInline, APublic],
-			kind: FVar(macro :Int, macro $v{offset}),
+			kind: FVar(macro :Int, macro $v{offset - offset_first}),
+			pos: here()
+		});
+
+		fields.push({
+			name : "OFFSET_FIRST",
+			doc:  "== " + $v{offset_first},
+			access: [AStatic, AInline, APublic],
+			kind: FVar(macro :Int, macro $v{offset_first}),
 			pos: here()
 		});
 
 		fields.push({
 			name : "ALL_FIELDS",
-			doc:  "== " + $v{offset},
+			meta: [{name: ":dce", pos: here()}],
+			doc:  "== " + $v{all_fields.length},
 			access: [AStatic, AInline, APublic],
 			kind: FFun({
 					args: [],
@@ -385,7 +403,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						$i{context} = untyped mem.Malloc.make(CAPACITY, true);
+						$i{context} = untyped mem.Malloc.make(CAPACITY, true) - $v{offset_first}; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -403,13 +421,14 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						mem.Malloc.free($i{context});
+						mem.Malloc.free($i{context} + $v{offset_first});
+						$i{context} = cast mem.Malloc.NUL;
 					}
 				}),
 				pos: here()
 			});
 
-		if (abs_type == null && !all_in_map.exists(context)) { //  for class Some implements Struct{}
+		if (abs_type == null && all_in_map.exists(context) == false) { //  for class Some implements Struct{}
 			fields.push({
 				name : context,
 				access: [APublic],
@@ -418,15 +437,15 @@ class StructBuild{
 			});
 		}
 
-			var prep = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return "null");
+			var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
 			var block:Array<Expr> = [];
-			for (k in all_fields.iterator()){
+			for (k in all_fields.iterator()) {
 				var node = Reflect.field(attrs, k);
 				var _w = Ut.hexWidth(offset);
-				var _dx = StringTools.hex( node.offset, _w);
+				var _dx  = node.offset >= 0 ? "0x" + hex( node.offset, _w) : "-" + node.offset;
 				var _len = node.len * node.bytes;
-				var _end = StringTools.hex(node.offset + _len, _w);
-				block.push(macro buf.push("offset: 0x" + $v{_dx} + " - 0x" + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
+				var _end = node.offset >= 0 ? "0x" + hex(node.offset + _len, _w) : "" + (node.offset + _len);
+				block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 			}
 			fields.push({
 				name : "__toOut",
@@ -436,15 +455,17 @@ class StructBuild{
 					args: [],
 					ret : macro :String,
 					expr: macro {
-						$prep;
-						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $v{offset} + ", addr: " + $i{context} +
-							", BLOCK SPACE: "+ @:privateAccess (mem.Malloc.indexOf($i{context}).size - mem.Malloc.Block.CAPACITY) +"\n"];
-						$b{block};
+						$checkFail;
+						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
+							+ " .ACTUAL_SPACE: " + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY)
+							+ ", ::baseAddr: " + $i{context} + "\n"];
+						$a{block};
 						return buf.join("");
 					}
 				}),
 				pos: here()
 			});
+
 		}
 		return fields;
 	}
