@@ -119,10 +119,10 @@ import mem.Ut;
 					sa = Malloc.make($v { SX_MAX }, false);
 					var p:Int = cast sa;
 					$a{codes};
-					x_0 = create(Memory.getI32(p + $v{cx[4 + 0]}), Memory.getI32(p + $v{cx[8 + 0]}));
-					x_1 = create(Memory.getI32(p + $v{cx[4 + 1]}), Memory.getI32(p + $v{cx[8 + 1]}));
-					x_2 = create(Memory.getI32(p + $v{cx[4 + 2]}), Memory.getI32(p + $v{cx[8 + 2]}));
-					x_3 = create(Memory.getI32(p + $v{cx[4 + 3]}), Memory.getI32(p + $v{cx[8 + 3]}));
+					x_0 = x_n(Memory.getI32(p + $v{cx[4 + 0]}), Memory.getI32(p + $v{cx[8 + 0]}));
+					x_1 = x_n(Memory.getI32(p + $v{cx[4 + 1]}), Memory.getI32(p + $v{cx[8 + 1]}));
+					x_2 = x_n(Memory.getI32(p + $v{cx[4 + 2]}), Memory.getI32(p + $v{cx[8 + 2]}));
+					x_3 = x_n(Memory.getI32(p + $v{cx[4 + 3]}), Memory.getI32(p + $v{cx[8 + 3]}));
 				}
 			})
 		});

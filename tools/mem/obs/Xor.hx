@@ -33,10 +33,10 @@ class Xor{
 	}
 
 	public inline static function fromHexString(hex:String):Xor{
-		return new Xor(AString.fromHexString(hex));
+		return new Xor(AStrImpl.fromHexString(hex));
 	}
 
 	public inline static function fromString(str:String):Xor{
-		return new Xor(AString.fromString(str));
+		return new Xor(AStrImpl.fromString(str));
 	}
 }

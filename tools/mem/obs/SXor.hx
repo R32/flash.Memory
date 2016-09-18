@@ -17,7 +17,7 @@ class SXor {
 	static var x_3: AU8;
 	static var  sa: Ptr = Malloc.NUL;
 
-	public static function create(low:Int, high:Int):AU8 {
+	static function x_n(low:Int, high:Int):AU8 {
 		var r:AU8 = cast mem.Malloc.make(8, false);
 	#if !neko
 		setI32(r, low);
@@ -39,7 +39,7 @@ class SXor {
 		var offset = 0;
 		var bmod = 0;
 		var p:Int = sa;
-	#if !neko	// Uncaught exception $sset on neko
+	#if (flash || cpp)
 		var b4 = len - (len & (4 - 1));
 		var mod = 0;
 		while (b4 > offset) {

@@ -34,9 +34,7 @@ class Test {
 		test_md5();
 		test_sha1();
 		test_aes128();
-	#if flash
 		test_xor_domainLock();
-	#end
 	}
 
 	static function test_aes128() {
@@ -199,6 +197,7 @@ class Test {
 	}
 	public static function test_utf8() {
 		trace("values of utf8d...");
+		/*
 		var utf8d = @:privateAccess Utf8.utf8d;
 		var t = [];
 		for (i in 0...400)
@@ -217,7 +216,7 @@ class Test {
 			p += 0x20;
 		}
 		trace("");
-
+		*/
 		var str = "这里有几a个中b文c字符";
 		#if cpp
 		trace(Gbk.u2Gbk('str: $str, utf-length: ${str.length}'));
@@ -241,7 +240,8 @@ class Test {
 
 	public static function test_xor_domainLock(){
 		var sa:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
-		SXor.make(sa.addr, sa.length, sa.addr);
+		var xor = mem.obs.Xor.fromHexString(haxe.crypto.Md5.encode("hello"));
+		xor.run(sa.addr, sa.length, sa.addr);
 		SXor.make(sa.addr, sa.length, sa.addr);
 		#if cpp
 		trace(Gbk.u2Gbk(sa.toString()));
