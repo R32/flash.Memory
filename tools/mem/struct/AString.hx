@@ -2,32 +2,30 @@ package mem.struct;
 
 import mem.Ptr;
 import mem.Malloc.NUL;
-import mem.struct.AString.AStrImpl.PADD;
+import mem.struct.Comm.*;
 
 abstract AString(Ptr) to Ptr {
 
 	public var length(get, never): Int;
-	private inline function get_length() return Memory.getI32((this:Int) - PADD);
+	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
 
 	public var addr(get, never): Ptr;
 	private inline function get_addr() return this;
 
 	private inline function new(addr: Ptr) this = cast addr;
 
-	public inline function free(): Void Ram.free(cast ((this:Int) - PADD));
+	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 }
 
 class AStrImpl {
 
-	public static inline var PADD = 4; // for variable length
-
 	public static function alloc(len: Int):AString {
-		var addr = Ram.malloc(len + PADD + 1);
+		var addr = Ram.malloc(len + BY_LEN + 1);
 		Memory.setI32(addr, len);
-		Memory.setByte(addr + len + PADD, 0);
-		return @:privateAccess new AString(addr + PADD);
+		Memory.setByte(addr + len + BY_LEN, 0);
+		return @:privateAccess new AString(addr + BY_LEN);
 	}
 
 	public static function fromString(str:String):AString {

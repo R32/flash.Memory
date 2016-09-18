@@ -2,17 +2,16 @@ package mem.struct;
 
 import mem.Ptr;
 import mem.Malloc.NUL;
-import mem.struct.Base64.PADD;
-import StringTools.hex;
+import mem.struct.Comm.*;
 
 @:dce abstract Base64String(Ptr) to Ptr {
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32((this:Int) - PADD);
+	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
 
 	private inline function new(addr: Ptr) this = cast addr;
 
-	public inline function free(): Void Ram.free(cast ((this:Int) - PADD));
+	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
@@ -23,11 +22,11 @@ import StringTools.hex;
 
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32((this:Int) - PADD);
+	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
 
 	private inline function new(addr:Ptr) this = cast addr;
 
-	public inline function free(): Void { Ram.free(cast ((this:Int) - PADD)); this = NUL; }
+	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
@@ -35,7 +34,6 @@ import StringTools.hex;
 }
 
 class Base64 {
-	public static inline var PADD = 4; // for variable length
 
 	static var encoding_table: Ptr = NUL;
 	static var decoding_table: Ptr;
@@ -103,8 +101,8 @@ class Base64 {
 
 		var olen = Std.int((len + 2) / 3) << 2;  // == Math.ceil((n * 4)/3);
 
-		var addr:Ptr = Ram.malloc(olen + PADD + 1); // length + DATA + \0
-		var base:Ptr = cast addr + PADD;
+		var addr:Ptr = Ram.malloc(olen + BY_LEN + 1); // length + DATA + \0
+		var base:Ptr = cast addr + BY_LEN;
 
 		var et:Ptr = encoding_table;
 
@@ -160,8 +158,8 @@ class Base64 {
 		len  -= pad;
 		olen -= pad;
 
-		var addr:Ptr = Ram.malloc(olen + PADD + 1, false);
-		var base:Ptr = addr + PADD;
+		var addr:Ptr = Ram.malloc(olen + BY_LEN + 1, false);
+		var base:Ptr = addr + BY_LEN;
 		Memory.setI32(addr, olen); // set length
 		Memory.setByte(base + olen, 0);
 
