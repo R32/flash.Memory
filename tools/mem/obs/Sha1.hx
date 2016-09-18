@@ -1,7 +1,7 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.obs.Sha1Macros.*;
+import mem.obs._macros.Sha1Macros.*;
 
 #if !macro @:build(mem.Struct.StructBuild.make()) #end
 @:dce private abstract Sha1Context(Ptr) to Ptr {

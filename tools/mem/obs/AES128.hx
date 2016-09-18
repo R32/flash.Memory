@@ -6,7 +6,7 @@ import mem.Ptr.Memory.setI32;
 import mem.Ptr.Memory.getI32;
 import mem.Ptr.Memory.getByte;
 import mem.Ptr.Memory.setByte;
-import mem.obs.AES128Macros.*;
+import mem.obs._macros.AES128Macros.*;
 
 /**
 This is an implementation of the AES128 algorithm, specifically ECB and CBC mode.

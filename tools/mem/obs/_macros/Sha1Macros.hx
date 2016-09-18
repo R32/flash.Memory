@@ -1,4 +1,4 @@
-package mem.obs;
+package mem.obs._macros;
 
 @:dce class Sha1Macros{
 

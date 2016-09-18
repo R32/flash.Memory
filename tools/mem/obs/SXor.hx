@@ -1,14 +1,14 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.obs.SxInt.*;
+import mem.obs._macros.SxInt.*;
 import mem.Ptr.Memory.setI32;
 import mem.Ptr.Memory.getI32;
 /**
 * 每个 x_n 的值为 8字节的明文, 通过这个明文计算将得到一个密钥块(4字节)的"位置值"
 */
 #if !macro
-@:build(mem.obs.SxInt.SXorBuild.make("sx-pwd"))
+@:build(mem.obs._macros.SxInt.SXorBuild.make("sx-pwd"))
 #end
 class SXor {
 	static var x_0: AU8;

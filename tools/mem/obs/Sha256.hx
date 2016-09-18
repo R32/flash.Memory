@@ -1,7 +1,7 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.obs.Sha256Macros.*;
+import mem.obs._macros.Sha256Macros.*;
 import Ram.memcpy;
 import StringTools.hex;
 
