@@ -6,14 +6,12 @@ import mem.struct.AString;
 
 class Hex{
 
-	public static var hexchar(default, null): AString = cast NUL;
+	static var hexchar(default, null): AString = cast NUL;
 
 	public static function init() {
 		if (hexchar == NUL)
 			hexchar = AStrImpl.fromString("0123456789ABCDEF");
 	}
-
-	static function free() hexchar.free();
 
 	public static function export(ptr:Ptr, len:Int):AString {
 		if (hexchar == NUL)
