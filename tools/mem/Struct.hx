@@ -168,7 +168,7 @@ class StructBuild{
 						switch (ts) {
 						case "Bool":
 							offset += params.dx;
-							[macro Memory.getByte($i{context}+ $v{offset}) != 0, macro Memory.setByte($i{context}+ $v{offset}, v ? 1 : 0)];
+							[macro Memory.getByte($i{context} + $v{offset}) != 0, macro Memory.setByte($i{context} + $v{offset}, v ? 1 : 0)];
 						case "Int":
 							offset += params.dx;
 							var sget = "getByte", sset = "setByte";
@@ -418,7 +418,6 @@ class StructBuild{
 			});
 		}
 
-		#if !no2out
 			var prep = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return "null");
 			var block:Array<Expr> = [];
 			for (k in all_fields.iterator()){
@@ -431,6 +430,7 @@ class StructBuild{
 			}
 			fields.push({
 				name : "__toOut",
+				meta: [{name: ":dce", pos: here()}],
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
@@ -445,7 +445,6 @@ class StructBuild{
 				}),
 				pos: here()
 			});
-		#end
 		}
 		return fields;
 	}

@@ -227,29 +227,47 @@ class Ram{
 		for (i in 0...len)
 			Memory.setByte(dst + i, StringTools.fastCodeAt(str, i));
 	#else
-		var jlen = str.length;
+		var slen = str.length;
 		var i = 0, c = 0, j = 0;
-		while (i < len && j < jlen){
+		while (i < len && j < slen) {
 			c = StringTools.fastCodeAt(str, j++);
 			// surrogate pair -- (copy from haxe.io.Bytes::getString)
 			if( 0xD800 <= c && c <= 0xDBFF )
-			       c = (c - 0xD7C0 << 10) | (StringTools.fastCodeAt(str, j++) & 0x3FF);
-			if( c <= 0x7F )
-				Memory.setByte(dst + i++, c);
-			else if ( c <= 0x7FF ) {
-				Memory.setByte(dst + i++, 0xC0 | (c >> 6) );
-				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63) );
+				c = (c - 0xD7C0 << 10) | (StringTools.fastCodeAt(str, j++) & 0x3FF);
+
+			if ( c <= 0x7F ) {
+				dst[i] = c;
+				i += 1;
+			} else if ( c <= 0x7FF ) {
+				if (i + 2 <= len) {
+					dst[i + 0] = 0xC0 | (c >> 6);
+					dst[i + 1] = 0x80 | (c & 63);
+				} else {
+					dst[i] = 0;
+				}
+				i += 2;
 			} else if ( c <= 0xFFFF ) {
-				Memory.setByte(dst + i++, 0xE0 | (c >> 12) );
-				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 6) & 63) );
-				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63) );
+				if (i + 3 <= len) {
+					dst[i + 0] = 0xE0 | (c >> 12);
+					dst[i + 1] = 0x80 | (c >>  6 & 63);
+					dst[i + 2] = 0x80 | (c >>  0 & 63);
+				} else {
+					dst[i] = 0;
+				}
+				i += 3;
 			} else {
-				Memory.setByte(dst + i++, 0xF0 | (c >> 18));
-				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 12) & 63));
-				if(i < len) Memory.setByte(dst + i++, 0x80 | ((c >> 6) & 63));
-				if(i < len) Memory.setByte(dst + i++, 0x80 | (c & 63));
+				if (i + 4 <= len) {
+					dst[i + 0] = 0xF0 | (c >> 18);
+					dst[i + 1] = 0x80 | (c >> 12 & 63);
+					dst[i + 2] = 0x80 | (c >>  6 & 63);
+					dst[i + 3] = 0x80 | (c >>  0 & 63);
+				} else {
+					dst[i] = 0;
+				}
+				i += 4;
 			}
 		}
+		if (i < len) dst[i] = 0;
 	#end
 	}
 
