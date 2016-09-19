@@ -6,7 +6,6 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.ExprTools;
 import haxe.macro.TypeTools;
-import haxe.macro.ComplexTypeTools;
 import haxe.macro.PositionTools.here;
 import StringTools.hex;
 
@@ -39,8 +38,8 @@ AF8
 */
 @:autoBuild(mem.StructBuild.make())
 #end
-@:remove interface Struct{
-	var addr(default, null): mem.Ptr;		// can overwrite as public
+@:remove interface Struct {
+	var addr(default, null): mem.Ptr;
 
 /*  make all @idx fields as inline getter/setter;
 
@@ -192,13 +191,16 @@ class StructBuild{
 							offset += params.dx;
 							switch(arrType[0]){	// ComplexType
 							case TPType(ct):
+								var paramType = Context.resolveType(ct, f.pos);
+								if (Context.unify(paramType, Context.getType("haxe.Constraints.FlatEnum")) == false)
+									Context.error("Must be FlatEnum", f.pos);
 								var sget = "getByte", sset = "setByte";
 								switch(params.width){
 								case 2: sget = "getUI16"; sset = "setI16";
 								case 4: sget = "getI32"; sset = "setI32";
 								default: params.width = 1;
 								}
-								if (params.width * 8 < TypeTools.getEnum(ComplexTypeTools.toType(ct)).names.length)
+								if (params.width * 8 < TypeTools.getEnum(paramType).names.length)
 									throw "Unsupported width for EnumFlags" + params.width;
 								[macro { new haxe.EnumFlags<$ct>(Memory.$sget($i{context} + $v{offset}));}
 									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
@@ -222,6 +224,8 @@ class StructBuild{
 							}
 						}
 					case TEnum(e, _):
+						if (Context.unify(t, Context.getType("haxe.Constraints.FlatEnum")) == false)
+							Context.error("Must be FlatEnum", f.pos);
 						ts = Std.string(e);
 						params = parseMeta(metaParams, ts);
 						offset += params.dx;
