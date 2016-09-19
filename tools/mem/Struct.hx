@@ -1,7 +1,5 @@
 package mem;
 
-import mem.Ptr;
-
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
@@ -20,7 +18,6 @@ typedef Param = {
 #else
 /**
 * in bytes
-* new 方法应该定义成 **inline** 形式的
 
 ```
 <bytes=4>mem.Ptr            @idx(?offset=0)
@@ -69,7 +66,7 @@ AF8
 }
 
 class StructBuild{
-	#if macro
+#if macro
 	static inline var IDX = "idx";
 
 	static function parseInt(s:String):Int{
@@ -469,5 +466,5 @@ class StructBuild{
 		}
 		return fields;
 	}
-	#end
+#end
 }
