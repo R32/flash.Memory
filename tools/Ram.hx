@@ -13,13 +13,12 @@ import mem.cpp.NRam;
 
 class Ram{
 
-	static inline var LB:Int = 8;						// LB 只能为 2 的 n 次幂,
-	static inline var LLB:Int = 8192;					// pow(2,13)
+	static inline var LLB = 16 << 10;  // 16384, 16K
 
 #if flash
 	static var tmp:ByteArray = null;
 	static var current:ByteArray = null;
-	public static function select(?ba:ByteArray):Void{
+	public static function select(?ba:ByteArray):Void {
 		if (ba == null)
 			ba = create(LLB);
 		else if (ba.length < 1024)
@@ -30,14 +29,23 @@ class Ram{
 		if (tmp == current) tmp = null;
 	}
 
-	public static function create(len = LLB):ByteArray{
+	public static function create(len = LLB):ByteArray {
 		var ba = new ByteArray();
 		ba.length = len;
 		ba.endian = flash.utils.Endian.LITTLE_ENDIAN;
 		return ba;
 	}
 
-	public static function detach():Void{
+	public static function attach():Void {
+		if (current == null) {
+			select(null); // create new
+		} else if (current != flash.system.ApplicationDomain.currentDomain.domainMemory) {
+			tmp = flash.system.ApplicationDomain.currentDomain.domainMemory;
+			Memory.select(current);
+		}
+	}
+
+	public static function detach():Void {
 		flash.system.ApplicationDomain.currentDomain.domainMemory = tmp;
 	}
 #elseif (cpp && !keep_bytes)
@@ -49,39 +57,48 @@ class Ram{
 		current = ba;
 	}
 
-	public static function create(len = LLB): Star<BytesData>{
+	public static function create(len = LLB): Star<BytesData> {
 		return BytesData.createStar(len);
 	}
-
-	public static function detach():Void { }
 #else
 	static var current:Bytes = null;
 
-	public static function select(?ba:Bytes):Void{
+	public static function select(?ba:Bytes):Void {
 		if (ba == null) ba = create(LLB);
 		Memory.select(ba);
 		current = ba;
 	}
 
-	public static function create(len = LLB):Bytes{
+	public static function create(len = LLB):Bytes {
 		return Bytes.alloc(len);
 	}
-
-	public static function detach():Void{}
 #end
+
+#if !flash
+	public static function attach():Void {
+		if (current == null)
+			select(null);
+		else if(Memory.b != current)
+			Memory.select(current);
+	}
+	public static function detach():Void {}
+#end
+
+
+
 	// in bytes
 	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero);
 
 	public static inline function free(ptr:Ptr) Malloc.free(ptr);
 
-	static function req(len:UInt){
+	static function req(len:UInt) {
 		if(len > current.length){
 		#if flash
-			current.length = mem.Ut.padmul(len, LLB);
+			current.length = mem.Ut.padmul(len, 4 << 10); // 4K
 		#elseif (cpp && !keep_bytes)
-			current.resize(mem.Ut.padmul(len, LLB));
+			current.resize(mem.Ut.padmul(len, 4 << 10));
 		#else
-			var a = Bytes.alloc(mem.Ut.padmul(len, LLB));
+			var a = Bytes.alloc(mem.Ut.padmul(len, 4 << 10));
 			a.blit(0, current, 0, current.length);
 			Memory.select(a);
 			current = a;
