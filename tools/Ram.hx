@@ -134,16 +134,14 @@ class Ram{
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src || size <= 0) return;
 	#if flash
-	//	if (size <= 40) {
-	//		memcpy_pure(dst, src, size);
-	//	} else {
 			current.position = src;
 			current.readBytes(current, dst, size);
-	//	}
 	#else
 		current.blit(dst, current, src, size);
 	#end
 	}
+
+	/*
 	static function memcpy_pure(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst < src) {
 			while (size >= 4) {
@@ -168,24 +166,31 @@ class Ram{
 				Memory.setByte(--dst , Memory.getByte(--src));
 			}
 		}
-	}
+	}*/
 
-	public static function memcmp(dst:Ptr, src: Ptr, size:Int):Bool{
-		if (dst == src) return true;
-	#if flash
-		while (size >= 4){
-			if (Memory.getI32(dst) != Memory.getI32(src)) return false;
-			dst += 4;
-			src += 4;
-			size -= 4;
+	static public function memcmp(ptr1: Ptr, ptr2: Ptr, len: Int):Int {
+	#if (cpp && !keep_bytes)
+		var base = current.cs();
+		return NRam.memcmp(base + (ptr1:Int), base + (ptr2:Int), len);
+	#else
+		var i = 0 , c1 = 0, c2 = 0;
+		#if flash
+		var len4 = len - (len & (4 - 1));
+		while (i < len4) {
+			c1 = Memory.getI32(ptr1 + i);
+			c2 = Memory.getI32(ptr2 + i);
+			if (c1 != c2) break;
+		i += 4;
 		}
-	#elseif (cpp && !keep_bytes)
-		return NRam.memcmp(current.cs() + (dst:Int), current.cs() + (src:Int), size) == 0;
+		#end
+		while (i < len) {
+			c1 = ptr1[i];
+			c2 = ptr2[i];
+			if (c1 != c2) break;
+		++i;
+		}
+		return c1 - c2;
 	#end
-		while (0 < size--) {
-			if (Memory.getByte(dst++) != Memory.getByte(src++)) return false;
-		}
-		return true;
 	}
 
 	public static function memset(dst:Ptr, v:Int, size:Int):Void {
@@ -309,7 +314,7 @@ class Ram{
 		var ptr = Malloc.NUL;
 		end -= len;
 		while(end >= start){
-			if(memcmp(start, src, len)){
+			if(memcmp(start, src, len) == 0){
 				ptr = start;
 				break;
 			}
