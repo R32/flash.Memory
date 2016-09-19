@@ -59,7 +59,7 @@ class Ph{
 	#elseif (neko || cpp || lua)
 		return Ram.readUTFBytes(ptr, len);
 	#elseif (js && (js_es > 3))
-		return untyped __js__("String.fromCharCode.apply(null, {0})", Memory.u8.slice(ptr, ptr + len));
+		return untyped __js__("String.fromCharCode.apply(null, {0})", Memory.b.b.slice(ptr, ptr + len));
 	#else
 		var buf = new StringBuf();
 		for (i in 0...len){
