@@ -68,7 +68,7 @@ class StructBuild{
 #if macro
 	static inline var IDX = "idx";
 
-	static function parseInt(s:String):Int{
+	static function parseInt(s:String):Int {
 		var i:Int = Std.parseInt(s);
 		if (s == null || i == null || Math.isNaN(i))
 			throw "todo";
@@ -77,7 +77,7 @@ class StructBuild{
 
 	static inline function notZero(v:Int, def:Int = 1) return v <= 0 ? def : v;
 
-	static function parseMeta(arr:Array<Int>, type:String):Param{
+	static function parseMeta(arr:Array<Int>, type:String):Param {
 		var ret;
 		var len = arr.length;
 		switch(type){
@@ -215,11 +215,11 @@ class StructBuild{
 							[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
 						default:
 							ts = TypeTools.toString(a.get().type);
-							if (abs_type != null && ts == "mem.Ptr"){  // for abstruct Other(Ptr) {}
+							if (abs_type != null && ts == "mem.Ptr") {  // for abstruct Other(Ptr) {}
 								params = parseMeta(metaParams, ts);
 								offset += params.dx;
 								[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
-							}else{
+							} else {
 								null;
 							}
 						}
@@ -266,9 +266,9 @@ class StructBuild{
 											}
 										default: null;
 									}// end(at.name)
-									if (sget == null || sset == null){
+									if (sget == null || sset == null) {
 										null;
-									}else{
+									} else {
 										[macro{[for (i in 0...$v{params.nums}) Memory.$sget($i{context} + $v{offset} + i)];
 										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset($i{context} + $v{offset} + i, v[i]); }];
 									}
@@ -279,9 +279,9 @@ class StructBuild{
 					default: null;
 				}
 
-				if(exprs == null){
-					Context.warning("Type (" + ts +") is not supported for field: " + f.name ,here());
-				}else{
+				if (exprs == null) {
+					Context.warning("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+				} else {
 					var getter = exprs[0];
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
@@ -438,34 +438,34 @@ class StructBuild{
 			});
 		}
 
-			var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
-			var block:Array<Expr> = [];
-			for (k in all_fields.iterator()) {
-				var node = Reflect.field(attrs, k);
-				var _w = Ut.hexWidth(offset);
-				var _dx  = node.offset >= 0 ? "0x" + hex( node.offset, _w) : "-" + node.offset;
-				var _len = node.len * node.bytes;
-				var _end = node.offset >= 0 ? "0x" + hex(node.offset + _len, _w) : "" + (node.offset + _len);
-				block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
-			}
-			fields.push({
-				name : "__toOut",
-				meta: [{name: ":dce", pos: here()}],
-				access: [AInline, APublic],
-				kind: FFun({
-					args: [],
-					ret : macro :String,
-					expr: macro {
-						$checkFail;
-						var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
-							+ " .ACTUAL_SPACE: " + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY)
-							+ ", ::baseAddr: " + $i{context} + "\n"];
-						$a{block};
-						return buf.join("");
-					}
-				}),
-				pos: here()
-			});
+		var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
+		var block:Array<Expr> = [];
+		for (k in all_fields.iterator()) {
+			var node = Reflect.field(attrs, k);
+			var _w = Ut.hexWidth(offset);
+			var _dx  = node.offset >= 0 ? "0x" + hex( node.offset, _w) : "-" + node.offset;
+			var _len = node.len * node.bytes;
+			var _end = node.offset >= 0 ? "0x" + hex(node.offset + _len, _w) : "" + (node.offset + _len);
+			block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
+		}
+		fields.push({
+			name : "__toOut",
+			meta: [{name: ":dce", pos: here()}],
+			access: [AInline, APublic],
+			kind: FFun({
+				args: [],
+				ret : macro :String,
+				expr: macro {
+					$checkFail;
+					var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
+						+ " .ACTUAL_SPACE: " + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY)
+						+ ", ::baseAddr: " + $i{context} + "\n"];
+					$a{block};
+					return buf.join("");
+				}
+			}),
+			pos: here()
+		});
 
 		}
 		return fields;
