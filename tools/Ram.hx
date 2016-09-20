@@ -108,7 +108,7 @@ class Ram{
 
 	static inline var himagic = 0x80808080;
 	static inline var lomagic = 0x01010101;
-	public static function strlen(ptr:Ptr):Int{
+	public static function strlen(ptr:Ptr):Int {
 		var i = 0;
 		//while ((Memory.getI32(ptr + i) - lomagic) & himagic != 0) i += 4;
 		while (Memory.getByte(ptr + i) != 0) i += 1;
@@ -229,12 +229,6 @@ class Ram{
 	#else
 		current.fill(dst, size, v);
 	#end
-	}
-
-	public static function isspace(dst: Ptr): Bool {
-		var c = Memory.getByte(dst);
-		return c == " ".code || c == "\t".code || c == "\n".code || c == "\r".code
-			|| c == 0x0b || c == 0x0c;  // 0x0b = \v, 0x0c = \f
 	}
 
 	public static inline function writeUTFBytes(dst:Ptr, str:String):Int{

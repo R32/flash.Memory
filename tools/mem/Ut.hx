@@ -54,6 +54,11 @@ class Ut{
 		}
 	}
 
+	public static inline function isspace(c: Int): Bool {
+		return c == " ".code || c == "\t".code || c == "\n".code || c == "\r".code
+			|| c == 0x0b || c == 0x0c;  // 0x0b = \v, 0x0c = \f
+	}
+
 	// xor for for macro build
 	public static function xxx(dst:haxe.io.Bytes, key:haxe.io.Bytes):Void{
 		var len = dst.length;
