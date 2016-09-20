@@ -13,11 +13,13 @@ class Ph{
 	static public function reverse(ptr:Ptr, len:Int):Void {
 		var left: Int = ptr;
 		var right:Int = left + len - 1;
-		var cc:Int;
+		var c:Int;
 		while (left < right) {
-			cc = Memory.getByte(left);
-			Memory.setByte(left++, Memory.getByte(right));
-			Memory.setByte(right--, cc);
+			c = Memory.getByte(left);
+			Memory.setByte(left, Memory.getByte(right));
+			Memory.setByte(right, c);
+		++left;
+		--right;
 		}
 	}
 

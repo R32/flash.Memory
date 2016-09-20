@@ -158,32 +158,37 @@ class Ram{
 	#end
 	}
 
-	/*
-	static function memcpy_pure(dst:Ptr, src:Ptr, size:Int):Void {
+	public static function memcpyPure(dst:Int, src:Int, size:Int):Void {
 		if (dst < src) {
 			while (size >= 4) {
 				Memory.setI32(dst, Memory.getI32(src));
-				dst += 4;
-				src += 4;
-				size -= 4;
+				dst  += 4;
+				src  += 4;
+			size -= 4;
 			}
-			while (0 != size--) {
-				Memory.setByte( dst++, Memory.getByte( src++ ));
+			while (size > 0) {
+				Memory.setByte(dst, Memory.getByte(src));
+				++dst;
+				++src;
+			--size;
 			}
-		} else {// 逆序复制
+		} else if(dst > src) { // reverse
 			dst += size;
 			src += size;
 			while (size >= 4 ) {
 				dst -= 4;
 				src -= 4;
-				size -= 4;
 				Memory.setI32(dst, Memory.getI32(src));
+			size -= 4;
 			}
-			while (0 < size--) {
-				Memory.setByte(--dst , Memory.getByte(--src));
+			while (size > 0) {
+				--dst;
+				--src;
+				Memory.setByte(dst , Memory.getByte(src));
+			--size;
 			}
 		}
-	}*/
+	}
 
 	static public function memcmp(ptr1: Ptr, ptr2: Ptr, len: Int):Int {
 	#if (cpp && !keep_bytes)
@@ -224,6 +229,12 @@ class Ram{
 	#else
 		current.fill(dst, size, v);
 	#end
+	}
+
+	public static function isspace(dst: Ptr): Bool {
+		var c = Memory.getByte(dst);
+		return c == " ".code || c == "\t".code || c == "\n".code || c == "\r".code
+			|| c == 0x0b || c == 0x0c;  // 0x0b = \v, 0x0c = \f
 	}
 
 	public static inline function writeUTFBytes(dst:Ptr, str:String):Int{

@@ -417,7 +417,7 @@ class StructBuild{
 		if (!all_in_map.exists("free"))
 			fields.push({
 				name : "free",
-				doc: "to release memory",
+				doc: ' .free($context + $offset_first);',
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
