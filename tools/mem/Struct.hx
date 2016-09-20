@@ -16,24 +16,25 @@ typedef Param = {
 };
 #else
 /**
-* in bytes
+Supported Types:
 
 ```
-<bytes=4>mem.Ptr            @idx(?offset=0)
-<bytes=1>Bool:              @idx(?offset)
-<bytes=1>Enum               @idx(?offset)
-<bytes=1>String             @idx(length, ?offset)
-Int: (1), 2, 4              @idx(?bytes, ?offset)
-Float: (4), [8|2]           @idx(?bytes, ?offset)
-haxe.EnumFlags: (1), 2, 4   @idx(?bytes, ?offset)
-Array<Int|Float>            @idx(length, ?bytes, ?offset)
+mem.Ptr                     @idx(?offset)         [bytes = 4, default offset = 0]
+  - or "abstruct Other(Ptr){}"
+Bool:                       @idx(?offset)         [bytes = 1]
+Enum                        @idx(?offset)         [bytes = 1]
+String                      @idx(length, ?offset) [bytes = length]
+Int: (1), 2, 4              @idx(?bytes, ?offset) [default bytes = 1]
+Float: (4), 8               @idx(?bytes, ?offset) [default bytes = 4]
+haxe.EnumFlags: (1), 2, 4   @idx(?bytes, ?offset) [default bytes = 1]
+Array<Int|Float>            @idx(length, ?bytes, ?offset) [space = length * bytes]
  - Int: (1), 2, 4
- - Float: if(bytes == 2 or 8) then 8 else 4
-AU8                         @idx(length, ?offset)
-AU16                        ......
-AI32
-AF4
-AF8
+ - Float: (4), 8
+AU8                         @idx(length, ?offset) [space = length * 1 bytes]
+AU16                        @idx(length, ?offset) [space = length * 2 bytes]
+AI32                        @idx(length, ?offset) [space = length * 4 bytes]
+AF4                         @idx(length, ?offset) [space = length * 4 bytes]
+AF8                         @idx(length, ?offset) [space = length * 8 bytes]
 ```
 */
 @:autoBuild(mem.StructBuild.make())

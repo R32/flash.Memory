@@ -23,13 +23,13 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 #end
 @:dce abstract Block(Ptr) to Ptr {
 	@idx(4) var size:Int;
-	@idx(0, 4) var prev:Block;
-	@idx(0, 4) var next:Block;
-	@idx var is_free:Bool;			// if true, will be remove from chain
+	@idx(0) var prev:Block;    // idx(0) is a offset
+	@idx(0) var next:Block;
+	@idx(0) var is_free:Bool;  // if true, will be remove from chain
 	@idx(1) var unk_1:Int;
 	@idx(1) var unk_2:Int;
 	@idx(1) var unk_3:Int;
-	@idx(4, -4) var info:Int;		// union with is_free, unk_1, unk_2, unk_3
+	@idx(4, -4) var info:Int;  // union with is_free, unk_1, unk_2, unk_3
 
 	public var entry(get, never):Ptr;
 	inline function get_entry():Ptr return this + CAPACITY;
@@ -69,7 +69,7 @@ class Malloc {
 	#end
 
 	public static function getUsed():Int {
-		return bottom == NUL ? Block.CAPACITY : bottom.entry + bottom.size;
+		return bottom == NUL ? 16 : bottom.entry + bottom.size; // Reserve 16 bytes
 	}
 
 	static function clear(){
