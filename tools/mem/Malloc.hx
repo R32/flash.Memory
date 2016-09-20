@@ -37,7 +37,7 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 	public var len(get, never):Int;
 	inline function get_len():Int return size - CAPACITY;
 
-	inline public function new(address:Ptr, length:Int, clear:Bool){
+	inline public function new(address:Ptr, length:Int, clear:Bool) {
 		this = address;
 		Ram.memset(this, 0, clear ? length + CAPACITY : CAPACITY);
 		size = CAPACITY + length;	// Note: must after memset
@@ -72,7 +72,7 @@ class Malloc {
 		return bottom == NUL ? 16 : bottom.entry + bottom.size; // Reserve 16 bytes
 	}
 
-	static function clear(){
+	static function clear() {
 		top = cast NUL;
 		bottom = cast NUL;
 		frag_count = 0;
@@ -80,19 +80,19 @@ class Malloc {
 	}
 
 	// add element at the end of this chain, Only for New Empty Block
-	static function add(b:Block):Void{
-		if (top == NUL)
+	static function add(b:Block):Void {
+		if (top == NUL) {
 			top = b;
-		else{
+		} else {
 			bottom.next = b;
 			b.prev = bottom;
 		}
 		bottom = b;
-		length++;
+		++ length;
 	}
 
 	// b after a
-	static function insertAfter(b:Block, a:Block):Void{
+	static function insertAfter(b:Block, a:Block):Void {
 		var cc = a.next;
 		a.next = b;
 		b.prev = a;
@@ -101,19 +101,22 @@ class Malloc {
 			bottom = b;
 		else
 			cc.prev = b;
-		length++;
+		++ length;
 	}
 
 	static function indexOf(p:Ptr):Block {
-		if (p > NUL) {
+		if (p - Block.CAPACITY > NUL) {
 			var b:Block = cast p - Block.CAPACITY;
-			if (b > NUL && (b == bottom || b == top || (b.prev.next == b && b.next.prev == b)))
-				return b;
+			//if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b))
+			//	return b;
+			if (b == bottom || b == top) return b;
+			var prev = b.prev, next = b.next;      // for Too many local variables
+			if (prev.next == b && next.prev == b) return b;
 		}
 		return cast NUL;
 	}
 
-	public static function make(need:Int, zero:Bool):Ptr{
+	public static function make(need:Int, zero:Bool):Ptr {
 		need = Ut.padmul(need, LB);
 
 		//if (frag_count > 0) mergeFragment();
@@ -122,16 +125,16 @@ class Malloc {
 		var ret:Block = cast NUL;
 		var capacity = 0;
 		var cc:Block = top;
-		while (tmp_frag_count > 0 && cc != NUL){
+		while (tmp_frag_count > 0 && cc != NUL) {
 			if (cc.is_free) {
 				capacity = cc.len;
-				if (capacity == need){
+				if (capacity == need) {
 					ret = cc;
 					break;
-				}else if (ret == NUL && capacity > need){
+				} else if (ret == NUL && capacity > need) {
 					ret = cc;
 				}
-				tmp_frag_count--;
+				-- tmp_frag_count;
 			}
 			cc = cc.next;
 		}
@@ -151,27 +154,27 @@ class Malloc {
 				newly.is_free = true;
 				insertAfter(newly, ret);
 			}else{
-				frag_count--;
+				-- frag_count;
 			}
 			ret.is_free = false;
 		}
 		return ret.entry;
 	}
 
-	public static inline function free(p:Ptr):Void freeBlock(indexOf(p));
+	public static inline function free(p:Ptr) freeBlock(indexOf(p));
 
-	static function freeBlock(prev:Block):Void{
+	static function freeBlock(prev:Block):Void {
 		if (prev == NUL || bottom == NUL || prev.is_free) return;
 
 		prev.is_free = true;
 
-		frag_count++;
+		++ frag_count;
 
-		while (bottom == prev && bottom.is_free){
+		while (bottom == prev && bottom.is_free) {
 			prev = bottom.prev;
-			length--;
-			frag_count--;
-			if (prev == NUL){
+			-- length;
+			-- frag_count;
+			if (prev == NUL) {
 				top = bottom = cast NUL;
 				break;
 			}
@@ -179,38 +182,38 @@ class Malloc {
 			bottom = prev;
 		}
 	}
-/*
-	static function mergeFragment(){
+
+	static function mergeFragment() {
 		var next:Block = cast NUL;
 		var head:Block = top;
-		while (head != NUL && frag_count > 0){		// if head == null, Is empty
-			if(head.is_free){
+		while (head != NUL && frag_count > 0) {		// if head == null, Is empty
+			if (head.is_free) {
 				next = head.next;
-				if (next != NUL && next.is_free){	// if next == null, next is BOTTOM
+				if (next != NUL && next.is_free) {	// if next == null, next is BOTTOM
 					head.next = next.next;			// Note: next.next
-					if (head.next == NUL){
+					if (head.next == NUL) {
 						bottom = head;
-					}else{
+					} else {
 						head.next.prev = head;
 					}
 					head.size += next.size;
-					frag_count--;
-					length--;
+					-- frag_count;
+					-- length;
 					continue;						// continue combine into this Block
 				}
 			}
 			head = head.next;
 		}
 	}
-*/
-	// ONLY FOR DEBUG
-	static function iterator():BlockIterator{
+
+	// FOR DEBUG
+	static function iterator():BlockIterator {
 		return new BlockIterator(top);
 	}
 }
 
 
-private class BlockIterator{
+private class BlockIterator {
 
 	var head:Block;
 
@@ -218,7 +221,7 @@ private class BlockIterator{
 
 	public inline function hasNext():Bool return head != Malloc.NUL;
 
-	public inline function next():Block{
+	public inline function next():Block {
 		var ret = head;
 		head = head.next;
 		return ret;
