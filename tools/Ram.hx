@@ -231,7 +231,7 @@ class Ram{
 	#end
 	}
 
-	public static inline function writeUTFBytes(dst:Ptr, str:String):Int{
+	public static inline function writeUTFBytes(dst:Ptr, str:String):Int {
 	#if flash
 		current.position = dst;
 		current.writeUTFBytes(str);
@@ -300,8 +300,8 @@ class Ram{
 
 	public static inline function mallocFromString(str:String):WString return WStrImpl.fromString(str);
 
-	public static function mallocFromBytes(b:Bytes): Ptr {
-		var ret = Malloc.make(b.length, false);
+	public static function mallocFromBytes(b:Bytes):mem.struct.FBlock {
+		var ret = new mem.struct.FBlock(b.length, 128);
 	#if flash
 		writeBytes(ret, b.length, b.getData());
 	#else
@@ -310,7 +310,7 @@ class Ram{
 		return ret;
 	}
 
-	public static inline function readUTFBytes(dst:Ptr, len:Int):String{
+	public static inline function readUTFBytes(dst:Ptr, len:Int):String {
 	#if flash
 		current.position = dst;
 		return current.readUTFBytes(len);
@@ -323,7 +323,7 @@ class Ram{
 
 	// public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
 	// below only for test
-	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL): Ptr{
+	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL):Ptr {
 		if ((start:Int) < 0) return Malloc.NUL;
 		if (end == Malloc.NUL) end = cast Malloc.getUsed();
 		var wstr = mallocFromString(str);
@@ -332,7 +332,7 @@ class Ram{
 		return ptr;
 	}
 
-	public static function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr{
+	public static function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr {
 		var ptr = Malloc.NUL;
 		end -= len;
 		while(end >= start){
