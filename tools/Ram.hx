@@ -87,7 +87,7 @@ class Ram{
 
 
 	// in bytes
-	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero);
+	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero, 8);
 
 	public static inline function free(ptr:Ptr) Malloc.free(ptr);
 

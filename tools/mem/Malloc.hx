@@ -110,8 +110,10 @@ class Malloc {
 		return cast NUL;
 	}
 
-	public static function make(entrySize:Int, zero:Bool):Ptr {
-		entrySize = Ut.padmul(entrySize, LB);
+	public static function make(entrySize:Int, zero:Bool, pb:Int):Ptr {
+		if (pb != LB && (((pb & LB - 1) != 0)) || pb < LB) pb = LB;
+
+		entrySize = Ut.padmul(entrySize, pb);
 
 		//if (frag_count > 0) mergeFragment();
 
