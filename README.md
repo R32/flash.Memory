@@ -40,7 +40,7 @@ flash.Memory
   offset: 0x01 - 0x02, bytes: 1, bigEndian: false
   ```
 
-* Providing some crypt method using flash.Memory, Including Md5, Sha1, Sha256, Base64, Crc32, AES128(only cbc/ecb)
+* Providing some crypto method using flash.Memory, Including Md5, Sha1, Sha256, Base64, Crc32, AES128(only cbc/ecb)
 
   haxe -cp tools -main Main -swf test.swf -swf-header 800:500:24:0 -resource some.txt
 
@@ -75,20 +75,19 @@ flash.Memory
           trace(Ram.memcmp(rf, b64, b64.length) == 0);    // memcmp(ptr1, ptr2, length);
 
           // MD5
-          var md5_out = Ram.malloc(16);                   // malloc
-          Md5.make(rf, file.length, md5_out);
-          Hex.trace(md5_out, 16, true, "Md5: ");
-
-          // AES CBC
-          var key = AStrImpl.fromString("some password"); // copy ascii string to ram.
+          var key = Ram.malloc(16);                       // malloc
+          var str = AStrImpl.fromString("some passwd");   // copy ascii string to ram.
                                                           // if UTF, you should use WString or Ram.mallocFromString
+          Md5.make(str, str.length, key);
+          Hex.trace(key, 16, true, "Md5: ");
 
+          // AES CBC, KEY must be 16 bytes,
           // in encrypt that allow input == output
           AES128.cbcEncryptBuff(rf, key, rf, file.length, cast 0);   // init IV = 0;
           // decrypt, Suffix "IO" means input == output,
           AES128.cbcDecryptBuffIO(rf, key, file.length, cast 0);
 
-          trace(Ram.readUTFBytes(rf, file.length));       // read string from ram
+          trace(Ram.readUTFBytes(rf, 32));       // read string from ram
       }
   }
   ```
