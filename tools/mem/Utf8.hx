@@ -40,7 +40,7 @@ class Utf8 {
 
 		var data = Mt.utf8DataTo32(); // I32, 100 * 4
 
-		utf8d_table = cast Malloc.make(400, false);
+		utf8d_table = cast Ram.malloc(400, false);
 
 		var u32:AI32 = cast utf8d_table;
 

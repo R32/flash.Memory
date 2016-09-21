@@ -48,7 +48,7 @@ AF8                         @idx(length, ?offset) [space = length * 8 bytes]
 	public var addr(default, null):mem.Ptr;
 
 	public inline function new(){
-		addr = mem.Malloc.make(CAPACITY, true);
+		addr = Ram.malloc(CAPACITY, true);
 	}
 
 	public inline function free(p:Ptr){
@@ -405,7 +405,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						$i{context} = untyped mem.Malloc.make(CAPACITY, true) - $v{offset_first}; // offset_first <= 0
+						$i{context} = untyped Ram.malloc(CAPACITY, true) - $v{offset_first}; // offset_first <= 0
 					}
 				}),
 				pos: here()

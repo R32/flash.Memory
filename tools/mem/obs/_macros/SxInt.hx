@@ -116,7 +116,7 @@ import mem.Ut;
 				expr: macro {
 					if (@:privateAccess Ram.current == null) throw "Ram.current is null";
 					if (sa != mem.Malloc.NUL) return;
-					sa = Malloc.make($v { SX_MAX }, false);
+					sa = Ram.malloc($v { SX_MAX }, false);
 					var p:Int = cast sa;
 					$a{codes};
 					x_0 = x_n(Memory.getI32(p + $v{cx[4 + 0]}), Memory.getI32(p + $v{cx[8 + 0]}));

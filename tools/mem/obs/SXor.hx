@@ -18,7 +18,7 @@ class SXor {
 	static var  sa: Ptr = Malloc.NUL;
 
 	static function x_n(low:Int, high:Int):AU8 {
-		var r:AU8 = cast mem.Malloc.make(8, false);
+		var r:AU8 = cast Ram.malloc(8, false);
 	#if !neko
 		setI32(r, low);
 		setI32(r + 4, high);

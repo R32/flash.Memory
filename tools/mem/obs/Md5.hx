@@ -35,7 +35,7 @@ import mem.obs._macros.Md5Macros.*;
 	@idx(8) var msglen:AU8;
 	@idx(64) var padding: AU8; // const
 	public inline function new() {
-		this = Malloc.make(CAPACITY, true);
+		this = Ram.malloc(CAPACITY, true);
 		padding[0] = 0x80;
 	}
 

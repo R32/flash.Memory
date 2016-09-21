@@ -18,7 +18,7 @@ import mem.obs._macros.Sha1Macros.*;
 	@idx(1)  var x0:AU8;
 
 	public inline function new():Void {
-		this = Malloc.make(CAPACITY, false);
+		this = Ram.malloc(CAPACITY, false);
 		x80[0] = 0x80;
 		x0[0] = 0;
 	}
