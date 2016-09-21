@@ -4,9 +4,11 @@ import mem.obs.SXor;
 import mem.obs.Hex;
 import mem.Ptr;
 import mem.Ut;
+import mem.Ut.toFixed;
 import mem.Ph;
 import mem.obs.Md5;
 import mem.obs.Sha1;
+import mem.obs.Sha256;
 import mem.obs.AES128;
 import mem.struct.WString;
 import mem.struct.AString;
@@ -17,6 +19,7 @@ import mem.cpp.BytesData;
 import mem.cpp.NRam;
 #end
 
+
 class Test {
 	public static function main(){
 		Ram.select(Ram.create());
@@ -26,14 +29,14 @@ class Test {
 		Utf8.init();
 		Md5.init();
 		Sha1.init();
+		Sha256.init();
 		AES128.init();
-		testStringCopy();
-		test_utf8();
-		test_cppblock();
 		ASS.test();
+		test_utf8();
 		test_md5();
 		test_sha1();
 		test_aes128();
+		test_cppblock();
 		test_xor_domainLock();
 	}
 
@@ -87,36 +90,42 @@ class Test {
 		Hex.trace(out + Ut.padmul(file.length, 16) - 16, 16, true,
 			'file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec, end of file 16: ');
 
-		last = haxe.Timer.stamp();
-		AES128.cbcDecryptBuffIO(org, key.addr, file.length, cast 0);
-		sec = haxe.Timer.stamp() - last;
-		Hex.trace(org + Ut.padmul(file.length, 16) - 16, 16, true,
-			'file: ${file.length/1024}Kb, DEC(output == input) sec: $sec, end of file 16: ');
+		//last = haxe.Timer.stamp();
+		//AES128.cbcDecryptBuffIO(org, key.addr, file.length, cast 0);
+		//sec = haxe.Timer.stamp() - last;
+		//Hex.trace(org + Ut.padmul(file.length, 16) - 16, 16, true,
+		//	'file: ${file.length/1024}Kb, DEC(output == input) sec: $sec, end of file 16: ');
 	}
 
 	static function test_sha1() {
 		trace("----------- SHA1 ------------");
-		var output = Ram.malloc(20, true);
-		var as = AStrImpl.fromString("helloworld");
-		mem.obs.Sha1.make(as.addr, as.length, output);
-		Hex.trace(output, 20, true, "SHA1 mem : ");
-		trace("SHA1 std :"  + haxe.crypto.Sha1.encode(as.toString()));
-
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
 
+		var out0 = Ram.malloc(20, true);
 		var now = haxe.Timer.stamp();
-		for(i in 0...5) Sha1.make(filePtr, file.length, output);
+		for(i in 0...3) Sha1.make(filePtr, file.length, out0);
 		var time0 = haxe.Timer.stamp() - now;
 
-		var hout:haxe.io.Bytes = null;
+		var out1:haxe.io.Bytes = null;
 		now = haxe.Timer.stamp();
-		for(i in 0...5) hout = haxe.crypto.Sha1.make(file);
+		for(i in 0...3) out1 = haxe.crypto.Sha1.make(file);
 		var time1 = haxe.Timer.stamp() - now;
+		Hex.trace(out0, 20, true, "_SHA1(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash:");
+		trace("SHA1(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
 
-		trace('filesize: ${file.length/1024}Kb *** vs *** std: $time1, mem: $time0');
-		Hex.trace(output, 20, true, "SHA1 mem : ");
-		trace("SHA1 std : "  + hout.toHex());
+
+		trace("----------- SHA256 ------------");
+		now = haxe.Timer.stamp();
+		var out00 = Ram.malloc(32);
+		var out11:haxe.io.Bytes = null;
+		for (i in 0...3) Sha256.make(filePtr, file.length, out00);
+		var time00 = haxe.Timer.stamp() - now;
+		now = haxe.Timer.stamp();
+		for (i in 0...3) out11 = haxe.crypto.Sha256.make(file);
+		var time01 = haxe.Timer.stamp() - now;
+		Hex.trace(out00, 32, true, "SHA256(loop * 3) mem sec: " + toFixed(time00, 5) + ", hash:");
+		trace("SHA256(loop * 3) std sec: " + toFixed(time01, 5)  +", hash: "  + out11.toHex());
 	}
 
 	static function test_cppblock():Void {
@@ -154,49 +163,25 @@ class Test {
 
 	public static function test_md5():Void {
 		trace("----------- MD5 ------------");
-		var output = Ram.malloc(16, true);
-
-		var as = AStrImpl.fromString("hello world");
-		Md5.make(as.addr, as.length, output);
-		Hex.trace(output, 16, true, "MD5 mem: ");
-		trace("MD5 std: " + haxe.crypto.Md5.encode(as.toString()));
-
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
+		trace('******* filesize: ${file.length/1024}Kb *******');
 
+		var out0 = Ram.malloc(16, true);
 		var now = haxe.Timer.stamp();
-		Md5.make(filePtr, file.length, output);
+		for(i in 0...3) Md5.make(filePtr, file.length, out0);
 		var time0 = haxe.Timer.stamp() - now;
 
-		var hout:haxe.io.Bytes = null;
+		var out1:haxe.io.Bytes = null;
 		now = haxe.Timer.stamp();
-		hout = haxe.crypto.Md5.make(file);
+		for(i in 0...3) out1 = haxe.crypto.Md5.make(file);
 		var time1 = haxe.Timer.stamp() - now;
-
-		trace('filesize: ${file.length/1024}Kb *** vs *** std : $time1, mem: $time0');
-		Hex.trace(output, 16, true, "mem: ");
-		trace("MD5 std: " + hout.toHex());
+		Hex.trace(out0, 16, true, "_MD5(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash:");
+		trace("MD5(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
 	}
 
-	public static function testStringCopy():Void {
-		var str = "hello world! 你好世界";
-		var byte = haxe.io.Bytes.ofString(str);
-		var sa = Ram.mallocFromString(str);
-		#if flash byte.getData().position = 0; #end
-		var sb:Ptr = Ram.mallocFromBytes(byte);
-
-
-		trace("copy str: " + (sa.toString() == str));
-		var sc = haxe.io.Bytes.alloc(byte.length);
-		#if flash
-		Ram.readBytes(sb, byte.length, sc.getData());
-		#else
-		Ram.readBytes(sb, byte.length, sc);
-		#end
-		trace("copy byte: " + (byte.compare(sc) == 0));
-	}
 	public static function test_utf8() {
-		trace("values of utf8d...");
+		trace("----------- Utf8 ------------");
 		/*
 		var utf8d = @:privateAccess Utf8.utf8d;
 		var t = [];
@@ -238,7 +223,8 @@ class Test {
 		trace(a.join(" "));
 	}
 
-	public static function test_xor_domainLock(){
+	public static function test_xor_domainLock() {
+		trace("----------- Simple XOR -----------");
 		var sa:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
 		var xor = mem.obs.Xor.fromHexString(haxe.crypto.Md5.encode("hello"));
 		xor.run(sa.addr, sa.length, sa.addr);
@@ -295,7 +281,7 @@ class ASS implements mem.Struct{
 		&& ASS.__I32_LEN == len
 		&& ASS.__F4_LEN == len
 		&& ASS.__F8_LEN == len
-		)) trace("************************ struct done.");
+		)) trace("----------- struct done. ------------");
 		else throw "struct";
 	}
 }
