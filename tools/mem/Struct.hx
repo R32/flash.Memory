@@ -449,6 +449,10 @@ class StructBuild{
 			var _end = node.offset >= 0 ? "0x" + hex(node.offset + _len, _w) : "" + (node.offset + _len);
 			block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 		}
+		var clsname = abs_type == null ? cls.name : abs_type.name;
+		var actual_space = clsname == "Block"
+			? macro ""
+			: macro ". ACTUAL_SPACE" + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY);
 		fields.push({
 			name : "__toOut",
 			meta: [{name: ":dce", pos: here()}],
@@ -458,9 +462,8 @@ class StructBuild{
 				ret : macro :String,
 				expr: macro {
 					$checkFail;
-					var buf = ["--- " + $v{abs_type == null ? cls.name : abs_type.name } + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
-						+ " .ACTUAL_SPACE: " + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY)
-						+ ", ::baseAddr: " + $i{context} + "\n"];
+					var buf = ["--- " + $v{clsname} + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
+						+ $e{actual_space} + ", ::baseAddr: " + $i{context} + "\n"];
 					$a{block};
 					return buf.join("");
 				}
