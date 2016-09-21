@@ -22,14 +22,12 @@ offset: 0x0C - 0x10, bytes: 4, info: 0
 @:build(mem.Struct.StructBuild.make())
 #end
 @:dce abstract Block(Ptr) to Ptr {
-	@idx(4) var size:Int;
-	@idx(0) var prev:Block;    // idx(0) is a offset
-	@idx(0) var next:Block;
-	@idx(0) var is_free:Bool;  // if true, will be remove from chain
-	@idx(1) var unk_1:Int;
-	@idx(1) var unk_2:Int;
-	@idx(1) var unk_3:Int;
-	@idx(4, -4) var info:Int;  // union with is_free, unk_1, unk_2, unk_3
+	@idx(2) var zero: Int;      // 2 bytes, always 0
+	@idx(0) var is_free: Bool;  // 1 bytes, if true, will be remove from chain
+	@idx(1) var unknown: Int;   // 1 bytes
+	@idx(4) var size: Int;      // 4 bytes,
+	@idx(0) var prev: Block;    // 4 bytes, Pointer to prev Block, idx(0) is a offset
+	@idx(0) var next: Block;    // 4 bytes
 
 	public var entry(get, never):Ptr;
 	inline function get_entry():Ptr return this + CAPACITY;
