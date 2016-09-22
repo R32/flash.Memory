@@ -135,6 +135,7 @@ class StructBuild{
 
 		for (f in fields) {
 			var is_array = false;
+			var unsafe_cast = false;
 			metaParams = null;
 			params = null;
 			if(f.meta != null)
@@ -163,12 +164,21 @@ class StructBuild{
 				var ts = "";
 				var exprs = switch (t) {
 					case TAbstract(a, _):
+						if (a.get().meta.has(":enum"))
+							switch (Context.followWithAbstracts(t)) {
+							case TAbstract(follow_a , _):
+								unsafe_cast = true;
+								a = follow_a;
+							case _:
+							}
+
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
+						var expr_value = unsafe_cast == false ? (macro v) : (macro cast v); // argument name are "v"
 						switch (ts) {
 						case "Bool":
 							offset += params.dx;
-							[macro Memory.getByte($i{context} + $v{offset}) != 0, macro Memory.setByte($i{context} + $v{offset}, v ? 1 : 0)];
+							[macro Memory.getByte($i{context} + $v{offset}) != 0, macro Memory.setByte($i{context} + $v{offset}, $expr_value ? 1 : 0)];
 						case "Int":
 							offset += params.dx;
 							var sget = "getByte", sset = "setByte";
@@ -177,7 +187,7 @@ class StructBuild{
 							case 4: sget = "getI32"; sset = "setI32";
 							default: params.width = 1;
 							}
-							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
+							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, $expr_value))];
 						case "Float":
 							offset += params.dx;
 							var sget = "getFloat", sset = "setFloat";
@@ -187,7 +197,7 @@ class StructBuild{
 							}else{
 								params.width = 4;
 							}
-							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, v))];
+							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, $expr_value))];
 						case "haxe.EnumFlags":
 							offset += params.dx;
 							switch(arrType[0]){	// ComplexType
@@ -209,17 +219,20 @@ class StructBuild{
 							}
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8":
 							is_array = true;
+							unsafe_cast = true;
 							offset += params.dx;
-							[(macro (cast $i{ context } + $v{ offset })), null]; // null is never
+							[(macro ($i{ context } + $v{ offset })), null]; // null is never
 						case "mem.Ptr":
+							unsafe_cast = true;
 							offset += params.dx;
-							[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
+							[macro (Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset}, $expr_value))];
 						default:
 							ts = TypeTools.toString(a.get().type);
 							if (abs_type != null && ts == "mem.Ptr") {  // for abstruct Other(Ptr) {}
+								unsafe_cast = true;
 								params = parseMeta(metaParams, ts);
 								offset += params.dx;
-								[macro (cast Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset},cast v))];
+								[macro (Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset}, $expr_value))];
 							} else {
 								null;
 							}
@@ -281,9 +294,9 @@ class StructBuild{
 				}
 
 				if (exprs == null) {
-					Context.warning("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+					Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 				} else {
-					var getter = exprs[0];
+					var getter = unsafe_cast == false ? exprs[0] : {expr: ECast(exprs[0], null), pos: f.pos};
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
 					var setter_name = "set_" + f.name;
