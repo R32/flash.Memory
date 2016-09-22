@@ -337,7 +337,7 @@ class StructBuild{
 						access: [AStatic, AInline, APublic],
 						doc: " == " + $v{offset},
 						kind: FVar(macro :Int, macro $v{offset}),
-						pos: here()
+						pos: f.pos
 					});
 
 					fields.push({
@@ -345,7 +345,7 @@ class StructBuild{
 						doc: " == " + $v{is_array ? params.nums : params.width},
 						access: [AStatic, AInline, APublic],
 						kind: FVar(macro :Int, macro $v{is_array ? params.nums : params.width}),
-						pos: here()
+						pos: f.pos
 					});
 
 					if (offset_first_ready == false) {
@@ -360,7 +360,7 @@ class StructBuild{
 							access: [AStatic, AInline, APublic],
 							doc: " == " + $v{params.width * params.nums},
 							kind: FVar(macro :Int, macro $v{params.width * params.nums}),
-							pos: here()
+							pos: f.pos
 						});
 
 						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width, len: params.nums});
@@ -383,7 +383,7 @@ class StructBuild{
 			doc:  "== " + $v{offset - offset_first},
 			access: [AStatic, AInline, APublic],
 			kind: FVar(macro :Int, macro $v{offset - offset_first}),
-			pos: here()
+			pos: cls.pos
 		});
 
 		fields.push({
@@ -391,12 +391,12 @@ class StructBuild{
 			doc:  "== " + $v{offset_first},
 			access: [AStatic, AInline, APublic],
 			kind: FVar(macro :Int, macro $v{offset_first}),
-			pos: here()
+			pos: cls.pos
 		});
 
 		fields.push({
 			name : "ALL_FIELDS",
-			meta: [{name: ":dce", pos: here()}],
+			meta: [{name: ":dce", pos: cls.pos}],
 			doc:  "== " + $v{all_fields.length},
 			access: [AStatic, AInline, APublic],
 			kind: FFun({
@@ -406,7 +406,7 @@ class StructBuild{
 						return $v{all_fields}.iterator();
 					}
 				}),
-			pos: here()
+			pos: cls.pos
 		});
 
 		var constructor = all_in_map.get(abs_type == null ? "new" : "_new");
@@ -418,7 +418,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						$i{context} = untyped Ram.malloc(CAPACITY, true) - $v{offset_first}; // offset_first <= 0
+						mallocAbind(CAPACITY, true);
 					}
 				}),
 				pos: here()
@@ -426,6 +426,38 @@ class StructBuild{
 		}else if (abs_type != null && constructor.access.indexOf(AInline) == -1){
 			Context.warning("Suggestion: add **inline** for " + cls.name, constructor.pos);
 		}
+
+		if (!all_in_map.exists("mallocAbind")) // malloc and bind Context
+			fields.push({
+				name : "mallocAbind",
+				meta: [{name: ":dce", pos: cls.pos}],
+				doc: ' help for custom constructor',
+				access: [AInline, APrivate],
+				kind: FFun({
+				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
+					ret : macro :Void,
+					expr: macro {
+						$i{context} = cast (Ram.malloc(entry_size, zero) - $v{offset_first}); // offset_first <= 0
+					}
+				}),
+				pos: here()
+			});
+
+		if (!all_in_map.exists("realEntry"))
+			fields.push({
+				name : "realEntry",
+				doc: ' for "Malloc.calcEntrySize(entry)", or "Ram.free(entry)"',
+				access: [AInline, APublic],
+				kind: FFun({
+					args: [],
+					ret : macro :mem.Ptr,
+					expr: macro {
+						return $i{context} + $v{offset_first};
+					}
+				}),
+				pos: here()
+			});
+
 
 		if (!all_in_map.exists("free"))
 			fields.push({
@@ -436,7 +468,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						mem.Malloc.free($i{context} + $v{offset_first});
+						mem.Malloc.free(realEntry());
 						$i{context} = cast mem.Malloc.NUL;
 					}
 				}),

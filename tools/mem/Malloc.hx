@@ -66,6 +66,14 @@ class Malloc {
 		return bottom == NUL ? 16 : bottom.entry + bottom.size; // Reserve 16 bytes
 	}
 
+	// e.g: .calcEntrySize( someStruct.realEntry() )
+	public static function calcEntrySize(entry: Ptr): Int {
+		var b = indexOf(entry);
+		if (b != NUL)
+			return b.entrySize;
+		return 0;
+	}
+
 	static function clear() {
 		top = cast NUL;
 		bottom = cast NUL;
@@ -98,9 +106,9 @@ class Malloc {
 		++ length;
 	}
 
-	static function indexOf(p:Ptr):Block {
-		if (p - Block.CAPACITY > NUL) {
-			var b:Block = cast p - Block.CAPACITY;
+	static function indexOf(entry:Ptr):Block {
+		if (entry - Block.CAPACITY > NUL) {
+			var b:Block = cast entry - Block.CAPACITY;
 			//if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b))
 			//	return b;
 			if (b == bottom || b == top) return b;
