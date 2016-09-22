@@ -5,6 +5,34 @@ some macro or inline values
 */
 @:dce class Mt {
 
+	// ref by Ph.sortU8, or Ph.sortI32
+	// https://github.com/ParkinWu/FastSort
+	macro static public function sort(rec) return macro @:mergeBlock {
+
+		if (left > right) return;
+
+		var i = left, j = right;
+
+		var pivot = a[left];
+
+		while (i != j) {
+			while (a[j] >= pivot && i < j) --j;
+
+			while (a[i] <= pivot && i < j) ++i;
+
+			if (i < j) {
+				var t = a[i];
+				a[i]  = a[j];
+				a[j]  = t;
+			}
+		}
+		a[left] = a[i];
+		a[i] = pivot;
+		$rec(left, i - 1, a);
+		$rec(i + 1, right, a);
+	};
+
+	// for mem.Utf8
 	macro static public function utf8DataTo32() {
 		var len = utf8_init_data.length;
 		var byte = haxe.io.Bytes.alloc(len);

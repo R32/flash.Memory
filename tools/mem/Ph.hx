@@ -71,4 +71,14 @@ class Ph{
 		return buf.toString();
 	#end
 	}
+
+	// fast sort
+	public static function sortU8(left:Int, right:Int, a:AU8):Void {
+		Mt.sort(sortU8);
+	}
+
+	public static function sortI32(left:Int, right:Int, a:AI32):Void {
+		Mt.sort(sortI32);
+	}
+
 }
