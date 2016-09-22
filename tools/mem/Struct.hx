@@ -462,7 +462,7 @@ class StructBuild{
 		if (!all_in_map.exists("free"))
 			fields.push({
 				name : "free",
-				doc: ' .free($context + $offset_first);',
+				doc: ' == Ram.free( this.realEntry() );',
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],

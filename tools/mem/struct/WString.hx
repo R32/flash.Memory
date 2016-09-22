@@ -7,14 +7,16 @@ import mem.struct.Comm.*;
 abstract WString(Ptr) to Ptr {
 
 	public var length(get, never): Int;
-	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
+	private inline function get_length() return Memory.getI32(realEntry());
 
 	public var addr(get, never): Ptr;
 	private inline function get_addr() return this;
 
 	private inline function new(addr: Ptr) this = cast addr;
 
-	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
+	public inline function realEntry(): Ptr { return this - BY_LEN; }
+
+	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
 
 	public inline function toString(): String return Ram.readUTFBytes(this, length);
 }

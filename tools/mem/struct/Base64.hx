@@ -7,11 +7,13 @@ import mem.struct.Comm.*;
 @:dce abstract Base64String(Ptr) to Ptr {
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
+	private inline function get_length() return Memory.getI32(realEntry());
 
 	private inline function new(addr: Ptr) this = cast addr;
 
-	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
+	public inline function realEntry(): Ptr { return this - BY_LEN; }
+
+	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
@@ -22,11 +24,13 @@ import mem.struct.Comm.*;
 
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32((this:Int) - BY_LEN);
+	private inline function get_length() return Memory.getI32(realEntry());
 
 	private inline function new(addr:Ptr) this = cast addr;
 
-	public inline function free(): Void { Ram.free(cast ((this:Int) - BY_LEN)); this = NUL; }
+	public inline function realEntry(): Ptr { return this - BY_LEN; }
+
+	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
