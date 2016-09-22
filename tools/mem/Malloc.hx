@@ -206,6 +206,22 @@ class Malloc {
 	static function iterator():BlockIterator {
 		return new BlockIterator(top);
 	}
+
+	// simple check for "Subscript out of range"
+	public static function check():Bool {
+		var cur = top;
+		var prev: Block;
+		while (cur != NUL) {
+			if (Memory.getUI16(cur) != 0) return false; // zero
+			if (cur.next == NUL) break;
+
+			prev = cur;
+			cur = cur.next;
+			if (cur.prev != prev) return false;
+		}
+		if (cur != bottom) return false;
+		return true;
+	}
 }
 
 
