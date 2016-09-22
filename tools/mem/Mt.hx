@@ -1,5 +1,7 @@
 package mem;
 
+
+
 /**
 some macro or inline values
 */
@@ -8,28 +10,36 @@ some macro or inline values
 	// ref by Ph.sortU8, or Ph.sortI32
 	// https://github.com/ParkinWu/FastSort
 	macro static public function qsort(rec) return macro @:mergeBlock {
-
-		if (left > right) return;
-
+		if (left >= right) return;
 		var i = left, j = right;
-
 		var pivot = a[left];
 
-		while (i != j) {
-			while (a[j] >= pivot && i < j) --j;
+		var ti = pivot, tj = pivot; // auto type
 
-			while (a[i] <= pivot && i < j) ++i;
-
-			if (i < j) {
-				var t = a[i];
-				a[i]  = a[j];
-				a[j]  = t;
+		while (i < j) {
+			while (i < j) {
+				tj = a[j];
+				if (tj < pivot) break;
+			--j;
+			}
+			while (i < j) {
+				ti = a[i];
+				if (ti > pivot) break;
+			++i;
+			}
+			if (i < j && ti != tj) {
+				a[i] = tj;
+				a[j] = ti;
 			}
 		}
-		a[left] = a[i];
-		a[i] = pivot;
-		$rec(left, i - 1, a);
-		$rec(i + 1, right, a);
+		if (left < i) {
+			a[left] = a[i];
+			a[i] = pivot;
+			$rec(left , i - 1, a);
+			$rec(i + 1, right, a);
+		} else {
+			$rec(i + 1, right, a);
+		}
 	};
 
 	// for mem.Utf8
