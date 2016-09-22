@@ -74,11 +74,11 @@ class Ph{
 
 	// fast sort
 	public static function sortU8(left:Int, right:Int, a:AU8):Void {
-		Mt.sort(sortU8);
+		Mt.qsort(sortU8);
 	}
 
 	public static function sortI32(left:Int, right:Int, a:AI32):Void {
-		Mt.sort(sortI32);
+		Mt.qsort(sortI32);
 	}
 
 }

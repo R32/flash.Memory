@@ -7,7 +7,7 @@ some macro or inline values
 
 	// ref by Ph.sortU8, or Ph.sortI32
 	// https://github.com/ParkinWu/FastSort
-	macro static public function sort(rec) return macro @:mergeBlock {
+	macro static public function qsort(rec) return macro @:mergeBlock {
 
 		if (left > right) return;
 
