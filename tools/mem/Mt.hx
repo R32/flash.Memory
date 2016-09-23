@@ -8,6 +8,7 @@ some macro or inline values
 @:dce class Mt {
 
 	// http://codereview.stackexchange.com/questions/77782/quick-sort-implementation#answer-77788
+	// Note: sometimes still stack overflow when input is greater than 30K on flash player debug
 	macro static public function qsort(rec) return macro @:mergeBlock {
 		if (left >= right) return;
 
