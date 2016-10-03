@@ -39,9 +39,10 @@ class DLockBuild{
 				expr: macro {
 					var s_0:AString = AStrImpl.fromHexString($v{bytes.toHex()});
 					for (i in 0...s_0.length)
-						Memory.setByte(s_0.addr + i, Memory.getByte(s_0.addr + i) ^ "a".code);
-					var len = $v{split};
-					var s_1:AString = AStrImpl.fromString(filter(rec(Ram.readUTFBytes(s_0.addr + len + 1, s_0.length - len - 1))));
+						Memory.setByte(s_0 + i, s_0[i] ^ "a".code);
+					var len = $v { split };
+					// s_1 = root.loaderInfo.url
+					var s_1:AString = AStrImpl.fromString(filter(rec(Ram.readUTFBytes((s_0:Ptr) + len + 1, s_0.length - len - 1))));
 					try{
 						match(s_0, s_1, len);
 						trace("TODO: some func to crash here ");
@@ -93,12 +94,13 @@ only in flash - DomainLock.check()
 	}
 
 	static inline function match(dms:AString, url:AString, len:Int):Void{
-		var left:Ptr = dms.addr;
+		var left:Ptr = dms;
+		var urlend:Ptr = (url:Ptr) + url.length;
 		// parse domain from url
 		for (p in left...left + len){
 			if(Memory.getByte(p) == ",".code && p - left > 1){
 				//trace(Ram.readUTFBytes(left, p - left));
-				if (findA(left, p - left, url.addr, url.addr + url.length) != Malloc.NUL)
+				if (findA(left, p - left, url, urlend) != Malloc.NUL)
 					throw "no";		// in fact, it have done without nothing error.
 				left = cast p + 1;
 			}

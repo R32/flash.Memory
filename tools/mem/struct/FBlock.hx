@@ -7,9 +7,7 @@ import mem.Ut.padmul;
 /**
 Fixed Block
 */
-#if !macro
 @:build(mem.Struct.StructBuild.make())
-#end
 @:dce abstract FBlock(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int; // OFFSET_FIRST == -4
 

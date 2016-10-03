@@ -2,45 +2,38 @@ package mem.struct;
 
 import mem.Ptr;
 import mem.Malloc.NUL;
-import mem.struct.Comm.*;
 
+@:build(mem.Struct.StructBuild.make())
 abstract WString(Ptr) to Ptr {
+	@idx(4, -4) private var _len:Int;
 
 	public var length(get, never): Int;
-	private inline function get_length() return Memory.getI32(realEntry());
 
-	public var addr(get, never): Ptr;
-	private inline function get_addr() return this;
-
-	private inline function new(addr: Ptr) this = cast addr;
-
-	public inline function realEntry(): Ptr { return this - BY_LEN; }
-
-	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
+	private inline function get_length() return _len;
 
 	public inline function toString(): String return Ram.readUTFBytes(this, length);
+
+	private inline function new(len: Int) {
+		mallocAbind(len + CAPACITY + 1, false);
+		_len = len;
+		this[len] = 0;
+	}
 }
 
 class WStrImpl {
 
 	public static function fromString(str:String):WString {
-		var addr:Ptr;
-		var base:Ptr;
-		var length:Int;
 	#if (neko || cpp || lua) // have not utf
-		length = str.length;
-		addr = Ram.malloc(length + BY_LEN + 1, false);
-		Ram.writeString(addr + BY_LEN, length, str);
+		var length = str.length;
+		var ws = @:privateAccess new WString(length);
+		Ram.writeString(ws, length, str);
 	#else
 		var ba = writeString(str);
-		length = ba.length;
-		addr = Ram.malloc(length + BY_LEN + 1, false);
-		Ram.writeBytes(addr + BY_LEN, length, ba);
+		var length = ba.length;
+		var ws = @:privateAccess new WString(length);
+		Ram.writeBytes(ws, length, ba);
 	#end
-		Memory.setI32(addr, length);
-		base = addr + BY_LEN;
-		Memory.setByte(base + length, 0);
-		return @:privateAccess new WString(base);
+		return ws;
 	}
 
 #if flash

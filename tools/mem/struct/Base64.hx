@@ -2,39 +2,43 @@ package mem.struct;
 
 import mem.Ptr;
 import mem.Malloc.NUL;
-import mem.struct.Comm.*;
 
+@:build(mem.Struct.StructBuild.make())
 @:dce abstract Base64String(Ptr) to Ptr {
+	@idx(4, -4) private var _len:Int;
+
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32(realEntry());
-
-	private inline function new(addr: Ptr) this = cast addr;
-
-	public inline function realEntry(): Ptr { return this - BY_LEN; }
-
-	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
+	private inline function get_length() return _len;
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
 	public inline function toBlock(): Base64Block return Base64.decode(this, length);
+
+	private inline function new(len: Int) {
+		mallocAbind(len + CAPACITY + 1, false);
+		_len = len;
+		this[len] = 0;
+	}
 }
 
-@:dce abstract Base64Block(Ptr) to Ptr { // TODO: @:foword does not work???
+@:build(mem.Struct.StructBuild.make())
+@:dce abstract Base64Block(Ptr) to Ptr {
+	@idx(4, -4) private var _len:Int;
 
 	public var length(get, never): Int;
 
-	private inline function get_length() return Memory.getI32(realEntry());
-
-	private inline function new(addr:Ptr) this = cast addr;
-
-	public inline function realEntry(): Ptr { return this - BY_LEN; }
-
-	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
+	private inline function get_length() return _len;
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
 	public inline function toBase64String(): Base64String return Base64.encode(this, length);
+
+	private inline function new(len: Int) {
+		mallocAbind(len + CAPACITY + 1, false);
+		_len = len;
+		this[len] = 0;
+	}
 }
 
 class Base64 {
@@ -45,7 +49,7 @@ class Base64 {
 	static public function init():Void {
 		if (encoding_table != NUL) return;
 		encoding_table = Ram.malloc(64, false);
-		decoding_table = Ram.malloc(128, false);
+		decoding_table = Ram.malloc(128, true);
 	/*
 		var i = 0;
 		for (c in "A".code..."Z".code + 1)
@@ -68,27 +72,33 @@ class Base64 {
 
 		var i = 0, c = "A".code;
 		while (c <= "Z".code) {
-			Memory.setByte(p + i, c); ++i;
-		++c;
+			p[i] = c;
+		++ i;
+		++ c;
 		}
 
 		c = "a".code;
 		while (c <= "z".code) {
-			Memory.setByte(p + i, c); ++i;
-		++c;
+			p[i] = c;
+		++ i;
+		++ c;
 		}
+
 		c = "0".code;
 		while (c <= "9".code) {
-			Memory.setByte(p + i, c); ++i;
-		++c;
+			p[i] = c;
+		++ i;
+		++ c;
 		}
-		Memory.setByte(p + i, "+".code); ++i;
-		Memory.setByte(p + i, "/".code);
+
+		p[i] = "+".code;
+		++ i;
+		p[i] = "/".code;
 
 		i = 0;
 		while (i < 64) {
-			Memory.setByte(Memory.getByte(p + i) + q, i);
-		++i;
+			Memory.setByte(p[i] + q, i);
+		++ i;
 		}
 
 /*		for (m in 0...16) {
@@ -105,17 +115,12 @@ class Base64 {
 
 		var olen = Std.int((len + 2) / 3) << 2;  // == Math.ceil((n * 4)/3);
 
-		var addr:Ptr = Ram.malloc(olen + BY_LEN + 1); // length + DATA + \0
-		var base:Ptr = cast addr + BY_LEN;
+		var s64 = @:privateAccess new Base64String(olen);
+		var base:Int = s64;
 
 		var et:Ptr = encoding_table;
-
-		Memory.setI32(addr, olen);
-		Memory.setByte(base + olen, 0);
-
 		var rest = len % 3;
 		len -= rest;
-
 		while (i < len) {
 			triple = (data[i] << 16) + (data[i + 1] << 8) + (data[i + 2]);
 			Memory.setI32(base + j,
@@ -145,7 +150,7 @@ class Base64 {
 				("=".code << 24)
 			);
 		}
-		return @:privateAccess new Base64String(base);
+		return s64;
 	}
 
 	static public function decode(data: Ptr, len: Int): Base64Block {
@@ -162,10 +167,8 @@ class Base64 {
 		len  -= pad;
 		olen -= pad;
 
-		var addr:Ptr = Ram.malloc(olen + BY_LEN + 1, false);
-		var base:Ptr = addr + BY_LEN;
-		Memory.setI32(addr, olen); // set length
-		Memory.setByte(base + olen, 0);
+		var b64 = @:privateAccess new Base64Block(olen);
+		var base:Int = b64;
 
 		var dt:Ptr = decoding_table;
 		while (i < len) {
@@ -187,6 +190,6 @@ class Base64 {
 				Memory.setI16 (base + j, triple & 0xFFFF);
 			}
 		}
-		return @:privateAccess new Base64Block(base);
+		return b64;
 	}
 }

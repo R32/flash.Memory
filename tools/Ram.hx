@@ -327,7 +327,7 @@ class Ram{
 		if ((start:Int) < 0) return Malloc.NUL;
 		if (end == Malloc.NUL) end = cast Malloc.getUsed();
 		var wstr = mallocFromString(str);
-		var ptr = findA(wstr.addr, wstr.length, start, end);
+		var ptr = findA(wstr, wstr.length, start, end);
 		wstr.free();
 		return ptr;
 	}

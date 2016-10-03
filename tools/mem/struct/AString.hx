@@ -2,46 +2,47 @@ package mem.struct;
 
 import mem.Ptr;
 import mem.Malloc.NUL;
-import mem.struct.Comm.*;
 
+@:build(mem.Struct.StructBuild.make())
 abstract AString(Ptr) to Ptr {
+	@idx(4, -4) private var _len:Int;
 
 	public var length(get, never): Int;
-	private inline function get_length() return Memory.getI32(realEntry());
+	public var addr(get, never): Ptr;  // legacy
 
-	public var addr(get, never): Ptr;
+	private inline function get_length() return _len;
 	private inline function get_addr() return this;
 
-	private inline function new(addr: Ptr) this = cast addr;
-
-	public inline function realEntry(): Ptr { return this - BY_LEN; }
-
-	public inline function free(): Void { Ram.free( realEntry() ); this = NUL; }
-
 	public inline function toString(): String return Ph.toAscii(this, length);
+
+	private inline function new(len: Int) {
+		mallocAbind(len + CAPACITY + 1, false);
+		_len = len;
+		this[len] = 0;
+	}
+
+	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);
+	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte((this:Int) + i, v);
 }
 
 class AStrImpl {
 
 	public static function alloc(len: Int):AString {
-		var addr = Ram.malloc(len + BY_LEN + 1);
-		Memory.setI32(addr, len);
-		Memory.setByte(addr + len + BY_LEN, 0);
-		return @:privateAccess new AString(addr + BY_LEN);
+		return @:privateAccess new AString(len);
 	}
 
 	public static function fromString(str:String):AString {
 		var sa = alloc(str.length);
 	#if flash
 		@:privateAccess {
-			Ram.current.position = sa.addr;
+			Ram.current.position = sa;
 			Ram.current.writeMultiByte(str, "us-ascii");
 		}
 	#elseif (neko || cpp || lua)
-		Ram.writeUTFBytes(sa.addr, str);
+		Ram.writeUTFBytes(sa, str);
 	#else
 		for (i in 0...sa.length)
-			sa.addr[i] = StringTools.fastCodeAt(str, i);
+			sa[i] = StringTools.fastCodeAt(str, i);
 	#end
 		return sa;
 	}
@@ -52,7 +53,7 @@ class AStrImpl {
 		var j:Int;
 		for (i in 0...len){
 			j = i + i;
-			sa.addr[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) );
+			sa[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1) );
 		}
 		return sa;
 	}
