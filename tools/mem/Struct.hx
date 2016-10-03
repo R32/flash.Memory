@@ -475,6 +475,21 @@ class StructBuild{
 				pos: here()
 			});
 
+		if (!all_in_map.exists("isNull"))
+			fields.push({
+				name : "isNull",
+				doc: ' $context == 0',
+				access: [AInline, APublic],
+				kind: FFun({
+					args: [],
+					ret : macro :Bool,
+					expr: macro {
+						return ($i{context}: Ptr) == mem.Malloc.NUL;
+					}
+				}),
+				pos: here()
+			});
+
 		if (abs_type == null && all_in_map.exists(context) == false) { //  for class Some implements Struct{}
 			fields.push({
 				name : context,

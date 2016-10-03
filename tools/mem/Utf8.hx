@@ -102,4 +102,30 @@ class Utf8 {
 		}
 		return true;
 	}
+
+	public static function charCodeAt(dst:Ptr, byteLength: Int, index:Int):Int {
+		var i = 0, len = 0, state = 0, codep = 0, utf8d = utf8d_table;
+		var byte:Int, type:Int;
+		while (i < byteLength) {
+			byte = dst[i];
+			type = utf8d[byte];
+
+			if (len == index) {
+				codep = state != UTF8_ACCEPT ?
+					(byte & 0x3f) | (codep << 6) :
+					(0xff >> type) & (byte);
+			}
+
+			state = utf8d[256 + (state << 4) + type];
+
+			if (state == UTF8_REJECT) {
+				break; //throw "Invalid utf8 string";
+			} else if (state == UTF8_ACCEPT) {
+				if (len == index) return codep;
+				len += 1;
+			}
+		++ i;
+		}
+		return -1;     // out of range
+	}
 }

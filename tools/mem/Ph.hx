@@ -23,6 +23,15 @@ class Ph{
 		}
 	}
 
+	// s = "abcdef"; leftRotateMove(s, s.length, 2) => "cdefab"
+	static public function leftRotateMove(ptr:Ptr, len:Int, w:Int):Void {
+		w %= len;
+		reverse(ptr, len);
+		reverse(ptr, len - w);
+		reverse(ptr + len - w, w);
+	}
+
+	// slower than "mem.obs.Crc32.hx"
 	static public function crc32(ptr:Ptr, len:Int):Int {
 		var init = 0xFFFFFFFF;
 		var crc = init;
