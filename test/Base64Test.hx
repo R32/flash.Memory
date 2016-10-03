@@ -9,9 +9,9 @@ class Base64Test {
 		mem.struct.Base64.init();
 		mem.obs.Hex.init();
 
-		var file = haxe.Resource.getBytes("res"); // -resource
+		var file = haxe.Resource.getBytes("testjs"); // -resource
 		if (file == null)
-			throw "need -resource XXXXX@res";
+			throw "need -resource XXXXX@testjs";
 		var fp = Ram.mallocFromBytes(file);
 		trace('file: ${file.length / 1024}KB');
 

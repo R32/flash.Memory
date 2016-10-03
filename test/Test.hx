@@ -31,6 +31,7 @@ class Test {
 		Sha1.init();
 		Sha256.init();
 		AES128.init();
+		mem.obs.Crc32.init();
 		ASS.test();
 		test_utf8();
 		test_md5();
@@ -162,11 +163,10 @@ class Test {
 
 
 	public static function test_md5():Void {
-		trace("----------- MD5 ------------");
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
 		trace('******* filesize: ${file.length/1024}Kb *******');
-
+		trace("----------- MD5 ------------");
 		var out0 = Ram.malloc(16, true);
 		var now = haxe.Timer.stamp();
 		for(i in 0...3) Md5.make(filePtr, file.length, out0);
@@ -176,8 +176,15 @@ class Test {
 		now = haxe.Timer.stamp();
 		for(i in 0...3) out1 = haxe.crypto.Md5.make(file);
 		var time1 = haxe.Timer.stamp() - now;
-		Hex.trace(out0, 16, true, "_MD5(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash:");
+
+		var out2:Int = 0;
+		now = haxe.Timer.stamp();
+		for (i in 0...3) out2 = mem.obs.Crc32.make(filePtr, file.length);
+		var time2 = haxe.Timer.stamp() - now;
+
+		Hex.trace(out0, 16, true, "_MD5(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash: ");
 		trace("MD5(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
+		trace("Crc32(loop * 3) mem sec: " + toFixed(time2, 5)  +", hash: 0x"  + StringTools.hex(out2));
 	}
 
 	public static function test_utf8() {
@@ -209,11 +216,11 @@ class Test {
 		trace(('str: $str, utf-length: ${str.length}'));
 		#end
 
-		var as = Ram.mallocFromString(str);
+		var ws = Ram.mallocFromString(str);
 
-		trace("Utf8.length(str): " + Utf8.length(as.addr, as.length));
+		trace("Utf8.length(str): " + Utf8.length(ws, ws.length));
 		var a = [];
-		Utf8.iter(as.addr, as.length, function(ch) {
+		Utf8.iter(ws, ws.length, function(ch) {
 		#if (neko || cpp)
 			a.push(ch);
 		#else
@@ -225,19 +232,19 @@ class Test {
 
 	public static function test_xor_domainLock() {
 		trace("----------- Simple XOR -----------");
-		var sa:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
+		var ws:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
 		var xor = mem.obs.Xor.fromHexString(haxe.crypto.Md5.encode("hello"));
-		xor.run(sa.addr, sa.length, sa.addr);
-		SXor.make(sa.addr, sa.length, sa.addr);
+		xor.run(ws, ws.length, ws);
+		SXor.make(ws, ws.length, ws);
 		#if cpp
-		trace(Gbk.u2Gbk(sa.toString()));
+		trace(Gbk.u2Gbk(ws.toString()));
 		#else
-		trace("XOR: " + (sa.toString()));
+		trace("XOR: " + (ws.toString()));
 		#end
-		sa.free();
+		ws.free();
 #if flash
 		mem.obs.DomainLock.check();
-		//trace(DomainLock.filter("http://cn.bing.com/search?q=i+have+no+idea+for+this&go=%E6%8F%90%E4%BA%A4&qs=n&form=QBLH&pq=i+have+no+idea+for+this&sc=0-23&sp=-1&sk=&cvid=CBE4556873664FCE8D1E1E8B4418FA47"));
+		//trace(@:privateAccess mem.obs.DomainLock.filter("http://cn.bing.com/search?q=i+have+no+idea+for+this&go=%E6%8F%90%E4%BA%A4&qs=n&form=QBLH&pq=i+have+no+idea+for+this&sc=0-23&sp=-1&sk=&cvid=CBE4556873664FCE8D1E1E8B4418FA47"));
 #end
 	}
 }

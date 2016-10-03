@@ -44,7 +44,7 @@ class TestInFlash{
 			Ram.free(cast ar[i]);
 			draw(MC_H * i);
 		}
-		trace("**in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length+ "\n");
+		trace("**in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length  + " Malloc.check: " + Malloc.check() + "\n");
 
 		ar.splice(0, half);
 
@@ -56,10 +56,10 @@ class TestInFlash{
 			Ram.free(cast ar[i]);
 			draw(MC_H * i);
 			if (i % 6 == 0)
-				trace("index: "+ i +" **in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length + "\n");
+				trace("index: "+ i +" **in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length  + " Malloc.check: " + Malloc.check() + "\n");
 
 		}
-		trace("**end** frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length);
+		trace("**end** frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length + " Malloc.check: " + Malloc.check());
 		if (Malloc.frag_count > 0) throw "xxxxxxxx";
 	}
 
