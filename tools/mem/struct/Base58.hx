@@ -3,6 +3,7 @@ package mem.struct;
 import mem.Ptr;
 import mem.Malloc.NUL;
 import mem.struct.AString;
+import mem.obs.Hex;
 
 @:build(mem.Struct.StructBuild.make())
 abstract Base58String(Ptr) to Ptr {
@@ -17,13 +18,30 @@ abstract Base58String(Ptr) to Ptr {
 	public inline function toBlock(): FBlock return Base58.decode(this, length);
 
 	private inline function new(len: Int) {
-		mallocAbind(len + CAPACITY + 1, false);
+		mallocAbind(len + CAPACITY + 1, true);
 		_len = len;
-		this[len] = 0;
 	}
+
+	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);
+	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte((this:Int) + i, v);
 }
 
+/**
+example:
 
+```haxe
+Base58.init();
+
+var strhex = "003c176e659bea0f29a3e9bf7880c112b1b31b4dc826268187";
+var sa  = AStrImpl.fromHexString(strhex);
+var s58 = Base58.encode(sa, sa.length);
+
+trace(s58.toString(), s58.toString() == "16UjcYNBG9GTK4uq2f7yYEbuifqCzoLMGS");
+
+var b58 = s58.toBlock();
+trace(b58.toBytes().toHex(), b58.toBytes().toHex() == strhex);
+```
+*/
 class Base58 {
 
 	static var alphabet: AString = cast NUL;  // padmul(58, 8) = 64
@@ -61,40 +79,45 @@ class Base58 {
 
 		var zeroes = i;
 		var buffSize = Std.int((len - zeroes) * 138 / 100) + 1; // log(256) / log(58), rounded up.
-		var buff = new haxe.ds.Vector<Int>(buffSize);
+		var s58Length = zeroes + buffSize;
+		var s58 = @:privateAccess new Base58String(s58Length);
+
 		var carry: Int, j:Int;
 
-		var high = buffSize - 1;
+		var high = zeroes;
 		while (i < len) {
 			carry = bin[i];
-			j = buffSize - 1;
-			while (j > high || carry != 0) {
-				carry += 256 * buff[j];
-				buff[j] = carry % 58;
+			j = zeroes;
+			while (j < high || carry != 0) {
+				carry += 256 * s58[j];
+				s58[j] = carry % 58;
 				carry = Std.int(carry / 58);
-			-- j ;
+			++ j;
 			}
 			high = j;
 		++ i;
 		}
 
-		// Skip leading zeroes
-		j = 0;
-		while (j < buffSize && buff[j] == 0) ++j;
+		// Skip tailing zeroes & change the length value
+		j = s58Length - 1;
+		while (j >= 0 && s58[j] == 0) --j;
+		s58Length = j + 1;
+		@:privateAccess s58._len = s58Length;
 
-		// Copy result into output.
-		var s58 = @:privateAccess new Base58String(zeroes + buffSize - j);
-		var etable:Ptr = cast alphabet;
-
+		// padding '1'
 		if (zeroes > 0) Ram.memset(s58, "1".code, zeroes);
 
+		// reverse & enc; let i = left, j = right, carry = tmp;
+		var enc:Ptr = cast alphabet;
 		i = zeroes;
-		while (j < buffSize) {
-			Memory.setByte(s58 + i, etable[ buff[j] ]);
+		while (i < j) {
+			carry = s58[i];
+			s58[i] = enc[s58[j]];
+			s58[j] = enc[carry];
 		++ i;
-		++ j;
+		-- j;
 		}
-		buff = null;
+		if (i == j) s58[i] = enc[s58[i]];
 		return s58;
 	}
 
@@ -105,37 +128,34 @@ class Base58 {
 
 		var zeroes = i;
 		var buffSize = Std.int((len - zeroes) * 733 / 1000) + 1; // log(58) / log(256), rounded up.
-		var buff = new haxe.ds.Vector<Int>(buffSize);
+		var fbLength = zeroes + buffSize;
+		var fb = new FBlock(fbLength, true, 8);
 		var ci:Int, carry:Int, j:Int;
-		var dtable = alphapos;
+		var dec = alphapos;
 
+		var high = zeroes;
 		while (i < len) {
 			ci = str[i] & 0x7F;
-			carry = dtable[ci];
-			j = buffSize - 1;
-			while (j >= 0) {
-				carry += 58 * buff[j];
-				buff[j] = carry & 255;  // buff[j] = carry % 256;
-				carry >>= 8;            // carry /= 256
-			-- j;
+			carry = dec[ci];
+			j = zeroes;
+			while (j < high || carry != 0) {
+				carry += 58 * fb[j];
+				fb[j] = carry & 255;  // buff[j] = carry % 256;
+				carry >>= 8;          // carry /= 256
+			++ j;
 			}
+			high = j;
 		++ i;
 		}
 
-		// Skip leading zeroes
-		j = 0;
-		while (j < buffSize && buff[j] == 0) ++j;
+		// Skip tailing zeroes & change the length value
+		j = fbLength - 1;
+		while (j >= 0 && fb[j] == 0) --j;
+		fbLength = j + 1;
+		@:privateAccess fb._len = fbLength;
 
-		// Copy result into output.
-		var fb = new FBlock(buffSize + zeroes - j, true, 8);
-		i = zeroes;
-		while(j < buffSize) {
-			fb[i] = buff[j];
-		++ i;
-		++ j;
-		}
-		buff = null;
+		// reverse
+		mem.Ph.reverse((fb:Ptr) + zeroes, fbLength - zeroes);
 		return fb;
 	}
-
 }
