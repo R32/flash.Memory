@@ -3,7 +3,6 @@ package mem.struct;
 import mem.Ptr;
 import mem.Malloc.NUL;
 import mem.struct.AString;
-import mem.obs.Hex;
 
 @:build(mem.Struct.StructBuild.make())
 abstract Base58String(Ptr) to Ptr {
