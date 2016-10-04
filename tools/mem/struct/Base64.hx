@@ -149,7 +149,7 @@ class Base64 {
 		len  -= pad;
 		olen -= pad;
 
-		var fb = new FBlock(olen, 8);
+		var fb = new FBlock(olen, false, 8);
 		var base:Int = fb;
 
 		var dt:Ptr = decoding_table;

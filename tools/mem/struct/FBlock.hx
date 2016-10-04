@@ -14,8 +14,8 @@ Fixed Block
 	public var length(get, never): Int;
 	private inline function get_length() return _len;
 
-	public inline function new(size:Int, pad:Int) {
-		this = untyped Ram.malloc(padmul(size + CAPACITY, pad), false) - OFFSET_FIRST;
+	public inline function new(size:Int, zero:Bool, pad:Int) {
+		this = untyped mem.Malloc.make(size + CAPACITY, zero, pad) - OFFSET_FIRST;
 		_len = size;
 	}
 
@@ -32,4 +32,7 @@ Fixed Block
 	static public inline function fromBytes(b):FBlock {
 		return Ram.mallocFromBytes(b);
 	}
+
+	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);
+	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte((this:Int) + i, v);
 }
