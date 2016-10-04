@@ -13,7 +13,7 @@ import mem.Malloc.NUL;
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
-	public inline function toBlock(): Base64Block return Base64.decode(this, length);
+	public inline function toBlock(): FBlock return Base64.decode(this, length);
 
 	private inline function new(len: Int) {
 		mallocAbind(len + CAPACITY + 1, false);
@@ -22,24 +22,6 @@ import mem.Malloc.NUL;
 	}
 }
 
-@:build(mem.Struct.StructBuild.make())
-@:dce abstract Base64Block(Ptr) to Ptr {
-	@idx(4, -4) private var _len:Int;
-
-	public var length(get, never): Int;
-
-	private inline function get_length() return _len;
-
-	public inline function toString(): String return Ph.toAscii(this, length);
-
-	public inline function toBase64String(): Base64String return Base64.encode(this, length);
-
-	private inline function new(len: Int) {
-		mallocAbind(len + CAPACITY + 1, false);
-		_len = len;
-		this[len] = 0;
-	}
-}
 
 class Base64 {
 
@@ -153,7 +135,7 @@ class Base64 {
 		return s64;
 	}
 
-	static public function decode(data: Ptr, len: Int): Base64Block {
+	static public function decode(data: Ptr, len: Int): FBlock {
 		var i = 0, j = 0, pad = 0, quart = 0, triple = 0;
 
 		if (len & (4 - 1) > 0) return cast NUL;
@@ -167,8 +149,8 @@ class Base64 {
 		len  -= pad;
 		olen -= pad;
 
-		var b64 = @:privateAccess new Base64Block(olen);
-		var base:Int = b64;
+		var fb = new FBlock(olen, 8);
+		var base:Int = fb;
 
 		var dt:Ptr = decoding_table;
 		while (i < len) {
@@ -190,6 +172,6 @@ class Base64 {
 				Memory.setI16 (base + j, triple & 0xFFFF);
 			}
 		}
-		return b64;
+		return fb;
 	}
 }
