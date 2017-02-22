@@ -39,6 +39,38 @@ class Test {
 		test_aes128();
 		test_cppblock();
 		test_xor_domainLock();
+		test_raw();
+	}
+
+	static function test_raw() @:privateAccess {
+		trace("----------- raw -----------");
+		var as1 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172a");
+		var as2 = Ram.malloc(128);
+		Ram.memcpy(as2, as1, as1.length);
+
+		Ram.memcpy(as2 + 1, as2, as1.length);
+		trace("memcpy/memcmp: " + (Ram.memcmp(as2 + 1, as1, as1.length) == 0));
+
+		Ram.memcpy(as2, as2 + 1, as1.length);
+		trace("memcpy/memcmp: " + (Ram.memcmp(as1, as2, as1.length) == 0));
+
+		var s = "abcde你好, 世界";
+		var b0 = haxe.io.Bytes.ofString(s);
+		Ram.writeBytes(as2, b0.length, #if flash b0.getData() #else b0 #end);
+		var b1 = haxe.io.Bytes.alloc(b0.length);
+		Ram.readBytes(as2, b1.length, #if flash b1.getData() #else b1 #end);
+		trace("writeBytes/readBytes: " + (b1.toString() == s));
+
+		var size = Ram.writeUTFBytes(as2, s);
+		var s2 = Ram.readUTFBytes(as2, size);
+		trace("writeUTFBytes/readUTFBytes: " + (s2 == s));
+
+		var as3 = Ram.malloc(128, true);
+		Ram.writeString(as3, 5, s);
+		trace("writeString: " + (Ram.readUTFBytes(as3, 5) == s.substr(0,5)));
+
+		var ws = WStrImpl.fromString(s);
+		trace("WStrImpl.fromString: " + (ws.toString() == s));
 	}
 
 	static function test_aes128() {
@@ -91,11 +123,6 @@ class Test {
 		Hex.trace(out + Ut.padmul(file.length, 16) - 16, 16, true,
 			'file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec, end of file 16: ');
 
-		//last = haxe.Timer.stamp();
-		//AES128.cbcDecryptBuffIO(org, key.addr, file.length, cast 0);
-		//sec = haxe.Timer.stamp() - last;
-		//Hex.trace(org + Ut.padmul(file.length, 16) - 16, 16, true,
-		//	'file: ${file.length/1024}Kb, DEC(output == input) sec: $sec, end of file 16: ');
 	}
 
 	static function test_sha1() {

@@ -2,16 +2,16 @@
 <project version="2">
   <!-- Output SWF options -->
   <output>
-    <movie outputType="Application" />
+    <movie outputType="CustomBuild" />
     <movie input="" />
-    <movie path="bin\test.swf" />
+    <movie path="test.hxml" />
     <movie fps="24" />
     <movie width="800" />
     <movie height="500" />
-    <movie version="10" />
-    <movie minorVersion="3" />
-    <movie platform="Flash Player" />
-    <movie background="#FFFFFF" />
+    <movie version="0" />
+    <movie minorVersion="0" />
+    <movie platform="hxml" />
+    <movie background="000000" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -19,12 +19,12 @@
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="" />
+    <option directives="sx-pwd=hello&#xA;dm-lock=test.com,helloworld.com,example.com" />
     <option flashStrict="True" />
     <option noInlineOnDebug="False" />
     <option mainClass="Test" />
     <option enabledebug="True" />
-    <option additional="-D sx-pwd=hello&#xA;-D dm-lock=test.com,3366.com,example.com&#xA;-resource test.js@testjs&#xA;-dce full" />
+    <option additional="-dce full&#xA;-resource test.js@testjs&#xA;--flash-strict &#xA;-swf-version 10.3" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -35,23 +35,19 @@
     <compile path="src\Main.hx" />
     <compile path="test\Test.hx" />
   </compileTargets>
-  <!-- Assets to embed into the output SWF -->
-  <library>
-    <!-- example: <asset path="..." id="..." update="..." glyphs="..." mode="..." place="..." sharepoint="..." /> -->
-  </library>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
     <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand />
+  <preBuildCommand>cmd /c haxe $(OutputFile)</preBuildCommand>
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->
   <options>
     <option showHiddenPaths="False" />
-    <option testMovie="Unknown" />
-    <option testMovieCommand="" />
+    <option testMovie="Custom" />
+    <option testMovieCommand="Run.bat" />
   </options>
   <!-- Plugin storage -->
   <storage />

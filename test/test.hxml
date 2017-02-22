@@ -1,16 +1,19 @@
 -dce full
 -cp ../tools
 -main Test
--resource Test.hx@testjs
+-resource test.js@testjs
 -D sx-pwd=hello
 -D dm-lock=test.com,helloworld.com,example.com
-#--connect 6000
+--connect 6000
 --each
 
 -swf bin/test.swf
 -swf-header 800:500:24:000000
 --flash-strict
 -swf-version 10.3
+
+--next
+-hl bin/test.hl
 
 --next
 -js bin/test.js
