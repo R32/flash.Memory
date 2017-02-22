@@ -76,11 +76,25 @@ class Memory {
 	public static inline function getFloat ( addr : Int ): Float return b.getFloat(addr);
 	public static inline function getDouble( addr : Int ): Float return b.getDouble(addr);
 }
-
+#elseif hl
+class Memory {
+	public static var b(default, null): hl.Bytes;
+	public static inline function select( o : hl.Bytes ): Void b = o;
+	public static inline function setByte( addr : Int, v : Int ): Void b.setUI8(addr, v);
+	public static inline function setI16 ( addr : Int, v : Int ): Void b.setUI16(addr, v);
+	public static inline function setI32 ( addr : Int, v : Int ): Void b.setI32(addr, v);
+	public static inline function setFloat ( addr : Int, v : Float ): Void b.setF32(addr, v);
+	public static inline function setDouble( addr : Int, v : Float ): Void b.setF64(addr, v);
+	public static inline function getByte( addr : Int ): Int return b.getUI8(addr);
+	public static inline function getUI16( addr : Int ): Int return b.getUI16(addr);
+	public static inline function getI32 ( addr : Int ): Int return b.getI32(addr);
+	public static inline function getFloat ( addr : Int ): Float return b.getF32(addr);
+	public static inline function getDouble( addr : Int ): Float return b.getF64(addr);
+}
 #else // Too Many Local Varialbes, so no inline
 class Memory {
 	public static var b(default, null): haxe.io.Bytes;
-	public static function select( o : haxe.io.Bytes ): Void b = o;
+	public static inline function select( o : haxe.io.Bytes ): Void b = o;
 	public static function setByte( addr : Int, v : Int ): Void b.set(addr, v);
 	public static function setI16 ( addr : Int, v : Int ): Void b.setUInt16(addr, v);
 	public static function setI32 ( addr : Int, v : Int ): Void b.setInt32(addr, v);

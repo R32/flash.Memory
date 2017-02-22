@@ -22,15 +22,20 @@ abstract WString(Ptr) to Ptr {
 
 class WStrImpl {
 
-	public static function fromString(str:String):WString {
+	public static function fromString(str:String):WString @:privateAccess {
 	#if (neko || cpp || lua) // have not utf
 		var length = str.length;
-		var ws = @:privateAccess new WString(length);
+		var ws = new WString(length);
 		Ram.writeString(ws, length, str);
+	#elseif hl
+		var length = 0;
+		var b = str.bytes.utf16ToUtf8(0, length);
+		var ws = new WString(length);
+		Ram.current.blit(ws, b, 0, length);
 	#else
 		var ba = writeString(str);
 		var length = ba.length;
-		var ws = @:privateAccess new WString(length);
+		var ws = new WString(length);
 		Ram.writeBytes(ws, length, ba);
 	#end
 		return ws;

@@ -31,13 +31,16 @@ class AStrImpl {
 		return @:privateAccess new AString(len);
 	}
 
-	public static function fromString(str:String):AString {
+	// if str contains the utf-characters, the result is unspecified.
+	public static function fromString(str:String):AString @:privateAccess {
 		var sa = alloc(str.length);
 	#if flash
-		@:privateAccess {
-			Ram.current.position = sa;
-			Ram.current.writeMultiByte(str, "us-ascii");
-		}
+		Ram.current.position = sa;
+		Ram.current.writeMultiByte(str, "us-ascii");
+	#elseif hl
+		var size = 0;
+		var b = str.bytes.utf16ToUtf8(0, size);
+		Ram.current.blit(sa, b, 0, str.length);
 	#elseif (neko || cpp || lua)
 		Ram.writeUTFBytes(sa, str);
 	#else

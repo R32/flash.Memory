@@ -8,17 +8,30 @@ import mem.struct.WString;
 import cpp.Star;
 import mem.cpp.BytesData;
 import mem.cpp.NRam;
+typedef RawData = Star<BytesData>;
+#elseif flash
+typedef RawData = flash.utils.ByteArray;
+#elseif hl
+typedef RawData = hl.Bytes;
+#else
+typedef RawData = haxe.io.Bytes;
 #end
-
 
 class Ram{
 
 	static inline var LLB = 16 << 10;  // 16384, 16K
+	static var current:RawData = null;
+	static var bytesLength(get, never):Int;
+	static inline function get_bytesLength() return #if hl currentLength; #else current.length; #end
+
+#if hl
+	static var currentLength:Int = 0;
+#end
 
 #if flash
-	static var tmp:ByteArray = null;
-	static var current:ByteArray = null;
-	public static function select(?ba:ByteArray):Void {
+	static var tmp:RawData = null;
+
+	public static function select(?ba:RawData):Void {
 		if (ba == null)
 			ba = create(LLB);
 		else if (ba.length < 1024)
@@ -29,7 +42,7 @@ class Ram{
 		if (tmp == current) tmp = null;
 	}
 
-	public static function create(len = LLB):ByteArray {
+	public static function create(len = LLB):RawData {
 		var ba = new ByteArray();
 		ba.length = len;
 		ba.endian = flash.utils.Endian.LITTLE_ENDIAN;
@@ -48,60 +61,56 @@ class Ram{
 	public static function detach():Void {
 		flash.system.ApplicationDomain.currentDomain.domainMemory = tmp;
 	}
-#elseif (cpp && !keep_bytes)
-	static var current: Star<BytesData> = null;
-
-	public static function select(?ba:Star<BytesData>): Void {
-		if (ba == null) ba = create(LLB);
-		Memory.select(ba);
-		current = ba;
-	}
-
-	public static inline function create(len = LLB): Star<BytesData> {
-		return BytesData.createStar(len);
-	}
 #else
-	static var current:Bytes = null;
-
-	public static function select(?ba:Bytes):Void {
-		if (ba == null) ba = create(LLB);
+	public static function select(?ba:RawData #if hl ,?len:Int #end):Void {
+		if (ba == null) {
+			ba = create(LLB);
+			#if hl len = LLB; #end
+		}
 		Memory.select(ba);
 		current = ba;
+		#if hl currentLength = len; #end
 	}
-
-	public inline static function create(len = LLB):Bytes {
+	public static inline function create(len = LLB):RawData {
+	  #if hl
+		return new hl.Bytes(len);
+	  #elseif (cpp && !keep_bytes)
+		return BytesData.createStar(len);
+	  #else
 		return Bytes.alloc(len);
+	  #end
 	}
-#end
 
-#if !flash
 	public static function attach():Void {
 		if (current == null)
 			select(null);
 		else if(Memory.b != current)
 			Memory.select(current);
 	}
+
 	public static function detach():Void {}
 #end
-
-
 
 	// in bytes
 	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero, 8);
 
 	public static inline function free(entry :Ptr) Malloc.free(entry);
 
-	static function req(len:UInt) {
-		if (len > current.length) {
+	static function req(len: Int) {
+		if (len > bytesLength) {
+			var expand = mem.Ut.padmul(len, 4 << 10);  // 4K
 		#if flash
-			current.length = mem.Ut.padmul(len, 4 << 10); // 4K
+			current.length = expand;
 		#elseif (cpp && !keep_bytes)
-			current.resize(mem.Ut.padmul(len, 4 << 10));
+			current.resize(expand);
 		#else
-			var a = Bytes.alloc(mem.Ut.padmul(len, 4 << 10));
-			a.blit(0, current, 0, current.length);
+			var a = create(expand);
+			a.blit(0, current, 0, bytesLength);
 			Memory.select(a);
 			current = a;
+			#if hl
+			currentLength = expand;
+			#end
 		#end
 		}
 	}
@@ -116,29 +125,33 @@ class Ram{
 	}
 
 #if flash
-	// read from Memory To Bytes
+	// from Memory To Bytes
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:ByteArray):Void {
 		dst.writeBytes(current, ptr, len);
 	}
 
-	// read from Bytes To Memory
+	// from Bytes To Memory
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:ByteArray):Void {
 		src.position = 0;
 		src.readBytes(current, ptr, len);
 	}
 #elseif (cpp && !keep_bytes)
-
 	// hxcpp/include/Array.h -- "inline char * getBase() const..."
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
 		var b:Star<cpp.Char> = untyped dst.getData().getBase();
 		NRam.memcpy(b, current.cs() + (ptr:Int), len);
 	}
-
 	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
 		var b:Star<cpp.Char> = untyped src.getData().getBase();
 		NRam.memcpy(current.cs() + (ptr:Int), b, len);
 	}
-
+#elseif hl
+	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
+		@:privateAccess dst.b.blit(0, current, ptr, len);
+	}
+	public static inline function writeBytes(ptr:Ptr, len:Int, src:Bytes):Void {
+		@:privateAccess current.blit(ptr, src.b, 0, len);
+	}
 #else
 	public static inline function readBytes(ptr:Ptr, len:Int, dst:Bytes):Void {
 		dst.blit(0, current, ptr, len);
@@ -151,8 +164,8 @@ class Ram{
 	public static inline function memcpy(dst:Ptr, src:Ptr, size:Int):Void {
 		if (dst == src || size <= 0) return;
 	#if flash
-			current.position = src;
-			current.readBytes(current, dst, size);
+		current.position = src;
+		current.readBytes(current, dst, size);
 	#else
 		current.blit(dst, current, src, size);
 	#end
@@ -194,6 +207,8 @@ class Ram{
 	#if (cpp && !keep_bytes)
 		var base = current.cs();
 		return NRam.memcmp(base + (ptr1:Int), base + (ptr2:Int), len);
+	#elseif hl
+		return current.compare(ptr1, current, ptr2, len);
 	#else
 		var i = 0 , c1 = 0, c2 = 0;
 		#if flash
@@ -241,6 +256,13 @@ class Ram{
 		var b:Star<cpp.Char> = cpp.NativeString.c_str(str).ptr;
 		NRam.memcpy(current.cs() + (dst:Int), b, str.length);
 		return str.length;
+	#elseif hl
+		var size = 0;
+		@:mergeBlock @:privateAccess {
+			var b = str.bytes.utf16ToUtf8(0, size);
+			current.blit(dst, b, 0, size);
+		}
+		return size;
 	#else
 		var a = Bytes.ofString(str);
 		current.blit(dst, a, 0, a.length);
@@ -248,11 +270,14 @@ class Ram{
 	#end
 	}
 
-
 	public static function writeString(dst:Ptr, len:Int, str:String):Void {
 	#if (neko || cpp || lua)
 		for (i in 0...len)
 			Memory.setByte(dst + i, StringTools.fastCodeAt(str, i));
+	#elseif hl
+		var size = 0;
+		@:privateAccess var b = str.bytes.utf16ToUtf8(0, size);
+		current.blit(dst, b, 0, len < size ? len : size);
 	#else
 		var slen = str.length;
 		var i = 0, c = 0, j = 0;
@@ -316,6 +341,11 @@ class Ram{
 		return current.readUTFBytes(len);
 	#elseif (cpp && !keep_bytes)
 		return untyped __cpp__("_hx_string_create({0}, {1})", current.cs() + (dst:Int), len);
+	#elseif hl
+		var b = new hl.Bytes(len + 1);
+		b.blit(0, current, dst, len);
+		b[len] = 0;
+		return @:privateAccess String.fromUTF8(b);
 	#else
 		return current.getString(dst, len);
 	#end
