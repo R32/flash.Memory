@@ -52,12 +52,12 @@ class Ram{
 	static var current: Star<BytesData> = null;
 
 	public static function select(?ba:Star<BytesData>): Void {
-		if (ba == null) ba = BytesData.createStar(LLB);
+		if (ba == null) ba = create(LLB);
 		Memory.select(ba);
 		current = ba;
 	}
 
-	public static function create(len = LLB): Star<BytesData> {
+	public static inline function create(len = LLB): Star<BytesData> {
 		return BytesData.createStar(len);
 	}
 #else
@@ -69,7 +69,7 @@ class Ram{
 		current = ba;
 	}
 
-	public static function create(len = LLB):Bytes {
+	public inline static function create(len = LLB):Bytes {
 		return Bytes.alloc(len);
 	}
 #end
@@ -92,7 +92,7 @@ class Ram{
 	public static inline function free(entry :Ptr) Malloc.free(entry);
 
 	static function req(len:UInt) {
-		if(len > current.length){
+		if (len > current.length) {
 		#if flash
 			current.length = mem.Ut.padmul(len, 4 << 10); // 4K
 		#elseif (cpp && !keep_bytes)
