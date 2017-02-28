@@ -29,8 +29,8 @@ Fixed Block
 		return b;
 	}
 
-	static public inline function fromBytes(b):FBlock {
-		return Ram.mallocFromBytes(b);
+	static public inline function fromBytes(b, align = 128):FBlock {
+		return Ram.mallocFromBytes(b, align);
 	}
 
 	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);

@@ -325,8 +325,8 @@ class Ram{
 
 	public static inline function mallocFromString(str:String):WString return WStrImpl.fromString(str);
 
-	public static function mallocFromBytes(b:Bytes):mem.struct.FBlock {
-		var ret = new mem.struct.FBlock(b.length, false, 128);
+	public static function mallocFromBytes(b:Bytes, align = 32):mem.struct.FBlock {
+		var ret = new mem.struct.FBlock(b.length, false, align);
 	#if flash
 		writeBytes(ret, b.length, b.getData());
 	#else
