@@ -117,6 +117,18 @@ class AES128 {
 		setI32(buf + 12, getI32(buf + 12) ^ getI32(iv + 12));
 	}
 
+	/**
+	 IMPORTANT: make sure that (capability(input/output) > length) && (capability(input/output) % 16 == 0)
+
+	 example:
+
+	 ```haxe
+	 var file = haxe.Resource.getBytes("res");
+	 var input = mem.struct.FBlock.fromBytes(file, 16);
+	 var output = input;
+	 AES128.cbcEncryptBuff(input, cast 0, output, file.length, cast 0);  // no key, no iv
+	 ```
+	*/
 	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
 
