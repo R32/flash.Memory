@@ -68,7 +68,7 @@ class Ph{
 			Ram.current.position = ptr;
 			return Ram.current.readMultiByte(len, "us-ascii");
 		}
-	#elseif (neko || cpp || lua)
+	#elseif (hl || neko || cpp || lua)
 		return Ram.readUTFBytes(ptr, len);
 	#elseif (js && (js_es > 3))
 		return untyped __js__("String.fromCharCode.apply(null, {0})", Memory.b.b.slice(ptr, ptr + len));
