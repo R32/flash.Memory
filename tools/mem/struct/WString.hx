@@ -31,7 +31,7 @@ class WStrImpl {
 		var length = 0;
 		var b = str.bytes.utf16ToUtf8(0, length);
 		var ws = new WString(length);
-		Ram.current.blit(ws, b, 0, length);
+		Ram.current.b.blit(ws, b, 0, length);
 	#else
 		var ba = writeString(str);
 		var length = ba.length;

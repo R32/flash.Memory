@@ -40,7 +40,7 @@ class AStrImpl {
 	#elseif hl
 		var size = 0;
 		var b = str.bytes.utf16ToUtf8(0, size);
-		Ram.current.blit(sa, b, 0, str.length);
+		Ram.current.b.blit(sa, b, 0, str.length);
 	#elseif (neko || cpp || lua)
 		Ram.writeUTFBytes(sa, str);
 	#else

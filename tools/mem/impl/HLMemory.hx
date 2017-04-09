@@ -4,8 +4,8 @@ import mem.RawData;
 
 class HLMemory {
 #if !macro
-	public static var b(default, null): RawData;
-	public static inline function select( o : RawData ): Void b = o;
+	public static var b(default, null): hl.Bytes;
+	public static inline function select( o : RawData ): Void b = @:privateAccess o.b;
 #else
 	static inline var bsetui8 = "$bsetui8"; // prevent "$" to escape.
 	static inline var bsetui16 = "$bsetui16";
