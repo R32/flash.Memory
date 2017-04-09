@@ -37,7 +37,6 @@ class Test {
 		test_md5();
 		test_sha1();
 		test_aes128();
-		test_cppblock();
 		test_xor_domainLock();
 		test_raw();
 	}
@@ -156,39 +155,6 @@ class Test {
 		trace("SHA256(loop * 3) std sec: " + toFixed(time01, 5)  +", hash: "  + out11.toHex());
 	}
 
-	static function test_cppblock():Void {
-	#if cpp
-		var p:cpp.Pointer<BytesData> = BytesData.create(1024);
-
-		p.ptr.blit(0, p.ptr, 0, 100);
-
-		BytesData.destory(p.ptr);
-
-		var s:cpp.Star<BytesData> = BytesData.createStar(1024);
-		s.I32[0] = 0x11223344;
-		s.I32[1] = 0x55667788;
-		s.resize(2048); // copy to new data
-		NRam.memcpy(s.star() + 1024, s.star(), 8);
-		Sys.println("0x" +StringTools.hex(s.get(1024)));
-		Sys.println("0x" +StringTools.hex(s.U16[1024 >> 1]));
-		Sys.println("0x" +StringTools.hex(s.I32[1024 >> 2]));
-		Sys.println(s.getInt32(1024) == s.I32[1024 >> 2]);
-
-		s.fill(8, 4,  0x66);
-		s.fill(12, 4, 0x99);
-		var i64:haxe.Int64 = s.I64[8 >> 3]; // 1 * 8
-		Sys.println(i64.low == s.getInt32(8) && i64.high == s.getInt32(12));
-		Sys.println("0x" + StringTools.hex(i64.low) + " -- 0x" +StringTools.hex(i64.high));
-
-		NRam.memset(s.star() + 32, 0x22, 4);
-		NRam.memset(s.star() + 36, 0x77, 4);
-		i64 = s.I64[32 >> 3]; // 1 * 8
-		Sys.println("0x" + StringTools.hex(i64.low) + " -- 0x" +StringTools.hex(i64.high));
-		BytesData.destory(s);
-	#end
-	}
-
-
 	public static function test_md5():Void {
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
@@ -208,7 +174,6 @@ class Test {
 		now = haxe.Timer.stamp();
 		for (i in 0...3) out2 = mem.obs.Crc32.make(filePtr, file.length);
 		var time2 = haxe.Timer.stamp() - now;
-
 		Hex.trace(out0, 16, true, "_MD5(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash: ");
 		trace("MD5(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
 		trace("Crc32(loop * 3) mem sec: " + toFixed(time2, 5)  +", hash: 0x"  + StringTools.hex(out2));
