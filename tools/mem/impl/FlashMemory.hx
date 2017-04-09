@@ -1,10 +1,11 @@
-package mem;
+package mem.impl;
 
-// typedef Memory = flash.Memory;
+import mem.RawData;
+
 // https://github.com/HaxeFoundation/haxe/commit/5b8bc7dd3dfb8999df8d86ccfdb9273dcc933d36
-@:dce class FlashMemory {
+class FlashMemory {
 #if !macro
-	public static inline function select( b : flash.utils.ByteArray ): Void flash.system.ApplicationDomain.currentDomain.domainMemory = b;
+	public static inline function select( b : RawData ): Void flash.system.ApplicationDomain.currentDomain.domainMemory = b;
 #end
 	macro public static function setByte(  addr, v ) return macro untyped __vmem_set__(0, ($addr: Int), ($v: Int));
 	macro public static function setI16(   addr, v ) return macro untyped __vmem_set__(1, ($addr: Int), ($v: Int));
