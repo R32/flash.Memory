@@ -175,6 +175,7 @@ class StructBuild{
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
 						var expr_value = unsafe_cast == false ? (macro v) : (macro cast v); // argument name are "v"
+						expr_value.pos = f.pos;
 						switch (ts) {
 						case "Bool":
 							offset += params.dx;
