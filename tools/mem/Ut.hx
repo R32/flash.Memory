@@ -1,8 +1,5 @@
 package mem;
 
-#if cpp
-@:nativeGen @:headerCode("#define Ut_hx Ut_hx_obj") @:native("mem.Ut_hx")
-#end
 class Ut{
 	/**
 	0x4321 => 4,  (n <= 0xFF) - 2

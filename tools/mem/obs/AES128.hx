@@ -54,16 +54,10 @@ Ported by r32
 }
 
 // N.B: 现在 haxe 编译器局部变量过多, 看以后是否会解决再优化这一块, 先不管它
-#if cpp
-@:nativeGen @:headerCode("#define AES128hx AES128hx_obj") @:native("mem.obs.AES128hx") // for names conflict
-#end
 @:analyzer(no_copy_propagation)
 class AES128 {
-	#if cpp
-	static var aes:AES128Context;  // no default value, To prevent creating __register()
-	#else
+
 	static var aes:AES128Context = cast NUL;
-	#end
 
 	static var pstate: Ptr;
 

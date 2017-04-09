@@ -6,15 +6,9 @@ import mem.Malloc.NUL;
 /**
 Crc32 checksum using a const table
 */
-#if cpp
-@:nativeGen @:headerCode("#define Crc32hx Crc32hx_obj") @:native("mem.obs.Crc32hx")
-#end
 class Crc32 {
-	#if cpp
-	static var table:AI32;
-	#else
+
 	static var table:AI32 = cast NUL;
-	#end
 
 	public static function init() {
 		if (table != NUL) return;

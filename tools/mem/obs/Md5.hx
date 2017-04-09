@@ -44,16 +44,10 @@ import mem.obs._macros.Md5Macros.*;
 	}
 }
 
-#if cpp
-@:nativeGen @:headerCode("#define Md5hx Md5hx_obj") @:native("mem.obs.Md5hx") // for names conflict
-#end
+
 class Md5 {
 
-	#if cpp
-	static var m5:Md5Context;  // no default value, To prevent creating __register()
-	#else
 	static var m5:Md5Context = cast Malloc.NUL;
-	#end
 
 	public static function init():Void {
 		if (m5 == Malloc.NUL) m5 = new Md5Context();

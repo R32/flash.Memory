@@ -41,26 +41,16 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	@:op(A == B) private static inline function eqInt( a : Block, b : Block ) : Bool
 		return (a:Int) == (b:Int);
 }
-#if cpp
-@:nativeGen @:headerCode("#define Mallochx Mallochx_obj") @:native("mem.Mallochx")
-#end
+
 class Malloc {
 
 	public static inline var NUL:Ptr = cast 0;
 	public static inline var LB = 8;
 
-	#if cpp
-	static var top(default, null):Block;
-	static var bottom(default, null):Block;
-	public static var frag_count(default, null):Int;
-	public static var length(default, null):Int;
-	public static function __register():Void {}
-	#else
 	static var top(default, null):Block = cast NUL;
 	static var bottom(default, null):Block = cast NUL;
 	public static var frag_count(default, null):Int = 0;
 	public static var length(default, null):Int = 0;
-	#end
 
 	public static function getUsed():Int {
 		return bottom == NUL ? 16 : bottom.entry + bottom.size; // Reserve 16 bytes

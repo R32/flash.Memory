@@ -38,15 +38,10 @@ import mem.obs._macros.Sha1Macros.*;
 //
 //  This is free and unencumbered software released into the public domain - June 2013 waterjuice.org
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if cpp
-@:nativeGen @:headerCode("#define Sha1hx Sha1hx_obj") @:native("mem.obs.Sha1hx") // for names conflict
-#end
+
 class Sha1{
-	#if cpp
-	static var sa: Sha1Context;  // no default value, To prevent creating __register()
-	#else
+
 	static var sa: Sha1Context = cast Malloc.NUL;
-	#end
 
 	public static function init():Void {
 		if (sa == Malloc.NUL) sa = new Sha1Context();
