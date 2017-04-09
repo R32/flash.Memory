@@ -9,8 +9,8 @@ int main(int argc, const char* argv[]){
 
 	mem::BData* byte = new mem::BData(128);
 
-	byte->I32()[2] = 0x55667788;
-	byte->I32()[3] = 0x11223344;
+	byte->setInt32(sizeof(int) * 2, 0x55667788);
+	byte->setInt32(sizeof(int) * 3, 0x11223344);
 
 	size_t base = 2 * sizeof(int);
 

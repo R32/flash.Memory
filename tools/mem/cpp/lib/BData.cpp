@@ -2,29 +2,16 @@
 
 namespace mem{
 
-	void BData::select(void* alloc, size_t len)
+	void BData::select(void* space, size_t len)
 	{
-		b = alloc;
+		b = space;
 		length = len;
-		u8 = (uint8_t*) b;
-		u16 = (uint16_t*) b;
-		i32 = (int32_t*) b;
-		i64 = (int64_t*) b;
-		f4 = (float*) b;
-		f8 = (double*) b;
-	}
-
-	char* BData::Cs()
-	{
-		return (char*) b;
 	}
 
 	void BData::resize(size_t len)
 	{
-		if(len <= length) return;
-		void* newly = malloc(len);
-		memcpy(newly, this->b, length);
-		free(this->b);
+		if(len <= length || b == NULL) return;
+		void* newly = realloc(b, len);
 		select(newly, len);
 	}
 
