@@ -73,6 +73,8 @@ class TestInFlash{
 			mc.graphics.beginFill(blk.is_free ? 0xbd2c00 : 0x6cc644) ;
 			mc.graphics.drawRect(x, h, w, MC_H);
 			i++;
+			if(0 != blk.next && ((blk:Int) + blk.size) != blk.next)
+				throw "xxxxxxxxxxx";
 		}
 		var len = i;
 		mc.graphics.lineStyle(1, 0);

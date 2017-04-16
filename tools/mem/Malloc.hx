@@ -37,9 +37,6 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	}
 
 	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
-
-	@:op(A == B) private static inline function eqInt( a : Block, b : Block ) : Bool
-		return (a:Int) == (b:Int);
 }
 
 class Malloc {
