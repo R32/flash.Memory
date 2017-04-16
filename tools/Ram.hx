@@ -73,6 +73,28 @@ class Ram{
 	// in bytes
 	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero, 8);
 
+	public static function realloc(src: Ptr, new_size:Int):Ptr @:privateAccess {
+		var src_blk = Malloc.indexOf(src);
+		if (new_size <= 0 || src_blk == Malloc.NUL) throw "Invalid arguments";
+
+		new_size = mem.Ut.padmul(new_size, 8);
+		var src_size = src_blk.entrySize;
+
+		if (src_blk == Malloc.bottom) {
+			if (new_size > src_size)
+				req((src:Int) + new_size); // check
+			src_blk.size = new_size + Block.CAPACITY;
+		} else if (new_size > src_size) {
+			var new_ptr = malloc(new_size, false);
+			var new_blk = Malloc.indexOf(new_ptr);
+			memcpy(new_ptr, src, src_size);
+			memset(new_ptr + src_size, 0, new_size - src_size);
+			src_blk.free();
+			return new_ptr;
+		}
+		return src;
+	}
+
 	public static inline function free(entry :Ptr) Malloc.free(entry);
 
 	static function req(len: UInt) {
