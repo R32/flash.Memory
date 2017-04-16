@@ -25,15 +25,15 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	@idx(0) var next: Block;    // 4 bytes
 
 	public var entry(get, never):Ptr;
-	inline function get_entry():Ptr return this + CAPACITY;
+	inline function get_entry():Ptr return this + OFFSET_END;
 
 	public var entrySize(get, never):Int;
 	inline function get_entrySize():Int return size - CAPACITY;
 
-	inline private function new(block_addr:Ptr, entry_size:Int, clear:Bool) {
+	inline private function new(block_addr:Ptr, req_size:Int, clear:Bool) {
 		this = block_addr;
-		Ram.memset(this, 0, clear ? entry_size + CAPACITY : CAPACITY);
-		size = CAPACITY + entry_size;	// Note: must after memset
+		Ram.memset(this, 0, (clear ? req_size + CAPACITY : CAPACITY));
+		size = CAPACITY + req_size;	// Note: must after memset
 	}
 
 	inline public function free() @:privateAccess Malloc.freeBlock(cast this);

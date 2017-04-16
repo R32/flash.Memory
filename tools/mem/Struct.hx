@@ -380,7 +380,7 @@ class StructBuild{
 	if (offset - offset_first > 0) {
 
 		fields.push({
-			name : "CAPACITY",
+			name : "CAPACITY",    // Some similar "sizeof struct"
 			doc:  "== " + $v{offset - offset_first},
 			access: [AStatic, AInline, APublic],
 			kind: FVar(macro :Int, macro $v{offset - offset_first}),
@@ -388,10 +388,18 @@ class StructBuild{
 		});
 
 		fields.push({
-			name : "OFFSET_FIRST",
+			name : "OFFSET_FIRST",// This field may be "Negative"
 			doc:  "== " + $v{offset_first},
 			access: [AStatic, AInline, APublic],
 			kind: FVar(macro :Int, macro $v{offset_first}),
+			pos: cls.pos
+		});
+
+		fields.push({
+			name : "OFFSET_END",  // If you want to add a flexible field at the end of the struct
+			doc:  "== " + $v{offset},
+			access: [AStatic, AInline, APublic],
+			kind: FVar(macro :Int, macro $v{offset}),
 			pos: cls.pos
 		});
 
@@ -438,7 +446,7 @@ class StructBuild{
 				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
 					ret : macro :Void,
 					expr: macro {
-						$i{context} = cast (Ram.malloc(entry_size, zero) - $v{offset_first}); // offset_first <= 0
+						$i{context} = Ram.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -453,7 +461,7 @@ class StructBuild{
 					args: [],
 					ret : macro :mem.Ptr,
 					expr: macro {
-						return $i{context} + $v{offset_first};
+						return $i{context} + OFFSET_FIRST;
 					}
 				}),
 				pos: here()
@@ -502,18 +510,15 @@ class StructBuild{
 
 		var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
 		var block:Array<Expr> = [];
-		for (k in all_fields.iterator()) {
+		for (k in all_fields) {
 			var node = Reflect.field(attrs, k);
 			var _w = Ut.hexWidth(offset);
-			var _dx  = node.offset >= 0 ? "0x" + hex( node.offset, _w) : "-" + node.offset;
+			var _dx  = node.offset        >= 0 ? "0x" + hex( node.offset, _w       ) : "(" + (node.offset       ) + ")";
 			var _len = node.len * node.bytes;
-			var _end = node.offset >= 0 ? "0x" + hex(node.offset + _len, _w) : "" + (node.offset + _len);
+			var _end = node.offset + _len >= 0 ? "0x" + hex( node.offset + _len, _w) : "(" + (node.offset + _len) + ")";
 			block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
 		}
 		var clsname = abs_type == null ? cls.name : abs_type.name;
-		var actual_space = clsname == "Block"
-			? macro ""
-			: macro ". ACTUAL_SPACE" + @:privateAccess (mem.Malloc.indexOf($i{context} + $v{offset_first}).size - mem.Malloc.Block.CAPACITY);
 		fields.push({
 			name : "__toOut",
 			meta: [{name: ":dce", pos: here()}],
@@ -523,8 +528,15 @@ class StructBuild{
 				ret : macro :String,
 				expr: macro {
 					$checkFail;
-					var buf = ["--- " + $v{clsname} + ".CAPACITY: " + $i{"CAPACITY"} + " .OFFSET_FIRST: "+ $v{offset_first}
-						+ $e{actual_space} + ", ::baseAddr: " + $i{context} + "\n"];
+					var actual_space = "";
+					if ($v{clsname} != "Block") @:privateAccess {
+						var b = mem.Malloc.indexOf($i{ context } + OFFSET_FIRST);
+						if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
+							actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";
+					}
+					var buf = ["\n--- " + $v { clsname } + ".CAPACITY: " + $i { "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
+						+ ", OFFSET_END: " + OFFSET_END
+						+ "\n--- " + actual_space + "baseAddr: " + ($i{ context } + OFFSET_FIRST) + "\n"];
 					$a{block};
 					return buf.join("");
 				}
