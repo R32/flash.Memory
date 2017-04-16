@@ -53,7 +53,7 @@ class Malloc {
 	public static var length(default, null):Int = 0;
 
 	public static function getUsed():Int {
-		return bottom == NUL ? 16 : bottom.entry + bottom.size; // Reserve 16 bytes
+		return bottom == NUL ? 16 : (bottom:Int) + bottom.size; // Reserve 16 bytes
 	}
 
 	// e.g: .calcEntrySize( someStruct.realEntry() )
