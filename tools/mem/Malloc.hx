@@ -33,7 +33,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	inline private function new(block_addr:Ptr, req_size:Int, clear:Bool) {
 		this = block_addr;
 		Ram.memset(this, 0, (clear ? req_size + CAPACITY : CAPACITY));
-		size = CAPACITY + req_size;	// Note: must after memset
+		size = req_size + CAPACITY;	// Note: must after memset
 	}
 
 	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
@@ -108,10 +108,10 @@ class Malloc {
 		return cast NUL;
 	}
 
-	public static function make(entrySize:Int, zero:Bool, pb:Int):Ptr {
+	public static function make(req_size:Int, zero:Bool, pb:Int):Ptr {
 		if (pb != LB && (((pb & LB - 1) != 0)) || pb < LB) pb = LB;
 
-		entrySize = Ut.padmul(entrySize, pb);
+		req_size = Ut.padmul(req_size, pb);
 
 		//if (frag_count > 0) mergeFragment();
 
@@ -122,10 +122,10 @@ class Malloc {
 		while (tmp_frag_count > 0 && cc != NUL) {
 			if (cc.is_free) {
 				poolEntrySize = cc.entrySize;
-				if (poolEntrySize == entrySize) {
+				if (poolEntrySize == req_size) {
 					block = cc;
 					break;
-				} else if (block == NUL && poolEntrySize > entrySize) {
+				} else if (block == NUL && poolEntrySize > req_size) {
 					block = cc;
 				}
 				-- tmp_frag_count;
@@ -133,20 +133,20 @@ class Malloc {
 			cc = cc.next;
 		}
 
-		var entrySizeAb = entrySize + Block.CAPACITY;
+		var entrySizeAb = req_size + Block.CAPACITY;
 
-		if(block == NUL) {
+		if(block == NUL) @:privateAccess {
 			var blockAddr = getUsed();
-			@:privateAccess Ram.req(blockAddr + entrySizeAb);  // check
-			block = @:privateAccess new Block(cast blockAddr, entrySize, zero);
+			Ram.req(blockAddr + entrySizeAb); // check
+			block = new Block(cast blockAddr, req_size, zero);
 			add(block);
 		} else {
 			poolEntrySize = block.entrySize;  // N.B: poolEntrySize does not contain its own "Block.CAPACITY"
-			if (entrySizeAb >= 64 && poolEntrySize >= (entrySizeAb + entrySize)) { // if true then split
-				block.size = entrySizeAb;
-				var nextBlock = @:privateAccess new Block(block.entry + entrySize, poolEntrySize - entrySizeAb, false);
+			if (entrySizeAb >= 64 && poolEntrySize >= (entrySizeAb + req_size)) { // if double size then split
+				var nextBlock = @:privateAccess new Block((block:Ptr) + entrySizeAb, poolEntrySize - entrySizeAb, false);
 				nextBlock.is_free = true;
 				insertAfter(nextBlock, block);
+				block.size = entrySizeAb;
 			} else {
 				-- frag_count;
 			}
