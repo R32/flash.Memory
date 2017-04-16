@@ -26,15 +26,16 @@ Enum                        @idx(?offset)         [bytes = 1]
 String                      @idx(length, ?offset) [bytes = length]
 Int: (1), 2, 4              @idx(?bytes, ?offset) [default bytes = 1]
 Float: (4), 8               @idx(?bytes, ?offset) [default bytes = 4]
-haxe.EnumFlags: (1), 2, 4   @idx(?bytes, ?offset) [default bytes = 1]
-Array<Int|Float>            @idx(length, ?bytes, ?offset) [space = length * bytes]
- - Int: (1), 2, 4
- - Float: (4), 8
+//haxe.EnumFlags: (1), 2, 4 @idx(?bytes, ?offset) [default bytes = 1]              - not recommended
+//Array<Int|Float>          @idx(length, ?bytes, ?offset) [space = length * bytes] - not recommended, use AU8,AU16,AI32...
+// - Int: (1), 2, 4
+// - Float: (4), 8
 AU8                         @idx(length, ?offset) [space = length * 1 bytes]
 AU16                        @idx(length, ?offset) [space = length * 2 bytes]
 AI32                        @idx(length, ?offset) [space = length * 4 bytes]
 AF4                         @idx(length, ?offset) [space = length * 4 bytes]
 AF8                         @idx(length, ?offset) [space = length * 8 bytes]
+Ucs2                        @idx(length, ?offset) [space = length * 2 bytes]
 ```
 */
 @:autoBuild(mem.StructBuild.make())
@@ -94,7 +95,7 @@ class StructBuild{
 				ret = { width:4, dx: arr[0], nums: 1 };
 			case "mem.AU8":
 				ret = { width:1, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
-			case "mem.AU16":
+			case "mem.AU16" | "mem.Ucs2":
 				ret = { width:2, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
 			case "mem.AI32":
 				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
@@ -218,7 +219,7 @@ class StructBuild{
 									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
 							default: throw "EnumFlags instance expected";
 							}
-						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8":
+						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
 							is_array = true;
 							unsafe_cast = true;
 							offset += params.dx;
