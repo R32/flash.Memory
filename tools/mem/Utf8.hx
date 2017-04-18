@@ -1,6 +1,7 @@
 package mem;
 
 import mem.Ptr;
+import mem.obs._macros.Utf8Macos.*;
 
 @:dce @:enum private abstract UTF8Valid(Int) to Int {
 	var UTF8_ACCEPT = 0;
@@ -16,7 +17,7 @@ class Utf8 {
 	public static function init() {
 		if (utf8d_table != Malloc.NUL) return;
 
-		var data = Mt.utf8DataTo32(); // I32;
+		var data = utf8DataTo32(); // I32;
 
 		var len = data.length;
 
