@@ -14,6 +14,7 @@ typedef Param = {
 	nums:Int,
 	dx:Int
 };
+
 #else
 /**
 Supported Types:
@@ -109,10 +110,18 @@ class StructBuild{
 		return ret;
 	}
 
-	static public function make(context = "addr") {
+	static public function make(context = "addr", ?allocter:{free: String, alloc: String}) {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
+
+		var mem = allocter != null ? {
+			free: allocter.free.split("."), // "Ram.free" => ["Ram", "free"] for "macro $p{XXX}"
+			alloc: allocter.alloc.split(".")
+		} : {
+			free: ["Ram","free"],
+			alloc: ["Ram","malloc"]
+		}
 
 		var abs_type  = null;
 		switch (cls.kind) {
@@ -447,7 +456,7 @@ class StructBuild{
 				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
 					ret : macro :Void,
 					expr: macro {
-						$i{context} = Ram.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
+						$i{context} = $p{mem.alloc}(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -472,13 +481,13 @@ class StructBuild{
 		if (!all_in_map.exists("free"))
 			fields.push({
 				name : "free",
-				doc: ' == Ram.free( this.realEntry() );',
+				doc: ' == .free( this.realEntry() );',
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
 					ret : null,
 					expr: macro {
-						mem.Malloc.free(realEntry());
+						$p{mem.free}(realEntry());
 						$i{context} = cast mem.Malloc.NUL;
 					}
 				}),
