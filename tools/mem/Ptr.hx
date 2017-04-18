@@ -57,6 +57,23 @@ abstract AF8(Ptr) to Ptr{
 	@:arrayAccess inline function set(k:Int, v:Float):Void Memory.setDouble(this + (k << 3), v);
 }
 
+abstract ABit(Ptr) to Ptr {
+	@:arrayAccess function get(k:Int):Int {
+		var byte = Memory.getByte(this + (k >> 3));
+		var p = k & (8 - 1);
+		return (byte >> p) & 1;
+	}
+	@:arrayAccess function set(k:Int, v:Int):Void {
+		var byte = Memory.getByte(this + (k >> 3));
+		var p = k & (8 - 1);
+		Memory.setByte(this + (k >> 3),
+			v == 0
+			? byte & (~(1 << p))
+			: byte | (1 << p)
+		);
+	}
+}
+
 #if flash
 typedef Memory = mem.impl.FlashMemory;
 #elseif cpp

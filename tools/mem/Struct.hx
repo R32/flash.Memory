@@ -228,6 +228,8 @@ class StructBuild{
 									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
 							default: throw "EnumFlags instance expected";
 							}
+						case "mem.ABit"	:
+							Context.error("build macor do not currently support \"" + ts + "\"", f.pos);
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
 							is_array = true;
 							unsafe_cast = true;
