@@ -8,7 +8,7 @@ import mem.struct.WString;
 
 class Ram{
 
-	static inline var LLB = 16 << 10;  // 16384, 16K
+	static inline var LLB = 16 << 12;  // 16384, 64K
 	static var current:RawData = null;
 
 #if flash
@@ -99,7 +99,7 @@ class Ram{
 
 	static function req(len: UInt) {
 		if (len > current.length) {
-			var expand = mem.Ut.padmul(len, 4 << 10);  // 4K
+			var expand = mem.Ut.padmul(len, 16 << 10);  // 16K
 		#if flash
 			current.length = expand;
 		#elseif cpp
