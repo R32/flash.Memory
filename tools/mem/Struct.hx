@@ -423,7 +423,7 @@ class StructBuild{
 				pos: here()
 			});
 		}else if (abs_type != null && constructor.access.indexOf(AInline) == -1){
-			Context.warning("Suggestion: add **inline** for " + cls.name, constructor.pos);
+			//Context.warning("Suggestion: add **inline** for " + cls.name, constructor.pos);
 		}
 
 		if (!all_in_map.exists("mallocAbind")) // malloc and bind Context
