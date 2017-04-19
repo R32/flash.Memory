@@ -43,28 +43,6 @@ Ucs2                        @idx(length, ?offset) [space = length * 2 bytes]
 #end
 @:remove interface Struct {
 	var addr(default, null): mem.Ptr;
-
-/*  make all @idx fields as inline getter/setter;
-
-	and if not have, macro will be auto create below these:
-	public var addr(default, null):mem.Ptr;
-
-	public inline function new(){
-		addr = Ram.malloc(CAPACITY, true);
-	}
-
-	public inline function free(p:Ptr){
-		mem.Malloc.free(ptr);
-		this.addr = mem.Malloc.NUL;
-	}
-
-	public inline function __toOut():String{
-		return "long ....";
-	}
-
-	static inline var CAPACITY:Int = typeof(this struct);
-	static inline var ALL_FIELDS:iterator = ["field_1_name", "field_2_name" .....];
-*/
 }
 
 class StructBuild{

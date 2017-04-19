@@ -3,10 +3,16 @@ package mem.struct;
 import mem.Ptr;
 import mem.Malloc.NUL;
 
+/**
+Utf8 String
+*/
 @:build(mem.Struct.StructBuild.make())
 abstract WString(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 
+	/**
+	bytesLength, you can use mem.Utf8.length to calculate length of Utf8
+	*/
 	public var length(get, never): Int;
 
 	private inline function get_length() return _len;
