@@ -88,17 +88,15 @@ class StructBuild{
 		return ret;
 	}
 
-	static public function make(context = "addr", ?allocter:{free: String, alloc: String}) {
+	static public function make(?alloc:Expr, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 		var fields:Array<Field> = Context.getBuildFields();
 
-		var mem = allocter != null ? {
-			free: allocter.free.split("."), // "Ram.free" => ["Ram", "free"] for "macro $p{XXX}"
-			alloc: allocter.alloc.split(".")
-		} : {
-			free: ["Ram","free"],
-			alloc: ["Ram","malloc"]
+		var alloc_s = ExprTools.toString(alloc);
+		if (alloc_s == "null") {
+			alloc_s = "Ram";
+			alloc = macro $i{alloc_s};
 		}
 
 		var abs_type  = null;
@@ -436,7 +434,7 @@ class StructBuild{
 				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
 					ret : macro :Void,
 					expr: macro {
-						$i{context} = $p{mem.alloc}(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
+						$i{context} = $alloc.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -467,7 +465,7 @@ class StructBuild{
 					args: [],
 					ret : null,
 					expr: macro {
-						$p{mem.free}(realEntry());
+						$alloc.free(realEntry());
 						$i{context} = cast mem.Malloc.NUL;
 					}
 				}),
@@ -519,14 +517,15 @@ class StructBuild{
 				expr: macro {
 					$checkFail;
 					var actual_space = "";
-					if ($v{clsname} != "Block" && $v{allocter == null} ) @:privateAccess {
+					if ($v{clsname} != "Block" && $v{alloc_s} == "Ram") @:privateAccess {
 						var b = mem.Malloc.indexOf($i{ context } + OFFSET_FIRST);
 						if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
 							actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";
 					}
 					var buf = ["\n--- " + $v { clsname } + ".CAPACITY: " + $i { "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
 						+ ", OFFSET_END: " + OFFSET_END
-						+ "\n--- " + actual_space + "baseAddr: " + ($i{ context } + OFFSET_FIRST) + "\n"];
+						+ "\n--- " + actual_space + "baseAddr: " + ($i { context } + OFFSET_FIRST)
+						+ ", Allocter: " + $v { alloc_s } + "\n"];
 					$a{block};
 					return buf.join("");
 				}
