@@ -1,6 +1,6 @@
 package mem;
 
-class Ut{
+@:allow(mem) class Ut{
 	/**
 	0x4321 => 4,  (n <= 0xFF) - 2
 	*/
@@ -19,9 +19,22 @@ class Ut{
 		var i = p - (n % p);
 		return i == p && n > 0 ? n : n + i;
 	}
+
 	// (7 => 16-7), (17 => 32-17), (16 => 16), (0 => 16), for AES padding
 	static public function pad16(size) {
 		return 16 - (size & (16 - 1));
+	}
+
+	// Note: "by" must be pow of 2
+	static inline function divisible(x, by) return (x & (by - 1)) == 0;
+
+	static public inline function isPowOf2(x) return divisible(x, x);
+
+	// (2) => 2, (3) => 4, (33) => 64;
+	static public function nextPow(x) {
+		var ret = 2;
+		while (ret < x) ret <<= 1;
+		return ret;
 	}
 
 	static public function toFixed(f: Float, n: Int): String {
