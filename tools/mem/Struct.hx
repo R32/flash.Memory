@@ -73,15 +73,15 @@ class StructBuild{
 			case "mem.Ptr":
 				ret = { width:4, dx: arr[0], nums: 1 };
 			case "mem.AU8":
-				ret = { width:1, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+				ret = { width:1, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AU16" | "mem.Ucs2":
-				ret = { width:2, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+				ret = { width:2, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AI32":
-				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AF4":
-				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AF8":
-				ret = { width:8, dx: (len > 1 ? arr[1] : 0), nums: notZero(arr[0]) };
+				ret = { width:8, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			default: // Float, String, Int, haxe.EnumFlags
 				ret = { width: notZero(arr[0]), dx: (len > 1 ? arr[1] : 0), nums: 1 };
 		}
@@ -112,6 +112,7 @@ class StructBuild{
 		var offset_first = 0;
 		var offset_first_ready = false;
 		var offset = 0;
+		var flexible = false;
 		var params:Param;
 		var metaParams;
 
@@ -119,25 +120,34 @@ class StructBuild{
 
 		for (f in fields) all_in_map.set(f.name, f);
 
-		for (f in fields) {
+		var filter = fields.filter(function(f) {
+			if (f.meta != null) {
+				for(meta in f.meta) {
+					if (meta.name == IDX)
+						return true;
+				}
+			}
+			return false;
+		});
+
+		for (f in filter) {
 			var is_array = false;
 			var unsafe_cast = false;
 			metaParams = null;
 			params = null;
-			if(f.meta != null)
-				for(meta in f.meta){
-					if (meta.name == IDX){
-						metaParams = [];
-						for (ex in meta.params) {
-							try {
-								metaParams.push(parseInt(ExprTools.getValue(ex)));
-							}catch(err: Dynamic) {
-								Context.error("Invalid Meta value for @" + IDX, f.pos);
-							}
+			for (meta in f.meta) {
+				if (meta.name == IDX) {
+					metaParams = [];
+					for (ex in meta.params) {
+						try {
+							metaParams.push(parseInt(ExprTools.getValue(ex)));
+						} catch(err: Dynamic) {
+							Context.error("Invalid Meta value for @" + IDX, f.pos);
 						}
-						if (metaParams.length == 0) metaParams.push(0);
 					}
+					if (metaParams.length == 0) metaParams.push(0);
 				}
+			}
 			if (metaParams == null) continue;
 
 			if (f.access.indexOf(AStatic) > -1) Context.error("Does not support static properties", f.pos);
@@ -209,6 +219,14 @@ class StructBuild{
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
 							is_array = true;
 							unsafe_cast = true;
+							if (params.nums == 0) {
+								if (f == filter[filter.length - 1]) {
+									flexible = true;
+									params.dx = 0; // if last field is a flexible array member
+								} else {
+									Context.error("the flexible array member is supports only for the last field.", f.pos);
+								}
+							}
 							offset += params.dx;
 							[(macro ($i{ context } + $v{ offset })), null]; // null is never
 						case "mem.Ptr":
@@ -351,8 +369,7 @@ class StructBuild{
 							kind: FVar(macro :Int, macro $v{params.width * params.nums}),
 							pos: f.pos
 						});
-
-						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width, len: params.nums});
+						Reflect.setField(attrs, f.name, {offset: offset, bytes: params.width, len: params.nums, is_array: is_array});
 						offset += params.nums * params.width;
 					}else{
 						Reflect.setField(attrs, f.name, {offset: offset, len: params.width, bytes: 1});
@@ -392,6 +409,13 @@ class StructBuild{
 		});
 
 		fields.push({
+			name : "FLEXIBLE",    // The last field is a flexible array(AU8/AU16/...) member
+			access: [AStatic, AInline, APublic],
+			kind: FVar(macro :Bool, macro $v{flexible}),
+			pos: cls.pos
+		});
+
+		fields.push({
 			name : "ALL_FIELDS",
 			meta: [{name: ":dce", pos: cls.pos}],
 			doc:  "== " + $v{all_fields.length},
@@ -411,13 +435,17 @@ class StructBuild{
 			fields.push({
 				name : "new",
 				access: [AInline, APublic],
-				kind: FFun({
+				kind: flexible ? FFun({
+					args: [{name: "extra", type: macro :Int}],
+					ret : null,
+					expr: macro {
+						mallocAbind(CAPACITY + extra, true);
+					}})    :     FFun({
 					args: [],
 					ret : null,
 					expr: macro {
 						mallocAbind(CAPACITY, true);
-					}
-				}),
+					}}),
 				pos: here()
 			});
 		}else if (abs_type != null && constructor.access.indexOf(AInline) == -1){
@@ -504,7 +532,8 @@ class StructBuild{
 			var _dx  = node.offset        >= 0 ? "0x" + hex( node.offset, _w       ) : "(" + (node.offset       ) + ")";
 			var _len = node.len * node.bytes;
 			var _end = node.offset + _len >= 0 ? "0x" + hex( node.offset + _len, _w) : "(" + (node.offset + _len) + ")";
-			block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $i{k} + "\n"));
+			var _val = node.is_array ? macro "[...]" : macro $i{k};
+			block.push(macro buf.push("offset: " + $v{_dx} + " - " + $v{_end} + ", bytes: "+ $v{_len} +", " + $v{k} + ": " + $_val + "\n"));
 		}
 		var clsname = abs_type == null ? cls.name : abs_type.name;
 		fields.push({
@@ -516,13 +545,19 @@ class StructBuild{
 				ret : macro :String,
 				expr: macro {
 					var actual_space = "";
-					if ($v{clsname} != "Block" && $v{alloc_s} == "Ram") @:privateAccess {
-						var b = mem.Malloc.indexOf($i{ context } + OFFSET_FIRST);
-						if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
-							actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";
+					if ($v{clsname} != "Block") @:privateAccess {
+						if ($v{alloc_s} == "Ram") {
+							var b = mem.Malloc.indexOf($i{context} + OFFSET_FIRST);
+							if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
+								actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";
+						} else if ($v{alloc_s} == "Mini" || $v{alloc_s} == "mem.Mini") {
+							var node = mem.Mini.indexOf($i { context } + OFFSET_FIRST);
+							if (node != mem.Malloc.NUL)
+								actual_space = "ACTUAL_SPACE: " + (mem.Mini.lvl2Size(node.lvl) - 1) + ", ";
+						}
 					}
-					var buf = ["\n--- " + $v { clsname } + ".CAPACITY: " + $i { "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
-						+ ", OFFSET_END: " + OFFSET_END
+					var buf = ["\n--- [" + $v { clsname } + "] CAPACITY: " + $i { "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
+						+ ", OFFSET_END: " + OFFSET_END  + $v{flexible ? ", FLEXIBLE: True" : ""}
 						+ "\n--- " + actual_space + "baseAddr: " + ($i { context } + OFFSET_FIRST)
 						+ ", Allocter: " + $v { alloc_s } + "\n"];
 					$a{block};

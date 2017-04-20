@@ -92,19 +92,27 @@ class Mini {
 	}
 
 	public static function free(chunk: Ptr): Void {
+		var node = indexOf(chunk);
+		if (node != NUL)
+			node.release(chunk);
+		else
+			Ram.free(chunk);
+	}
+
+	static function indexOf(p: Ptr): MiniNode {
 		if (chain != null) {
-			var lvl = getLvl(chunk);
+			var lvl = getLvl(p);
 			if (lvl > 0 &&  lvl <= LVL_MAX) {
-				var node = chain[lvl];
-				if (node != null) {
-					var bx = node.which(chunk);
-					if (bx != NUL && valid(chunk, bx, lvl)) {
-						return bx.release(chunk);
+				var mini = chain[lvl];
+				if (mini != null) {
+					var node = mini.which(p);
+					if (node != NUL && valid(p, node, lvl)) {
+						return node;
 					}
 				}
 			}
 		}
-		Ram.free(chunk);
+		return cast NUL;
 	}
 
 	// Note: [0~8]=>8, [9~16] => 16
@@ -153,7 +161,7 @@ class Mini {
 			var j = 0;
 			while (lop != NUL) {
 				total += (MiniNode.DATA_SIZE + MiniNode.CAPACITY);
-				trace('Node: $j, Available: ${lop.avail}, Fragments: ${lop.frags}, Caret: ${lop.caret}');
+				trace('MNode: $j, Available: ${lop.avail}, Fragments: ${lop.frags}, Caret: ${lop.caret}');
 			++ j;
 			lop = lop.next;
 			}
