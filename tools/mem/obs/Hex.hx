@@ -9,14 +9,17 @@ class Hex{
 	static var hexchar(default, null): AString = cast NUL;
 
 	public static function init() {
+		_init();
+	}
+
+	inline static function _init() {
 		if (hexchar == NUL)
-			hexchar = AStrImpl.fromString("0123456789ABCDEF");
+			hexchar = AString.fromString("0123456789ABCDEF");
 	}
 
 	public static function export(ptr:Ptr, len:Int):AString {
-		if (hexchar == NUL)
-			throw "TODO";
-		var sa = AStrImpl.alloc(len + len);
+		_init();
+		var sa = AString.alloc(len + len);
 		var u16:AU16 = cast sa;
 		var hex:AU8 = cast hexchar;
 		var c:Int;
@@ -28,6 +31,7 @@ class Hex{
 	}
 
 	public static function trace(ptr: Ptr, len: Int, lower = true, prefix = ""): Void {
+		_init();
 		var sa = export(ptr, len);
 		if (lower)
 			trace(prefix + sa.toString().toLowerCase());

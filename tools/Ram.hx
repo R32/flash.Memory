@@ -317,7 +317,7 @@ class Ram{
 	#end
 	}
 
-	public static inline function mallocFromString(str:String):WString return WStrImpl.fromString(str);
+	public static inline function mallocFromString(str:String):WString return WString.fromString(str);
 
 	public static function mallocFromBytes(b:Bytes, align = 32):mem.struct.FBlock {
 		var ret = new mem.struct.FBlock(b.length, false, align);

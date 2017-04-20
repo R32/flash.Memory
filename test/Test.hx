@@ -13,16 +13,17 @@ import mem.obs.AES128;
 import mem.struct.WString;
 import mem.struct.AString;
 import mem.Utf8;
+import mem.Malloc.dump;
 #if cpp
 import mem.cpp.Gbk;
 import mem.cpp.BytesData;
 import mem.cpp.NRam;
 #end
-
+import haxe.Log;
 
 class Test {
 	public static function main(){
-		Ram.select(Ram.create());
+		Ram.attach(1024);
 		Ram.malloc(Ut.rand(128, 1), false);
 		Hex.init();
 		SXor.init();
@@ -43,7 +44,7 @@ class Test {
 
 	static function test_raw() @:privateAccess {
 		trace("----------- raw -----------");
-		var as1 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172a");
+		var as1 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172a");
 		var as2 = Ram.malloc(128);
 		Ram.memcpy(as2, as1, as1.length);
 
@@ -68,60 +69,60 @@ class Test {
 		Ram.writeString(as3, 5, s);
 		trace("writeString: " + (Ram.readUTFBytes(as3, 5) == s.substr(0,5)));
 
-		var ws = WStrImpl.fromString(s);
-		trace("WStrImpl.fromString: " + (ws.toString() == s));
+		var ws = WString.fromString(s);
+		trace("WString.fromString: " + (ws.toString() == s));
 	}
 
 	static function test_aes128() {
 		trace("----------- AES EBC -----------");
-		var as1 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172a");// 3ad77bb40d7a3660a89ecaf32466ef97
-		var as2 = AStrImpl.fromHexString("ae2d8a571e03ac9c9eb76fac45af8e51");// f5d3d58503b9699de785895a96fdbaaf
-		var as3 = AStrImpl.fromHexString("30c81c46a35ce411e5fbc1191a0a52ef");// 43b1cd7f598ece23881b00e3ed030688
-		var key = AStrImpl.fromHexString("2b7e151628aed2a6abf7158809cf4f3c");//
-		Hex.trace(key.addr, key.length, true, "the key  : ");
+		var as1 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172a");// 3ad77bb40d7a3660a89ecaf32466ef97
+		var as2 = AString.fromHexString("ae2d8a571e03ac9c9eb76fac45af8e51");// f5d3d58503b9699de785895a96fdbaaf
+		var as3 = AString.fromHexString("30c81c46a35ce411e5fbc1191a0a52ef");// 43b1cd7f598ece23881b00e3ed030688
+		var key = AString.fromHexString("2b7e151628aed2a6abf7158809cf4f3c");//
+		Hex.trace(key, key.length, true, "the key  : ");
 
-		AES128.ecbEncrypt(as1.addr, key.addr, as1.addr);
-		AES128.ecbEncrypt(as2.addr, key.addr, as2.addr);
-		AES128.ecbEncrypt(as3.addr, key.addr, as3.addr);
-		Hex.trace(as1.addr, as1.length, true, "ebc enc 1: ");
-		Hex.trace(as2.addr, as2.length, true, "ebc enc 2: ");
-		Hex.trace(as3.addr, as3.length, true, "ebc enc 3: ");
+		AES128.ecbEncrypt(as1, key, as1);
+		AES128.ecbEncrypt(as2, key, as2);
+		AES128.ecbEncrypt(as3, key, as3);
+		Hex.trace(as1, as1.length, true, "ebc enc 1: ");
+		Hex.trace(as2, as2.length, true, "ebc enc 2: ");
+		Hex.trace(as3, as3.length, true, "ebc enc 3: ");
 
-		AES128.ecbDecrypt(as1.addr, key.addr, as1.addr);
-		AES128.ecbDecrypt(as2.addr, key.addr, as2.addr);
-		AES128.ecbDecrypt(as3.addr, key.addr, as3.addr);
-		Hex.trace(as1.addr, as1.length, true, "ebc dec 1: ");
-		Hex.trace(as2.addr, as2.length, true, "ebc dec 2: ");
-		Hex.trace(as3.addr, as3.length, true, "ebc dec 3: ");
+		AES128.ecbDecrypt(as1, key, as1);
+		AES128.ecbDecrypt(as2, key, as2);
+		AES128.ecbDecrypt(as3, key, as3);
+		Hex.trace(as1, as1.length, true, "ebc dec 1: ");
+		Hex.trace(as2, as2.length, true, "ebc dec 2: ");
+		Hex.trace(as3, as3.length, true, "ebc dec 3: ");
 
 		trace("----------- AES CBC -----------");
-		var as4 = AStrImpl.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
-		Hex.trace(as4.addr, as4.length, true, "cbc org str: ");
+		var as4 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
+		Hex.trace(as4, as4.length, true, "cbc org str: ");
 
-		var as4out = AStrImpl.alloc(as4.length);
-		AES128.cbcEncryptBuff(as4.addr, cast 0, as4.addr, as4.length, cast 0);
-		AES128.cbcDecryptBuff(as4.addr, cast 0, as4out.addr, as4out.length, cast 0);
-		Hex.trace(as4out.addr, as4.length, true, "cbc dec out: ");
+		var as4out = AString.alloc(as4.length);
+		AES128.cbcEncryptBuff(as4, cast 0, as4, as4.length, cast 0);
+
+		AES128.cbcDecryptBuff(as4, cast 0, as4out, as4out.length, cast 0);
+		Hex.trace(as4out, as4.length, true, "cbc dec out: ");
 
 		// input==output
-		AES128.cbcDecryptBuffIO(as4.addr, cast 0, as4.length, cast 0);
-		Hex.trace(as4.addr, as4.length, true, "cbc dec i=o: ");
+		AES128.cbcDecryptBuffIO(as4, cast 0, as4.length, cast 0);
+		Hex.trace(as4, as4.length, true, "cbc dec i=o: ");
 
 		var file = haxe.Resource.getBytes("testjs");
-		var org = Ram.malloc(Ut.padmul(file.length, 16));
-		var out = Ram.malloc(Ut.padmul(file.length, 16));
-	  #if flash
-		Ram.writeBytes(org, file.length, file.getData());
-	  #else
-		Ram.writeBytes(org, file.length, file);
-	  #end
-		AES128.cbcEncryptBuff(org, key.addr, org, file.length, cast 0);
+		var multi_of_16 = Ut.padmul(file.length, 16);
+		var org = Ram.mallocFromBytes(file, 16);
+		var out = Ram.malloc(multi_of_16);
+		AES128.cbcEncryptBuff(org, key, out, file.length, cast 0);
 		var last = haxe.Timer.stamp();
-		AES128.cbcDecryptBuff(org, key.addr, out, file.length, cast 0);
+		AES128.cbcDecryptBuff(out, key, out, file.length, cast 0);
 		var sec = haxe.Timer.stamp() - last;
-		Hex.trace(out + Ut.padmul(file.length, 16) - 16, 16, true,
-			'file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec, end of file 16: ');
 
+		trace('file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec.\nfile.last_32_ascii: '
+		+ Ph.toAscii((org:Ptr) + file.length - 32, 32)
+		+ ", memcmp: " + Ram.memcmp(org, out, file.length)
+		);
+		trace(dump());
 	}
 
 	static function test_sha1() {

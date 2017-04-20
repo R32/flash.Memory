@@ -32,7 +32,7 @@ example:
 Base58.init();
 
 var strhex = "003c176e659bea0f29a3e9bf7880c112b1b31b4dc826268187";
-var sa  = AStrImpl.fromHexString(strhex);
+var sa  = AString.fromHexString(strhex);
 var s58 = Base58.encode(sa, sa.length);
 
 trace(s58.toString(), s58.toString() == "16UjcYNBG9GTK4uq2f7yYEbuifqCzoLMGS");
@@ -48,7 +48,7 @@ class Base58 {
 
 	public static function init() {
 		if (alphabet != NUL) return;
-		var b = AStrImpl.fromString("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
+		var b = AString.fromString("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 		var p = Ram.malloc(128, true);
 		for (i in 0...58)
 			p[Memory.getByte(b + i)] = i;

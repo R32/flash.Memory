@@ -34,7 +34,9 @@ flash.Memory
 
   ```bash
   littleEndian: true, bigEndian: false
-  --- EndianDetect.CAPACITY: 2 .OFFSET_FIRST: 0 .ACTUAL_SPACE: 8, ::baseAddr: 32
+
+  --- EndianDetect.CAPACITY: 2, OFFSET_FIRST: 0, OFFSET_END: 2
+  --- ACTUAL_SPACE: 8, baseAddr: 32, Allocter: Ram
   offset: 0x00 - 0x01, bytes: 1, littleEndian: true
   offset: 0x00 - 0x02, bytes: 2, i: 1
   offset: 0x01 - 0x02, bytes: 1, bigEndian: false
@@ -42,7 +44,7 @@ flash.Memory
 
 * Providing some crypto method using flash.Memory, Including Md5, Sha1, Sha256, Base64, Crc32, AES128(only cbc/ecb)
 
-  haxe -cp tools -main Main -swf test.swf -swf-header 800:500:24:0 -resource some.txt
+  haxe -cp tools -main Main -swf test.swf -swf-header 800:500:24:0 -resource some.txt@res
 
   ```haxe
   import mem.obs.Md5;
@@ -76,7 +78,7 @@ flash.Memory
 
           // MD5
           var key = Ram.malloc(16);                       // malloc
-          var str = AStrImpl.fromString("some passwd");   // copy ascii string to ram.
+          var str = AString.fromString("some passwd");    // copy ascii string to ram.
                                                           // if UTF, you should use WString or Ram.mallocFromString
           Md5.make(str, str.length, key);
           Hex.trace(key, 16, true, "Md5: ");

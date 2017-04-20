@@ -4,7 +4,7 @@ import mem.Ptr;
 import mem.Malloc.NUL;
 
 @:build(mem.Struct.StructBuild.make())
-@:dce abstract Base64String(Ptr) to Ptr {
+@:allow(mem.struct.Base64) @:dce abstract Base64String(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 
 	public var length(get, never): Int;
@@ -97,7 +97,7 @@ class Base64 {
 
 		var olen = Std.int((len + 2) / 3) << 2;  // == Math.ceil((n * 4)/3);
 
-		var s64 = @:privateAccess new Base64String(olen);
+		var s64 = new Base64String(olen);
 		var base:Int = s64;
 
 		var et:Ptr = encoding_table;

@@ -24,9 +24,8 @@ abstract WString(Ptr) to Ptr {
 		_len = len;
 		this[len] = 0;
 	}
-}
 
-class WStrImpl {
+	/////////////// static ///////////////
 
 	public static function fromString(str:String):WString @:privateAccess {
 	#if (neko || cpp || lua) // have not utf

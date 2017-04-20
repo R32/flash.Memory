@@ -496,7 +496,7 @@ class StructBuild{
 			});
 		}
 
-		var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
+		//var checkFail = abs_type == null ?  (macro null) : (macro if ((this:Int) <= 0) return null);
 		var block:Array<Expr> = [];
 		for (k in all_fields) {
 			var node = Reflect.field(attrs, k);
@@ -510,12 +510,11 @@ class StructBuild{
 		fields.push({
 			name : "__toOut",
 			meta: [{name: ":dce", pos: here()}],
-			access: [AInline, APublic],
+			access: [APublic],
 			kind: FFun({
 				args: [],
 				ret : macro :String,
 				expr: macro {
-					$checkFail;
 					var actual_space = "";
 					if ($v{clsname} != "Block" && $v{alloc_s} == "Ram") @:privateAccess {
 						var b = mem.Malloc.indexOf($i{ context } + OFFSET_FIRST);

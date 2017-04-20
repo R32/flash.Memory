@@ -134,6 +134,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 		if(block == NUL) {
 			var blockAddr = getUsed();
+			//trace('xxxxxxxxxxxxx  ${check()} xxxxxxxxxxxxxxxxx  ${(bottom:Int)} ${bottom.entrySize}');
 			Ram.req(blockAddr + entrySizeAb); // check
 			block = new Block(cast blockAddr, req_size, zero);
 			add(block);
@@ -174,8 +175,8 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 		}
 	}
 
-	public static function dump() {
-		trace('Volume: ${Ram.current.length / 1024}KB, USAGE: ${getUsed() / 1024}KB, Blocks: $length, Fragments: $frag_count');
+	public static function dump(): String {
+		return '-- Volume: ${Ram.current.length / 1024}KB, USAGE: ${getUsed() / 1024}KB, Blocks: $length, Fragments: $frag_count, Check: ${check()}';
 	}
 
 	static function mergeFragment() {

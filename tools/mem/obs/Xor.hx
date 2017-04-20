@@ -3,7 +3,7 @@ package mem.obs;
 import mem.Ptr;
 import mem.struct.AString;
 
-class Xor{
+class Xor {
 
 	public var sa(default, null):AString;
 
@@ -17,7 +17,7 @@ class Xor{
 		else if (dst > src && dst < src + size)
 			throw "It will be overwritten";
 		var len = this.sa.length;
-		var tpr:Int = this.sa.addr;
+		var tpr:Int = this.sa;
 		var offset = 0;
 	#if (flash || cpp)
 		var b4 = size - (size % 4);
@@ -33,10 +33,10 @@ class Xor{
 	}
 
 	public inline static function fromHexString(hex:String):Xor{
-		return new Xor(AStrImpl.fromHexString(hex));
+		return new Xor(AString.fromHexString(hex));
 	}
 
 	public inline static function fromString(str:String):Xor{
-		return new Xor(AStrImpl.fromString(str));
+		return new Xor(AString.fromString(str));
 	}
 }

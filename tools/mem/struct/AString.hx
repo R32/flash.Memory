@@ -3,15 +3,14 @@ package mem.struct;
 import mem.Ptr;
 import mem.Malloc.NUL;
 
+// ascii string
 @:build(mem.Struct.StructBuild.make())
 abstract AString(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 
 	public var length(get, never): Int;
-	public var addr(get, never): Ptr;  // legacy
 
 	private inline function get_length() return _len;
-	private inline function get_addr() return this;
 
 	public inline function toString(): String return Ph.toAscii(this, length);
 
@@ -23,12 +22,12 @@ abstract AString(Ptr) to Ptr {
 
 	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);
 	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte((this:Int) + i, v);
-}
 
-class AStrImpl {
+	/////////////// static ///////////////
 
 	public static function alloc(len: Int):AString {
-		return @:privateAccess new AString(len);
+
+		return new AString(len);
 	}
 
 	// if str contains the utf-characters, the result is unspecified.
