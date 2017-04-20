@@ -173,7 +173,7 @@ class Mini {
 	static inline function getLvl(p: Ptr) return p[-1] >> 1;     // Memory.getByte(p - 1) >> 1;
 
 	static inline function valid(p: Ptr, bx: MiniNode, lvl: Int): Bool
-		return (p >= bx.entry) && (p - bx.entry) % lvl2Size(lvl) == 0;
+		return (p - bx.entry) % lvl2Size(lvl) == 0;
 }
 
 
@@ -243,11 +243,11 @@ Layout:
 
 		if (frags == 0) {
 			ret = entry + offset;
-			ret[width - 1] = lvl << 1 | 1; // mark the "new chunk"
+			ret[width - 1] = lvlA | 1; // mark the "new chunk"
 
 			offset += width;
 			caret = offset;
-			avail = avail - 1;             // "avail -= 1" will be generate more temp variables.
+			avail = avail - 1;         // "avail -= 1" will be generate more temp variables.
 		} else {
 			var start = entry;
 			var end = start + offset;
