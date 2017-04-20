@@ -112,21 +112,23 @@ class AES128 {
 	}
 
 	/**
+	 IMPORTANT: make sure that (Capability(input|output) % 16 == 0)
+
 	 example:
 
 	 ```haxe
 	 var file = haxe.Resource.getBytes("res");
-	 var input = mem.struct.FBlock.fromBytes(file, 16);
+	 var input = Ram.mallocFromBytes(file, 16);
 	 var output = input;
-	 AES128.cbcEncryptBuff(input, cast 0, output, file.length, cast 0);  // no key, no iv
+	 AES128.cbcEncryptBuff(input, cast 0, output, mem.Ut.padmul(file.length, 16), cast 0);  // no key, no iv
 	 ```
 	*/
 	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
 
-		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
-		if (input != output) BlockCopy(output, input);
+		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
 		pstate = output;
 
@@ -157,9 +159,9 @@ class AES128 {
 
 		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
 
-		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
-		BlockCopy(output, input);
+		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
 		pstate = output;
 
@@ -189,6 +191,8 @@ class AES128 {
 	// when output == input
 	static public function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
 		var i = 0, j = 0;
+
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		var remainders:Int = length & (KEYLEN - 1); // eq length % KEYLEN;
 

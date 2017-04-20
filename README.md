@@ -84,10 +84,11 @@ flash.Memory
           Hex.trace(key, 16, true, "Md5: ");
 
           // AES CBC, KEY must be 16 bytes,
-          // in encrypt that allow input == output
-          AES128.cbcEncryptBuff(rf, key, rf, file.length, cast 0);   // init IV = 0;
-          // decrypt, Suffix "IO" means input == output,
-          AES128.cbcDecryptBuffIO(rf, key, file.length, cast 0);
+          // allow input == output
+		  var multi_of_16 = mem.Ut.padmul(file.length, 16);
+          AES128.cbcEncryptBuff(rf, key, rf, multi_of_16, cast 0);   // init IV = 0;
+
+          AES128.cbcDecryptBuff(rf, key, multi_of_16, cast 0);
 
           trace(Ram.readUTFBytes(rf, 32));       // read string from ram
       }

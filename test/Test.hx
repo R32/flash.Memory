@@ -113,13 +113,13 @@ class Test {
 		var multi_of_16 = Ut.padmul(file.length, 16);
 		var org = Ram.mallocFromBytes(file, 16);
 		var out = Ram.malloc(multi_of_16);
-		AES128.cbcEncryptBuff(org, key, out, file.length, cast 0);
+		AES128.cbcEncryptBuff(org, key, out, multi_of_16, cast 0);
 		var last = haxe.Timer.stamp();
-		AES128.cbcDecryptBuff(out, key, out, file.length, cast 0);
+		AES128.cbcDecryptBuff(out, key, out, multi_of_16, cast 0);
 		var sec = haxe.Timer.stamp() - last;
 
 		trace('file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec.\nfile.last_32_ascii: '
-		+ Ph.toAscii((org:Ptr) + file.length - 32, 32)
+		+ Ph.toAscii((out:Ptr) + file.length - 32, 32)
 		+ ", memcmp: " + Ram.memcmp(org, out, file.length)
 		);
 		trace(dump());
