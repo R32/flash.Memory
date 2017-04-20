@@ -126,6 +126,8 @@ class AES128 {
 	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
 
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
+
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
 		if (input != output) BlockCopy(output, input);
@@ -136,8 +138,8 @@ class AES128 {
 		if (key != NUL) KeyExpansion(key);
 
 		while (i < length) {
-			if (iv != NUL) XorWithIv(input, iv);
 			if (input != output) BlockCopy(output, input);
+			if (iv != NUL) XorWithIv(output, iv);
 			pstate = output;
 			Cipher();
 			iv = output;
@@ -154,9 +156,12 @@ class AES128 {
 		}
 	}
 
-
 	static public function cbcDecryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
+
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
+
+		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
 
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
@@ -189,8 +194,9 @@ class AES128 {
 
 	// when output == input
 	static public function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
-
 		var i = 0, j = 0;
+
+		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		var remainders:Int = length & (KEYLEN - 1); // eq length % KEYLEN;
 
