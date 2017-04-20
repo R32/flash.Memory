@@ -30,14 +30,14 @@ class Nsfhd implements mem.Struct{
 	@idx(32) var author:String;
 	@idx(32) var copyright:String;
 	@idx(2) var ntsc:Int;
-	@idx(8) var bank:Array<Int>;
+	@idx(8) var bank:AU8;
 	@idx(2) var ntsc_loop_speed:Int;
-	@idx var sys:haxe.EnumFlags<NsfSys>;		// test EnumFlags
+	@idx(1) var sys:Int;
 	@idx var spec:Int;
-	@idx(4) var exra:Array<Int>;
+	@idx(4) var exra:AU8;
 	public var addr(default, null):Ptr;
 	inline public function new(len){
-		addr = mem.Malloc.make(len, false);
+		addr = Ram.malloc(len, false);
 	}
 }
 
@@ -89,12 +89,14 @@ class TestStruct extends haxe.unit.TestCase{
 		fake.author = mario.author;
 		fake.copyright = mario.copyright;
 		fake.ntsc = mario.ntsc;
-		fake.bank = mario.bank;
+		for (i in 0...Nsfhd.__BANK_LEN)
+			fake.bank[i] = mario.bank[i];
 		fake.ntsc_loop_speed = mario.ntsc_loop_speed;
 		fake.sys = mario.sys;
-		fake.exra = mario.exra;
+		for (i in 0...Nsfhd.__EXRA_LEN)
+			fake.exra[i] = mario.exra[i];
 
-		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.addr, mario.addr, Nsfhd.CAPACITY));
+		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.addr, mario.addr, Nsfhd.CAPACITY) == 0);
 
 		var endian = new EndianDetect();
 		print(endian.__toOut() + "\n");

@@ -243,9 +243,6 @@ class Test {
 }
 
 class ASS implements mem.Struct{
-	@idx(10, 1) var a1:Array<Int>;
-	@idx(10, 2) var a2:Array<Int>;
-	@idx(10, 4) var a4:Array<Int>;
 	@idx(10) var u8:AU8;
 	@idx(10) var u16:AU16;
 	@idx(10) var i32:AI32;
@@ -253,30 +250,20 @@ class ASS implements mem.Struct{
 	@idx(10) var f8:AF8;
 	public static function test() {
 		var len = 10;
-		if((
-		   ASS.__A1_BYTE == len
-		&& ASS.__A2_BYTE == len * 2
-		&& ASS.__A4_BYTE == len * 4
-		&& ASS.__U8_BYTE == len
+		if(( ASS.__U8_BYTE == len
 		&& ASS.__U16_BYTE == len * 2
 		&& ASS.__I32_BYTE == len * 4
 		&& ASS.__F4_BYTE == len * 4
 		&& ASS.__F8_BYTE == len * 8
 		) && (
-		   ASS.__A1_OF == 0
-		&& ASS.__A2_OF == len
-		&& ASS.__A4_OF == len * 2 + len
-		&& ASS.__U8_OF == len * 4 + len * 2 + len
+		   ASS.__U8_OF == len * 4 + len * 2 + len
 		&& ASS.__U16_OF == len + len * 4 + len * 2 + len
 		&& ASS.__I32_OF == len * 2 + len + len * 4 + len * 2 + len
 		&& ASS.__F4_OF  == len * 4 + len * 2 + len + len * 4 + len * 2 + len
 		&& ASS.__F8_OF  == len * 4 + len * 4 + len * 2 + len + len * 4 + len * 2 + len
 		&& ASS.CAPACITY == len * 8 + len * 4 + len * 4 + len * 2 + len + len * 4 + len * 2 + len
 		) && (
-		   ASS.__A1_LEN == len
-		&& ASS.__A2_LEN == len
-		&& ASS.__A4_LEN == len
-		&& ASS.__U8_LEN == len
+		   ASS.__U8_LEN == len
 		&& ASS.__U16_LEN == len
 		&& ASS.__I32_LEN == len
 		&& ASS.__F4_LEN == len

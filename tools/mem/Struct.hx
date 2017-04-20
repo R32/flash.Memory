@@ -27,10 +27,6 @@ Enum                        @idx(?offset)         [bytes = 1]
 String                      @idx(length, ?offset) [bytes = length]
 Int: (1), 2, 4              @idx(?bytes, ?offset) [default bytes = 1]
 Float: (4), 8               @idx(?bytes, ?offset) [default bytes = 4]
-//haxe.EnumFlags: (1), 2, 4 @idx(?bytes, ?offset) [default bytes = 1]              - not recommended
-//Array<Int|Float>          @idx(length, ?bytes, ?offset) [space = length * bytes] - not recommended, use AU8,AU16,AI32...
-// - Int: (1), 2, 4
-// - Float: (4), 8
 AU8                         @idx(length, ?offset) [space = length * 1 bytes]
 AU16                        @idx(length, ?offset) [space = length * 2 bytes]
 AI32                        @idx(length, ?offset) [space = length * 4 bytes]
@@ -64,12 +60,6 @@ class StructBuild{
 		switch(type){
 			case "Bool", "Enum":
 				ret = {width:1, dx: arr[0], nums: 1};
-			case "Array":
-				ret = {
-					width: len > 1 ? notZero(arr[1]) : 1,
-					dx: len > 2 ? arr[2] : 0,
-					nums: notZero(arr[0])
-				};
 			case "mem.Ptr":
 				ret = { width:4, dx: arr[0], nums: 1 };
 			case "mem.AU8":
@@ -82,7 +72,7 @@ class StructBuild{
 				ret = { width:4, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AF8":
 				ret = { width:8, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
-			default: // Float, String, Int, haxe.EnumFlags
+			default: // Float, String, Int
 				ret = { width: notZero(arr[0]), dx: (len > 1 ? arr[1] : 0), nums: 1 };
 		}
 		return ret;
@@ -195,25 +185,6 @@ class StructBuild{
 								params.width = 4;
 							}
 							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, $expr_value))];
-						case "haxe.EnumFlags":
-							offset += params.dx;
-							switch(arrType[0]){	// ComplexType
-							case TPType(ct):
-								var paramType = Context.resolveType(ct, f.pos);
-								if (Context.unify(paramType, Context.getType("haxe.Constraints.FlatEnum")) == false)
-									Context.error("Must be FlatEnum", f.pos);
-								var sget = "getByte", sset = "setByte";
-								switch(params.width){
-								case 2: sget = "getUI16"; sset = "setI16";
-								case 4: sget = "getI32"; sset = "setI32";
-								default: params.width = 1;
-								}
-								if (params.width * 8 < TypeTools.getEnum(paramType).names.length)
-									throw "Unsupported width for EnumFlags" + params.width;
-								[macro { new haxe.EnumFlags<$ct>(Memory.$sget($i{context} + $v{offset}));}
-									, macro { Memory.$sset($i{context} + $v{offset}, v.toInt());}];
-							default: throw "EnumFlags instance expected";
-							}
 						case "mem.ABit"	:
 							Context.error("build macor do not currently support \"" + ts + "\"", f.pos);
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
@@ -263,38 +234,6 @@ class StructBuild{
 							case "String":
 							[macro Ram.readUTFBytes($i{context} + $v{offset}, $v{params.width})
 								,macro Ram.writeString($i{context} + $v{offset}, $v{params.width} ,v)];
-							case "Array":
-								is_array = true;
-								switch (arrType[0]) {
-								case TPType(ct = TPath(at)):
-									var sget = null, sset = null;
-									switch (at.name) {
-										case "Int":
-											switch(params.width){
-											case 2: sget = "getUI16"; sset = "setI16";
-											case 4: sget = "getI32"; sset = "setI32";
-											default:
-												params.width = 1;
-												sget = "getByte"; sset = "setByte";
-											}
-										case "Float":
-											if (params.width == 2) params.width = 8;
-											if(params.width == 8){
-												sget = "getDouble"; sset = "setDouble";
-											}else{
-												params.width = 4;
-												sget = "getFloat"; sset = "setFloat";
-											}
-										default: null;
-									}// end(at.name)
-									if (sget == null || sset == null) {
-										null;
-									} else {
-										[macro{[for (i in 0...$v{params.nums}) Memory.$sget($i{context} + $v{offset} + i)];
-										}, macro{ for (i in 0...$v{params.nums}) Memory.$sset($i{context} + $v{offset} + i, v[i]); }];
-									}
-								default: null;
-								}
 							default: null;
 							}
 					default: null;
@@ -365,7 +304,7 @@ class StructBuild{
 						fields.push({
 							name : "__" + f.name.toUpperCase() + "_BYTE",
 							access: [AStatic, AInline, APublic],
-							doc: " == " + $v{params.width * params.nums},
+							doc: "bytesLength == " + $v{params.width * params.nums},
 							kind: FVar(macro :Int, macro $v{params.width * params.nums}),
 							pos: f.pos
 						});
