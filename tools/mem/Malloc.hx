@@ -134,7 +134,6 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 		if(block == NUL) {
 			var blockAddr = getUsed();
-			//trace('xxxxxxxxxxxxx  ${check()} xxxxxxxxxxxxxxxxx  ${(bottom:Int)} ${bottom.entrySize}');
 			Ram.req(blockAddr + entrySizeAb); // check
 			block = new Block(cast blockAddr, req_size, zero);
 			add(block);

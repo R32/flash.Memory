@@ -85,7 +85,7 @@ flash.Memory
 
           // AES CBC, KEY must be 16 bytes,
           // allow input == output
-		  var multi_of_16 = mem.Ut.padmul(file.length, 16);
+          var multi_of_16 = mem.Ut.padmul(file.length, 16);
           AES128.cbcEncryptBuff(rf, key, rf, multi_of_16, cast 0);   // init IV = 0;
 
           AES128.cbcDecryptBuff(rf, key, multi_of_16, cast 0);
