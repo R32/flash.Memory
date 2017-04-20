@@ -112,8 +112,6 @@ class AES128 {
 	}
 
 	/**
-	 IMPORTANT: make sure that (capability(input/output) > length) && (capability(input/output) % 16 == 0)
-
 	 example:
 
 	 ```haxe
@@ -125,8 +123,6 @@ class AES128 {
 	*/
 	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
-
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
@@ -158,8 +154,6 @@ class AES128 {
 
 	static public function cbcDecryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
-
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
 
@@ -195,8 +189,6 @@ class AES128 {
 	// when output == input
 	static public function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
 		var i = 0, j = 0;
-
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		var remainders:Int = length & (KEYLEN - 1); // eq length % KEYLEN;
 
