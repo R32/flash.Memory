@@ -519,7 +519,7 @@ class StructBuild{
 				expr: macro {
 					$checkFail;
 					var actual_space = "";
-					if ($v{clsname} != "Block") @:privateAccess {
+					if ($v{clsname} != "Block" && $v{allocter == null} ) @:privateAccess {
 						var b = mem.Malloc.indexOf($i{ context } + OFFSET_FIRST);
 						if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
 							actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";

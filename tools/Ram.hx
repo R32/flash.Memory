@@ -32,8 +32,10 @@ class Ram{
 		return ba;
 	}
 
-	public static function attach():Void {
-		if (current == null) {
+	public static function attach(bytesLength = 0):Void {
+		if (bytesLength >= 1024) {
+			select(create(bytesLength));
+		} else if (current == null) {
 			select(null); // create new
 		} else if (current != flash.system.ApplicationDomain.currentDomain.domainMemory) {
 			tmp = flash.system.ApplicationDomain.currentDomain.domainMemory;
@@ -60,8 +62,10 @@ class Ram{
 	  #end
 	}
 
-	public static function attach():Void {
-		if (current == null)
+	public static function attach(bytesLength = 0):Void {
+		if (bytesLength >= 1024) {
+			select(create(bytesLength));
+		} else if (current == null)
 			select(null);
 		else
 			Memory.select(current);

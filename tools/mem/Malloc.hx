@@ -16,7 +16,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 #if !macro
 @:build(mem.Struct.StructBuild.make())
 #end
-@:dce abstract Block(Ptr) to Ptr {
+@:allow(mem.Malloc) @:dce abstract Block(Ptr) to Ptr {
 	@idx(2) var zero: Int;      // 2 bytes, always 0
 	@idx(0) var is_free: Bool;  // 1 bytes, if true, will be remove from chain
 	@idx(1) var unknown: Int;   // 1 bytes
@@ -39,7 +39,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
 }
 
-class Malloc {
+@:access(Ram) class Malloc {
 
 	public static inline var NUL:Ptr = cast 0;
 	public static inline var LB = 8;
@@ -132,7 +132,7 @@ class Malloc {
 
 		var entrySizeAb = req_size + Block.CAPACITY;
 
-		if(block == NUL) @:privateAccess {
+		if(block == NUL) {
 			var blockAddr = getUsed();
 			Ram.req(blockAddr + entrySizeAb); // check
 			block = new Block(cast blockAddr, req_size, zero);
@@ -140,7 +140,7 @@ class Malloc {
 		} else {
 			poolEntrySize = block.entrySize;  // N.B: poolEntrySize does not contain its own "Block.CAPACITY"
 			if (entrySizeAb >= 64 && poolEntrySize >= (entrySizeAb + req_size)) { // if double size then split
-				var nextBlock = @:privateAccess new Block((block:Ptr) + entrySizeAb, poolEntrySize - entrySizeAb, false);
+				var nextBlock = new Block((block:Ptr) + entrySizeAb, poolEntrySize - entrySizeAb, false);
 				nextBlock.is_free = true;
 				insertAfter(nextBlock, block);
 				block.size = entrySizeAb;
@@ -154,24 +154,28 @@ class Malloc {
 
 	public static inline function free(p:Ptr) freeBlock(indexOf(p));
 
-	static function freeBlock(prev:Block):Void {
-		if (prev == NUL || bottom == NUL || prev.is_free) return;
+	static function freeBlock(b: Block) :Void {
+		if (b == NUL || bottom == NUL || b.is_free) return;
 
-		prev.is_free = true;
+		b.is_free = true;
 
 		++ frag_count;
 
-		while (bottom == prev && bottom.is_free) {
-			prev = bottom.prev;
-			-- length;
-			-- frag_count;
-			if (prev == NUL) {
-				top = bottom = cast NUL;
-				break;
+		if (b == bottom) {
+			while (bottom.is_free) {
+				bottom = bottom.prev;
+				-- length;
+				-- frag_count;
+				if (bottom == NUL)
+					top = bottom;
+				else
+					bottom.next = cast NUL;
 			}
-			prev.next = cast NUL;
-			bottom = prev;
 		}
+	}
+
+	public static function dump() {
+		trace('Volume: ${Ram.current.length / 1024}KB, USAGE: ${getUsed() / 1024}KB, Blocks: $length, Fragments: $frag_count');
 	}
 
 	static function mergeFragment() {
