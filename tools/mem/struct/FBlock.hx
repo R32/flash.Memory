@@ -7,7 +7,7 @@ import mem.Ut.padmul;
 /**
 Fixed Block
 */
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 @:dce abstract FBlock(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int; // OFFSET_FIRST == -4
 

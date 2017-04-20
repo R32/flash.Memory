@@ -14,34 +14,29 @@ typedef Param = {
 	nums:Int,
 	dx:Int
 };
+#end
 
-#else
 /**
 Supported Types:
 
 ```
-mem.Ptr                     @idx(?offset)         [bytes = 4, default offset = 0]
+mem.Ptr          @idx(?offset)         [sizeof(4), default offset = 0]
   - or "abstruct Other(Ptr){}"
-Bool:                       @idx(?offset)         [bytes = 1]
-Enum                        @idx(?offset)         [bytes = 1]
-String                      @idx(length, ?offset) [bytes = length]
-Int: (1), 2, 4              @idx(?bytes, ?offset) [default bytes = 1]
-Float: (4), 8               @idx(?bytes, ?offset) [default bytes = 4]
-AU8                         @idx(length, ?offset) [space = length * 1 bytes]
-AU16                        @idx(length, ?offset) [space = length * 2 bytes]
-AI32                        @idx(length, ?offset) [space = length * 4 bytes]
-AF4                         @idx(length, ?offset) [space = length * 4 bytes]
-AF8                         @idx(length, ?offset) [space = length * 8 bytes]
-Ucs2                        @idx(length, ?offset) [space = length * 2 bytes]
+
+Bool:            @idx(?offset)         [sizeof(1)]
+Enum             @idx(?offset)         [sizeof(1)]
+String           @idx(length, ?offset) [length]
+Int: (1), 2, 4   @idx(?sizeof,?offset) [default sizeof(1)]
+Float: (4), 8    @idx(?sizeof,?offset) [default sizeof(4)]
+AU8              @idx(length, ?offset) [space = length * sizeof(1)]
+AU16             @idx(length, ?offset) [space = length * sizeof(2)]
+AI32             @idx(length, ?offset) [space = length * sizeof(4)]
+AF4              @idx(length, ?offset) [space = length * sizeof(4)]
+AF8              @idx(length, ?offset) [space = length * sizeof(8)]
+Ucs2             @idx(length, ?offset) [space = length * sizeof(2)]
 ```
 */
-@:autoBuild(mem.StructBuild.make())
-#end
-@:remove interface Struct {
-	var addr(default, null): mem.Ptr;
-}
-
-class StructBuild{
+class Struct {
 #if macro
 	static inline var IDX = "idx";
 
@@ -78,6 +73,7 @@ class StructBuild{
 		return ret;
 	}
 
+	// example: @:build(mem.Struct.make(mem.Mini))
 	static public function make(?alloc:Expr, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;

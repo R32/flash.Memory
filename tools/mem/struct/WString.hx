@@ -6,7 +6,7 @@ import mem.Malloc.NUL;
 /**
 Utf8 String
 */
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 abstract WString(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 

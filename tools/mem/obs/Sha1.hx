@@ -3,7 +3,7 @@ package mem.obs;
 import mem.Ptr;
 import mem.obs._macros.Sha1Macros.*;
 
-#if !macro @:build(mem.Struct.StructBuild.make()) #end
+#if !macro @:build(mem.Struct.make()) #end
 @:dce private abstract Sha1Context(Ptr) to Ptr {
 	@idx(8)  var finalcount:AU8;   // local variable, in "finish"
 

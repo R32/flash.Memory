@@ -242,7 +242,7 @@ class Test {
 	}
 }
 
-class ASS implements mem.Struct{
+class ASS implements mem.IStruct{
 	@idx(10) var u8:AU8;
 	@idx(10) var u16:AU16;
 	@idx(10) var i32:AI32;

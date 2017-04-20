@@ -212,7 +212,7 @@ Layout:
 */
 
 #if !macro
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 #end
 @:allow(mem.Mini) abstract MiniNode(Ptr) to Ptr {
 

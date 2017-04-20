@@ -3,7 +3,7 @@ package mem.struct;
 import mem.Ptr;
 import mem.Malloc.NUL;
 
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 @:allow(mem.struct.Base64) @:dce abstract Base64String(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 

@@ -18,7 +18,7 @@ enum NsfSys{
 /**
 http://vgmrips.net/wiki/NSF_File_Format
 */
-class Nsfhd implements mem.Struct{
+class Nsfhd implements mem.IStruct{
 	@idx(5) var tag:String;
 	@idx var ver:NsfVer;						// test Enum
 	@idx var track_count:Int;
@@ -41,7 +41,7 @@ class Nsfhd implements mem.Struct{
 	}
 }
 
-class EndianDetect implements mem.Struct{
+class EndianDetect implements mem.IStruct{
 	@idx var littleEndian:Bool;		// 00
 	@idx(2, -1) var i:Int;			// 00~01
 	@idx(-1) var bigEndian:Bool;	// 01
@@ -53,7 +53,7 @@ class EndianDetect implements mem.Struct{
 }
 
 #if !macro
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 #end
 abstract AbsEndianDetect(Ptr) from Ptr{
 	@idx var littleEndian:Bool;		// 00

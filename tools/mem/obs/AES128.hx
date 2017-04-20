@@ -40,7 +40,7 @@ Project Org: https://github.com/kokke/tiny-AES128-C
 
 Ported by r32
 */
-#if !macro @:build(mem.Struct.StructBuild.make()) #end
+#if !macro @:build(mem.Struct.make()) #end
 @:dce private abstract AES128Context(Ptr) to Ptr {
 	@idx(176) var roundKey:AU8;
 	@idx(4)   var tempa:AU8;   // local variable,

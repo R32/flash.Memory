@@ -1,7 +1,6 @@
 package mem;
 
 import mem.Ptr;
-import mem.Struct;
 
 /**
 e.g:
@@ -14,7 +13,7 @@ offset: 0x08 - 0x0C, bytes: 4, prev: 168
 offset: 0x0C - 0x10, bytes: 4, next: 376
 */
 #if !macro
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 #end
 @:allow(mem.Malloc) @:dce abstract Block(Ptr) to Ptr {
 	@idx(2) var zero: Int;      // 2 bytes, always 0

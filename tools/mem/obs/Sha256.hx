@@ -5,7 +5,7 @@ import mem.obs._macros.Sha256Macros.*;
 import Ram.memcpy;
 import StringTools.hex;
 
-#if !macro @:build(mem.Struct.StructBuild.make()) #end
+#if !macro @:build(mem.Struct.make()) #end
 @:dce private abstract Sha256Context(Ptr) to Ptr {
 	@idx( 8) var S:AI32;
 	@idx(64) var W:AI32;

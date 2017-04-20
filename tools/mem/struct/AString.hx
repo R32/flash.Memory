@@ -4,7 +4,7 @@ import mem.Ptr;
 import mem.Malloc.NUL;
 
 // ascii string
-@:build(mem.Struct.StructBuild.make())
+@:build(mem.Struct.make())
 abstract AString(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 

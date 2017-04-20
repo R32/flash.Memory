@@ -27,7 +27,7 @@ import mem.obs._macros.Md5Macros.*;
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#if !macro @:build(mem.Struct.StructBuild.make()) #end
+#if !macro @:build(mem.Struct.make()) #end
 @:dce private abstract Md5Context(Ptr) to Ptr {
 	@idx(2) var total: AI32;   // [len: 2, bytes: 4]
 	@idx(4) var state: AI32;
