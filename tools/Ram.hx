@@ -329,20 +329,26 @@ class Ram{
 		return ret;
 	}
 
-	public static inline function readUTFBytes(dst:Ptr, len:Int):String {
+	public static inline function readUTFBytes(dst:Ptr, bytesLength:Int):String {
 	#if flash
 		current.position = dst;
-		return current.readUTFBytes(len);
+		return current.readUTFBytes(bytesLength);
 	#elseif cpp
-		return untyped __cpp__("_hx_string_create((char*){0}, {1})", current.offset(dst), len);
+		return untyped __cpp__("_hx_string_create((char*){0}, {1})", current.offset(dst), bytesLength);
 	#elseif hl
-		var b = new hl.Bytes(len + 1);
-		b.blit(0, @:privateAccess current.b, dst, len);
-		b[len] = 0;
+		var b = new hl.Bytes(bytesLength + 1);
+		b.blit(0, @:privateAccess current.b, dst, bytesLength);
+		b[bytesLength] = 0;
 		return @:privateAccess String.fromUTF8(b);
 	#else
-		return current.getString(dst, len);
+		return current.getString(dst, bytesLength);
 	#end
+	}
+
+	public static function readUTF2Zero(dst: Ptr): String {
+		var end = dst;
+		while (Memory.getByte(end) != 0) ++end;
+		return readUTFBytes(dst, end - dst);
 	}
 
 	// public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));

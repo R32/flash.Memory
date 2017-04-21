@@ -37,7 +37,7 @@ abstract Ucs2(Ptr) to Ptr {
 	}
 
 	// unsafe
-	public inline function copyfromString(str: String): Void @:privateAccess {
+	public function copyfromString(str: String): Void @:privateAccess {
 	#if js
 		var bytesLength = str.length << 1;
 		var u8 = Memory.b.b;
