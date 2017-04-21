@@ -5,7 +5,7 @@ A way to typedef struct like c language
 
 ### normal struct
 
-[all of `@idx` Supported types in Struct.hx](tools/mem/Struct.hx#L20)
+all of `@idx` Supported types in [Struct.hx](tools/mem/Struct.hx#L20)
 
 ```haxe
 import mem.Ptr;                   // 1. import mem.Ptr
@@ -52,7 +52,7 @@ abstract UString(Ptr) to Ptr {
     @idx(0) var __s: mem.Ucs2;
     public function new(str: String) {
         var bytesLength = (str.length + 1) << 1;
-        mallocAbind(Fraw.malloc(bytesLength + CAPACITY), false);  // mallocAbind & CAPACITY defined by macro
+        mallocAbind(bytesLength + CAPACITY, false);  // mallocAbind & CAPACITY defined by macro
         length = str.length;      // assign values after malloc
         __s.copyfromString(str);
         Memory.setI16(bytesLength - 2, 0);
