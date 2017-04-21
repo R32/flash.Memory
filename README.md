@@ -1,9 +1,9 @@
 fraw (WIP)
 ------
 
-Way to typedef struct like c language
+A way to typedef struct like c language
 
-#### normal struct
+### normal struct
 
 ```haxe
 import mem.Ptr;                   // 1. import mem.Ptr
@@ -25,7 +25,7 @@ class App {
 }
 ```
 
-#### flexible struct
+### flexible struct
 
 Currently only supported types are AU8, AU16, AI32, AF4, AF8, Ucs2.
 
@@ -39,7 +39,7 @@ abstract UString(Ptr) to Ptr {
 }
 ```
 
-actually the offset of first field can be defined as a negative value.
+Actually the offset of first field can be defined as a negative value.
 
 ```haxe
 import mem.Ptr;
@@ -83,7 +83,7 @@ offset: (-4) - 0x00, bytes: 4, length: 9
 offset: 0x00 - 0x00, bytes: 0, __s: [...]
 ```
 
-#### mem.Mini
+### mem.Mini
 
 this a simple fixed-width memory allocator.
 
@@ -95,12 +95,10 @@ abstract Commit(Ptr) {
 }
 ```
 
-### benchmark
+## benchmark
 
 soon. (maybe only faster in flash platform.)
 
 ## extra
 
 Providing some crypto method using flash.Memory, Including Md5, Sha1, Sha256, Base64, Crc32, AES128(only cbc/ecb)
-
-
