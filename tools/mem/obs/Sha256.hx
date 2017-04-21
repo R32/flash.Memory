@@ -2,7 +2,7 @@ package mem.obs;
 
 import mem.Ptr;
 import mem.obs._macros.Sha256Macros.*;
-import Ram.memcpy;
+import Fraw.memcpy;
 import StringTools.hex;
 
 #if !macro @:build(mem.Struct.make()) #end

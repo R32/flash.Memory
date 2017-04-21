@@ -31,14 +31,14 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 	inline private function new(block_addr:Ptr, req_size:Int, clear:Bool) {
 		this = block_addr;
-		Ram.memset(this, 0, (clear ? req_size + CAPACITY : CAPACITY));
+		Fraw.memset(this, 0, (clear ? req_size + CAPACITY : CAPACITY));
 		size = req_size + CAPACITY;	// Note: must after memset
 	}
 
 	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
 }
 
-@:access(Ram) class Malloc {
+@:access(Fraw) class Malloc {
 
 	public static inline var NUL:Ptr = cast 0;
 	public static inline var LB = 8;
@@ -133,7 +133,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 		if(block == NUL) {
 			var blockAddr = getUsed();
-			Ram.req(blockAddr + entrySizeAb); // check
+			Fraw.req(blockAddr + entrySizeAb); // check
 			block = new Block(cast blockAddr, req_size, zero);
 			add(block);
 		} else {
@@ -174,7 +174,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	}
 
 	public static function dump(): String {
-		return '-- Volume: ${Ram.current.length / 1024}KB, USAGE: ${getUsed() / 1024}KB, Blocks: $length, Fragments: $frag_count, Check: ${check()}';
+		return '-- Volume: ${Fraw.current.length / 1024}KB, USAGE: ${getUsed() / 1024}KB, Blocks: $length, Fragments: $frag_count, Check: ${check()}';
 	}
 
 	static function mergeFragment() {

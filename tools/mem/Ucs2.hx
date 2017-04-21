@@ -15,8 +15,8 @@ abstract Ucs2(Ptr) to Ptr {
 			new js.html.Int16Array(Memory.b.b.buffer.slice(this, end))
 		);
 	#elseif flash
-		Ram.current.position = this;
-		return Ram.current.readMultiByte( end - (this:Int), "unicode");
+		Fraw.current.position = this;
+		return Fraw.current.readMultiByte( end - (this:Int), "unicode");
 	#elseif hl
 		var bytesLength = end - (this:Int);
 		var hlb = new hl.Bytes(bytesLength + 2);
@@ -50,9 +50,9 @@ abstract Ucs2(Ptr) to Ptr {
 		u8[(this:Int) + i++] = 0;
 		u8[(this:Int) + i++] = 0;
 	#elseif flash
-		Ram.current.position = this;
-		Ram.current.writeMultiByte(str, "unicode");
-		Ram.current.writeShort(0);
+		Fraw.current.position = this;
+		Fraw.current.writeMultiByte(str, "unicode");
+		Fraw.current.writeShort(0);
 	#elseif hl
 		var bytesLength = str.length << 1;
 		var hlb = str.bytes;

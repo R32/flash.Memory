@@ -21,8 +21,8 @@ import mem.cpp.Gbk;
 class Test {
 
 	static function init() {
-		Ram.attach(1024);
-		Ram.malloc(Ut.rand(128, 1), false);
+		Fraw.attach(1024);
+		Fraw.malloc(Ut.rand(128, 1), false);
 		Hex.init();
 		SXor.init();
 		Utf8.init();
@@ -47,29 +47,29 @@ class Test {
 	static function test_raw() @:privateAccess {
 		trace("----------- raw -----------");
 		var as1 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172a");
-		var as2 = Ram.malloc(128);
-		Ram.memcpy(as2, as1, as1.length);
+		var as2 = Fraw.malloc(128);
+		Fraw.memcpy(as2, as1, as1.length);
 
-		Ram.memcpy(as2 + 1, as2, as1.length);
-		trace("memcpy/memcmp: " + (Ram.memcmp(as2 + 1, as1, as1.length) == 0));
+		Fraw.memcpy(as2 + 1, as2, as1.length);
+		trace("memcpy/memcmp: " + (Fraw.memcmp(as2 + 1, as1, as1.length) == 0));
 
-		Ram.memcpy(as2, as2 + 1, as1.length);
-		trace("memcpy/memcmp: " + (Ram.memcmp(as1, as2, as1.length) == 0));
+		Fraw.memcpy(as2, as2 + 1, as1.length);
+		trace("memcpy/memcmp: " + (Fraw.memcmp(as1, as2, as1.length) == 0));
 
 		var s = "abcde你好, 世界";
 		var b0 = haxe.io.Bytes.ofString(s);
-		Ram.writeBytes(as2, b0.length, #if flash b0.getData() #else b0 #end);
+		Fraw.writeBytes(as2, b0.length, #if flash b0.getData() #else b0 #end);
 		var b1 = haxe.io.Bytes.alloc(b0.length);
-		Ram.readBytes(as2, b1.length, #if flash b1.getData() #else b1 #end);
+		Fraw.readBytes(as2, b1.length, #if flash b1.getData() #else b1 #end);
 		trace("writeBytes/readBytes: " + (b1.toString() == s));
 
-		var size = Ram.writeUTFBytes(as2, s);
-		var s2 = Ram.readUTFBytes(as2, size);
+		var size = Fraw.writeUTFBytes(as2, s);
+		var s2 = Fraw.readUTFBytes(as2, size);
 		trace("writeUTFBytes/readUTFBytes: " + (s2 == s));
 
-		var as3 = Ram.malloc(128, true);
-		Ram.writeString(as3, 5, s);
-		trace("writeString: " + (Ram.readUTFBytes(as3, 5) == s.substr(0,5)));
+		var as3 = Fraw.malloc(128, true);
+		Fraw.writeString(as3, 5, s);
+		trace("writeString: " + (Fraw.readUTFBytes(as3, 5) == s.substr(0,5)));
 
 		var ws = WString.fromString(s);
 		trace("WString.fromString: " + (ws.toString() == s));
@@ -113,14 +113,14 @@ class Test {
 
 		var file = haxe.Resource.getBytes("testjs");
 		var multi_of_16 = Ut.padmul(file.length, 16);
-		var org = Ram.mallocFromBytes(file, 16);
-		var out = Ram.malloc(multi_of_16);
+		var org = Fraw.mallocFromBytes(file, 16);
+		var out = Fraw.malloc(multi_of_16);
 		AES128.cbcEncryptBuff(org, key, out, multi_of_16, cast 0);
 		var last = haxe.Timer.stamp();
 		AES128.cbcDecryptBuff(out, key, out, multi_of_16, cast 0);
 		var sec = haxe.Timer.stamp() - last;
 
-		trace('-- File: ${toFixed(file.length/1024, 2)}Kb, AES_CBC,Encry&DeCry Sec: ${toFixed(sec, 4)}. Memcmp: ${Ram.memcmp(org, out, file.length)} '
+		trace('-- File: ${toFixed(file.length/1024, 2)}Kb, AES_CBC,Encry&DeCry Sec: ${toFixed(sec, 4)}. Memcmp: ${Fraw.memcmp(org, out, file.length)} '
 		);
 		trace(dump());
 	}
@@ -128,9 +128,9 @@ class Test {
 	static function test_sha1() {
 		trace("----------- SHA1 ------------");
 		var file = haxe.Resource.getBytes("testjs");
-		var filePtr = Ram.mallocFromBytes(file);
+		var filePtr = Fraw.mallocFromBytes(file);
 
-		var out0 = Ram.malloc(20, true);
+		var out0 = Fraw.malloc(20, true);
 		var now = haxe.Timer.stamp();
 		for(i in 0...3) Sha1.make(filePtr, file.length, out0);
 		var time0 = haxe.Timer.stamp() - now;
@@ -145,7 +145,7 @@ class Test {
 
 		trace("----------- SHA256 ------------");
 		now = haxe.Timer.stamp();
-		var out00 = Ram.malloc(32);
+		var out00 = Fraw.malloc(32);
 		var out11:haxe.io.Bytes = null;
 		for (i in 0...3) Sha256.make(filePtr, file.length, out00);
 		var time00 = haxe.Timer.stamp() - now;
@@ -158,9 +158,9 @@ class Test {
 
 	public static function test_md5():Void {
 		var file = haxe.Resource.getBytes("testjs");
-		var filePtr = Ram.mallocFromBytes(file);
+		var filePtr = Fraw.mallocFromBytes(file);
 		trace("----------- MD5 ------------");
-		var out0 = Ram.malloc(16, true);
+		var out0 = Fraw.malloc(16, true);
 		var now = haxe.Timer.stamp();
 		for(i in 0...3) Md5.make(filePtr, file.length, out0);
 		var time0 = haxe.Timer.stamp() - now;
@@ -194,7 +194,7 @@ class Test {
 		#else
 		trace(('str: $str, utf-length: ${str.length}'));
 		#end
-		var ws = Ram.mallocFromString(str);
+		var ws = Fraw.mallocFromString(str);
 		trace("Utf8.length(str): " + Utf8.length(ws, ws.length));
 		var a = [];
 		Utf8.iter(ws, ws.length, function(ch) {
@@ -209,7 +209,7 @@ class Test {
 
 	public static function test_xor_domainLock() {
 		trace("----------- Simple XOR -----------");
-		var ws:WString = Ram.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
+		var ws:WString = Fraw.mallocFromString("我可以永远笑着扮演你的配角, 在你的背后自已煎熬..ABC");
 		var xor = mem.obs.Xor.fromHexString(haxe.crypto.Md5.encode("hello"));
 		xor.run(ws, ws.length, ws);
 		SXor.make(ws, ws.length, ws);

@@ -1,4 +1,4 @@
-fstruct (WIP)
+fraw (WIP)
 ------
 
 Way to typedef struct like c language
@@ -16,7 +16,7 @@ abstract Monkey(Ptr) {            // 2. define struct
 
 class App {
     static function main() {
-        Ram.attach();             // 3. init Ram
+        Fraw.attach();            // 3. init Fraw
         var jojo = new Monkey();
         jojo.name = "jojo";
         jojo.id = 101;
@@ -50,7 +50,7 @@ abstract UString(Ptr) to Ptr {
     @idx(0) var __s: mem.Ucs2;
     public function new(str: String) {
         var bytesLength = (str.length + 1) << 1;
-        mallocAbind(Ram.malloc(bytesLength + CAPACITY), false);  // mallocAbind & CAPACITY defined by macro
+        mallocAbind(Fraw.malloc(bytesLength + CAPACITY), false);  // mallocAbind & CAPACITY defined by macro
         length = str.length;      // assign values after malloc
         __s.copyfromString(str);
         Memory.setI16(bytesLength - 2, 0);
@@ -60,7 +60,7 @@ abstract UString(Ptr) to Ptr {
 
 class App {
     static function main() {
-        Ram.attach();
+        Fraw.attach();
         var us = new UString("hello 世界!");
         log(cast us); // UString => mem.Ucs2, since (us: Ptr) == (us.__s: Ptr)
         trace(us.__toOut());
@@ -78,7 +78,7 @@ output:
 App.hx:26: hello 世界!
 App.hx:22:
 --- [UString] CAPACITY: 4, OFFSET_FIRST: -4, OFFSET_END: 0, FLEXIBLE: True
---- ACTUAL_SPACE: 32, baseAddr: 72, Allocter: Ram
+--- ACTUAL_SPACE: 32, baseAddr: 72, Allocter: Fraw
 offset: (-4) - 0x00, bytes: 4, length: 9
 offset: 0x00 - 0x00, bytes: 0, __s: [...]
 ```
@@ -87,7 +87,7 @@ offset: 0x00 - 0x00, bytes: 0, __s: [...]
 
 this a simple fixed-width memory allocator.
 
-```
+```haxe
 @:build(mem.Struct.make(mem.Mini))  // use Mini as memory allocter
 abstract Commit(Ptr) {
   @idx(4) var value: Int;
@@ -95,6 +95,12 @@ abstract Commit(Ptr) {
 }
 ```
 
+### benchmark
+
+soon. (maybe only faster in flash platform.)
+
 ## extra
 
 Providing some crypto method using flash.Memory, Including Md5, Sha1, Sha256, Base64, Crc32, AES128(only cbc/ecb)
+
+

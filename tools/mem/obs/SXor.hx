@@ -18,7 +18,7 @@ class SXor {
 	static var  sa: Ptr = Malloc.NUL;
 
 	static function x_n(low:Int, high:Int):AU8 {
-		var r:AU8 = cast Ram.malloc(8, false);
+		var r:AU8 = cast Fraw.malloc(8, false);
 	#if !neko
 		setI32(r, low);
 		setI32(r + 4, high);
@@ -87,10 +87,10 @@ class SXor {
 		var p3 = c3(x_3);
 		trace([p0, p1, p2, p3]);
 	#if flash
-		Ram.readBytes(sa + p0, 4, t.getData());
-		Ram.readBytes(sa + p1, 4, t.getData());
-		Ram.readBytes(sa + p2, 4, t.getData());
-		Ram.readBytes(sa + p3, 4, t.getData());
+		Fraw.readBytes(sa + p0, 4, t.getData());
+		Fraw.readBytes(sa + p1, 4, t.getData());
+		Fraw.readBytes(sa + p2, 4, t.getData());
+		Fraw.readBytes(sa + p3, 4, t.getData());
 		trace(t.toHex());
 	#end
 	}

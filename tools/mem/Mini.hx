@@ -48,7 +48,7 @@ class Mini {
 		while (lop != NUL) {
 			if (lop.avail > 0 || lop.frags > 0) {
 				ret = lop.request();
-				if (zero) Ram.memset(ret, 0, lvl2Size(lvl) - 1);
+				if (zero) Fraw.memset(ret, 0, lvl2Size(lvl) - 1);
 				break;
 			} else if(q == lop) {
 				add(new MiniNode(lvl));
@@ -83,7 +83,7 @@ class Mini {
 		var lvl = size2Lvl(size);
 
 		if (lvl > LVL_MAX)
-			return Ram.malloc(req_size, zero);
+			return Fraw.malloc(req_size, zero);
 
 		if (chain[lvl] == null)
 			chain[lvl] = new Mini(lvl);
@@ -96,7 +96,7 @@ class Mini {
 		if (node != NUL)
 			node.release(chunk);
 		else
-			Ram.free(chunk);
+			Fraw.free(chunk);
 	}
 
 	static function indexOf(p: Ptr): MiniNode {
@@ -233,13 +233,13 @@ Layout:
 
 	// lvl is Multiples of 8, [8, 16, 24, 32, ..., 128].length == 16
 	public function new(v: Int) {
-		this = Ram.malloc(DATA_SIZE + CAPACITY, true);
+		this = Fraw.malloc(DATA_SIZE + CAPACITY, true);
 		avail = Std.int(DATA_SIZE / Mini.lvl2Size(v));
 		lvl = v;
 		lvlA = v << 1;
 	}
 
-	public inline function free() Ram.free(this);
+	public inline function free() Fraw.free(this);
 
 	public inline function here(chunk: Ptr): Bool
 		return entry <= chunk && (entry + DATA_SIZE) > chunk;

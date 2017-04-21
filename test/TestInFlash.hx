@@ -27,7 +27,7 @@ class TestInFlash{
 		//Lib.current.stage.addEventListener(MouseEvent.CLICK, run);
 	}
 
-	function randAlloc():Ptr return Ram.malloc(Std.int(512 * Math.random() + 64));
+	function randAlloc():Ptr return Fraw.malloc(Std.int(512 * Math.random() + 64));
 
 	function run(?e:MouseEvent){
 		mc.graphics.clear();
@@ -41,7 +41,7 @@ class TestInFlash{
 		shuffle(ar, 2);
 
 		for (i in 0...half) {
-			Ram.free(cast ar[i]);
+			Fraw.free(cast ar[i]);
 			draw(MC_H * i);
 		}
 		trace("**in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length  + " Malloc.check: " + Malloc.check() + "\n");
@@ -53,7 +53,7 @@ class TestInFlash{
 		shuffle(ar, 2);
 
 		for (i in 0...ar.length) {
-			Ram.free(cast ar[i]);
+			Fraw.free(cast ar[i]);
 			draw(MC_H * i);
 			if (i % 6 == 0)
 				trace("index: "+ i +" **in process: ** - frag: " + Malloc.frag_count +", used: " +  Malloc.getUsed() + " bytes, --- block.length: " + Malloc.length  + " Malloc.check: " + Malloc.check() + "\n");
@@ -106,7 +106,7 @@ class TestInFlash{
 		stage.align = flash.display.StageAlign.TOP_LEFT;
 		stage.color = 0;
 		Log.setColor(0xffffff);
-		Ram.select(Ram.create());
+		Fraw.select(Fraw.create());
 		var f = new TestInFlash();
 		var t = new Timer(2000);
 		t.run = f.run.bind();

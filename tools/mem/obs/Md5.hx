@@ -35,12 +35,12 @@ import mem.obs._macros.Md5Macros.*;
 	@idx(8) var msglen:AU8;
 	@idx(64) var padding: AU8; // const
 	public inline function new() {
-		this = Ram.malloc(CAPACITY, true);
+		this = Fraw.malloc(CAPACITY, true);
 		padding[0] = 0x80;
 	}
 
 	public inline function reset():Void {
-		Ram.memset(this, 0, CAPACITY - 64);
+		Fraw.memset(this, 0, CAPACITY - 64);
 	}
 }
 
@@ -80,7 +80,7 @@ class Md5 {
 		if (ctx.total[0] < ilen) ctx.total[1] += 1;
 
 		if (left > 0 && ilen >= fill) {
-			Ram.memcpy((ctx.buffer:Ptr) + left, input, fill);
+			Fraw.memcpy((ctx.buffer:Ptr) + left, input, fill);
 			process(ctx.state, ctx.buffer);
 			input += fill;
 			ilen -= fill;
@@ -92,7 +92,7 @@ class Md5 {
 			input += 64;
 			ilen -= 64;
 		}
-		if (ilen > 0) Ram.memcpy((ctx.buffer:Ptr) + left, input, ilen);
+		if (ilen > 0) Fraw.memcpy((ctx.buffer:Ptr) + left, input, ilen);
 	}
 
 	// N.B: crash on Neko, becouse this function is too large after macro expansion... Sha1 is the same.
@@ -198,6 +198,6 @@ class Md5 {
 		update(ctx, ctx.padding, padn);
 		update(ctx, ctx.msglen, 8);
 
-		Ram.memcpy(output, ctx.state, 16);
+		Fraw.memcpy(output, ctx.state, 16);
 	}
 }

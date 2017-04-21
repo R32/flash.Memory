@@ -18,12 +18,12 @@ import mem.obs._macros.Sha1Macros.*;
 	@idx(1)  var x0:AU8;
 
 	public inline function new():Void {
-		this = Ram.malloc(CAPACITY, false);
+		this = Fraw.malloc(CAPACITY, false);
 		x80[0] = 0x80;
 		x0[0] = 0;
 	}
 	public inline function reset():Void {
-		Ram.memset(this, 0, CAPACITY - 2);
+		Fraw.memset(this, 0, CAPACITY - 2);
 	}
 }
 
@@ -81,7 +81,7 @@ class Sha1{
 
 			i = 64 - j;
 
-			Ram.memcpy((ctx.Buffer:Ptr) + j, input, i);
+			Fraw.memcpy((ctx.Buffer:Ptr) + j, input, i);
 
 			process(ctx.State, ctx.Buffer);
 
@@ -98,7 +98,7 @@ class Sha1{
 		if (ilen == 1)
 			Memory.setByte(ctx.Buffer + j, Memory.getByte(input + i));
 		else if (ilen > 0)
-			Ram.memcpy((ctx.Buffer:Ptr) + j, input + i, ilen);
+			Fraw.memcpy((ctx.Buffer:Ptr) + j, input + i, ilen);
 	}
 
 	// this function is too large for neko
@@ -110,7 +110,7 @@ class Sha1{
 		var	e = state[4];
 
 		var L:AI32 = sa.l;  // L is associated with macros
-		Ram.memcpy(sa.c, data, 64);
+		Fraw.memcpy(sa.c, data, 64);
 
 		var La = 0, Lb = 0, Lc = 0, Ld = 0;
 

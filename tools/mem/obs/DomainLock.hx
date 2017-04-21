@@ -42,7 +42,7 @@ class DLockBuild{
 						Memory.setByte(s_0 + i, s_0[i] ^ "a".code);
 					var len = $v { split };
 					// s_1 = root.loaderInfo.url
-					var s_1:AString = AString.fromString(filter(rec(Ram.readUTFBytes((s_0:Ptr) + len + 1, s_0.length - len - 1))));
+					var s_1:AString = AString.fromString(filter(rec(Fraw.readUTFBytes((s_0:Ptr) + len + 1, s_0.length - len - 1))));
 					try{
 						match(s_0, s_1, len);
 						trace("TODO: some func to crash here ");
@@ -99,7 +99,7 @@ only in flash - DomainLock.check()
 		// parse domain from url
 		for (p in left...left + len){
 			if(Memory.getByte(p) == ",".code && p - left > 1){
-				//trace(Ram.readUTFBytes(left, p - left));
+				//trace(Fraw.readUTFBytes(left, p - left));
 				if (findA(left, p - left, url, urlend) != Malloc.NUL)
 					throw "no";		// in fact, it have done without nothing error.
 				left = cast p + 1;
@@ -107,7 +107,7 @@ only in flash - DomainLock.check()
 		}
 	}
 
-	// Same as Ram.findA except inline
+	// Same as Fraw.findA except inline
 	static inline function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr{
 		var ptr = Malloc.NUL;
 		end -= len;

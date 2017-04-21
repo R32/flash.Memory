@@ -37,7 +37,7 @@ class Nsfhd implements mem.IStruct{
 	@idx(4) var exra:AU8;
 	public var addr(default, null):Ptr;
 	inline public function new(len){
-		addr = Ram.malloc(len, false);
+		addr = Fraw.malloc(len, false);
 	}
 }
 
@@ -47,7 +47,7 @@ class EndianDetect implements mem.IStruct{
 	@idx(-1) var bigEndian:Bool;	// 01
 
 	public inline function new(){
-		addr = Ram.malloc(CAPACITY);
+		addr = Fraw.malloc(CAPACITY);
 		i = 1;
 	}
 }
@@ -61,7 +61,7 @@ abstract AbsEndianDetect(Ptr) from Ptr{
 	@idx(-1) var bigEndian:Bool;	// 01
 
 	public inline function new(){
-		this = Ram.malloc(CAPACITY);
+		this = Fraw.malloc(CAPACITY);
 		i = 1;
 	}
 }
@@ -73,11 +73,11 @@ class TestStruct extends haxe.unit.TestCase{
 		var file = haxe.Resource.getBytes("supermario");
 
 		var mario = new Nsfhd(file.length);
-		Ram.writeBytes(mario.addr, file.length, #if flash file.getData() #else file #end);
+		Fraw.writeBytes(mario.addr, file.length, #if flash file.getData() #else file #end);
 		print(mario.__toOut() + "\n");
 
 		var fake = new Nsfhd(Nsfhd.CAPACITY);
-		// you can do: Ram.memcpy(fake.addr, mario.addr,  Nsfhd.CAPACITY);
+		// you can do: Fraw.memcpy(fake.addr, mario.addr,  Nsfhd.CAPACITY);
 		fake.tag = mario.tag;
 		fake.ver = mario.ver;
 		fake.track_count = mario.track_count;
@@ -96,7 +96,7 @@ class TestStruct extends haxe.unit.TestCase{
 		for (i in 0...Nsfhd.__EXRA_LEN)
 			fake.exra[i] = mario.exra[i];
 
-		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Ram.memcmp(fake.addr, mario.addr, Nsfhd.CAPACITY) == 0);
+		assertTrue(mario.ntsc == 0x411A && Nsfhd.CAPACITY == 128 && Fraw.memcmp(fake.addr, mario.addr, Nsfhd.CAPACITY) == 0);
 
 		var endian = new EndianDetect();
 		print(endian.__toOut() + "\n");
@@ -116,7 +116,7 @@ class TestStruct extends haxe.unit.TestCase{
 		stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
 		stage.align = flash.display.StageAlign.TOP_LEFT;
 	#end
-		Ram.select(Ram.create());
+		Fraw.select(Fraw.create());
 
 		var runner = new TestRunner();
 		runner.add(new TestStruct());

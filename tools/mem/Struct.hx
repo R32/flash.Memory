@@ -81,7 +81,7 @@ class Struct {
 
 		var alloc_s = ExprTools.toString(alloc);
 		if (alloc_s == "null") {
-			alloc_s = "Ram";
+			alloc_s = "Fraw";
 			alloc = macro $i{alloc_s};
 		}
 
@@ -228,8 +228,8 @@ class Struct {
 						offset += params.dx;
 							switch(ts) {
 							case "String":
-							[macro Ram.readUTFBytes($i{context} + $v{offset}, $v{params.width})
-								,macro Ram.writeString($i{context} + $v{offset}, $v{params.width} ,v)];
+							[macro Fraw.readUTFBytes($i{context} + $v{offset}, $v{params.width})
+								,macro Fraw.writeString($i{context} + $v{offset}, $v{params.width} ,v)];
 							default: null;
 							}
 					default: null;
@@ -406,7 +406,7 @@ class Struct {
 		if (!all_in_map.exists("realEntry"))
 			fields.push({
 				name : "realEntry",
-				doc: ' for "Malloc.calcEntrySize(entry)", or "Ram.free(entry)"',
+				doc: ' for "Malloc.calcEntrySize(entry)", or "Fraw.free(entry)"',
 				access: [AInline, APublic],
 				kind: FFun({
 					args: [],
@@ -481,7 +481,7 @@ class Struct {
 				expr: macro {
 					var actual_space = "";
 					if ($v{clsname} != "Block") @:privateAccess {
-						if ($v{alloc_s} == "Ram") {
+						if ($v{alloc_s} == "Fraw") {
 							var b = mem.Malloc.indexOf($i{context} + OFFSET_FIRST);
 							if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
 								actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";

@@ -12,7 +12,7 @@ class Crc32 {
 
 	public static function init() {
 		if (table != NUL) return;
-		table = cast Ram.malloc(256 << 2, false);
+		table = cast Fraw.malloc(256 << 2, false);
 
 		var i = 0, j = 0, d = 0;
 

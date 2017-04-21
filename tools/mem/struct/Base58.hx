@@ -49,7 +49,7 @@ class Base58 {
 	public static function init() {
 		if (alphabet != NUL) return;
 		var b = AString.fromString("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
-		var p = Ram.malloc(128, true);
+		var p = Fraw.malloc(128, true);
 		for (i in 0...58)
 			p[Memory.getByte(b + i)] = i;
 		alphabet = b;
@@ -104,7 +104,7 @@ class Base58 {
 		@:privateAccess s58._len = s58Length;
 
 		// padding '1'
-		if (zeroes > 0) Ram.memset(s58, "1".code, zeroes);
+		if (zeroes > 0) Fraw.memset(s58, "1".code, zeroes);
 
 		// reverse & enc; let i = left, j = right, carry = tmp;
 		var enc:Ptr = cast alphabet;

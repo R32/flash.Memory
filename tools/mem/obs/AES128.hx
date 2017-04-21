@@ -49,7 +49,7 @@ Ported by r32
 	@idx(256) var rsbox:AU8;
 	@idx(256) var rcon:AU8;
 	inline public function reset():Void {
-		Ram.memset(this, 0, 176 + (4 * 4));
+		Fraw.memset(this, 0, 176 + (4 * 4));
 	}
 }
 
@@ -118,7 +118,7 @@ class AES128 {
 
 	 ```haxe
 	 var file = haxe.Resource.getBytes("res");
-	 var input = Ram.mallocFromBytes(file, 16);
+	 var input = Fraw.mallocFromBytes(file, 16);
 	 var output = input;
 	 AES128.cbcEncryptBuff(input, cast 0, output, mem.Ut.padmul(file.length, 16), cast 0);  // no key, no iv
 	 ```
@@ -148,7 +148,7 @@ class AES128 {
 
 		if (remainders > 0) {
 			if (input != output) BlockCopy(output, input);
-			Ram.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
+			Fraw.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
 			pstate = output;
 			Cipher();
 		}
@@ -182,7 +182,7 @@ class AES128 {
 
 		if (remainders > 0) {
 			BlockCopy(output, input);
-			Ram.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
+			Fraw.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
 			pstate = output;
 			XorWithIv(output, iv);
 		}
@@ -224,7 +224,7 @@ class AES128 {
 		}
 
 		if (remainders > 0) {
-			Ram.memset(io + remainders, 0, KEYLEN - remainders); // add 0-padding
+			Fraw.memset(io + remainders, 0, KEYLEN - remainders); // add 0-padding
 			pstate = io;
 			XorWithIv(io, j & 1 == 1 ? tb : tb + KEYLEN);
 		}

@@ -21,7 +21,7 @@ class Utf8 {
 
 		var len = data.length;
 
-		utf8d_table = cast Ram.malloc(len * 4, false);
+		utf8d_table = cast Fraw.malloc(len * 4, false);
 
 		var u32:AI32 = cast utf8d_table;
 

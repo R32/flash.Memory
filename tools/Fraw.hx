@@ -6,7 +6,7 @@ import mem.Malloc;
 import haxe.io.Bytes;
 import mem.struct.WString;
 
-class Ram{
+class Fraw{
 
 	static inline var LLB = 16 << 12;  // 16384, 64K
 	static var current:RawData = null;

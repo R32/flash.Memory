@@ -17,7 +17,7 @@ abstract WString(Ptr) to Ptr {
 
 	private inline function get_length() return _len;
 
-	public inline function toString(): String return Ram.readUTFBytes(this, length);
+	public inline function toString(): String return Fraw.readUTFBytes(this, length);
 
 	private inline function new(len: Int) {
 		mallocAbind(len + CAPACITY + 1, false);
@@ -31,17 +31,17 @@ abstract WString(Ptr) to Ptr {
 	#if (neko || cpp || lua) // have not utf
 		var length = str.length;
 		var ws = new WString(length);
-		Ram.writeString(ws, length, str);
+		Fraw.writeString(ws, length, str);
 	#elseif hl
 		var length = 0;
 		var b = str.bytes.utf16ToUtf8(0, length);
 		var ws = new WString(length);
-		Ram.current.b.blit(ws, b, 0, length);
+		Fraw.current.b.blit(ws, b, 0, length);
 	#else
 		var ba = writeString(str);
 		var length = ba.length;
 		var ws = new WString(length);
-		Ram.writeBytes(ws, length, ba);
+		Fraw.writeBytes(ws, length, ba);
 	#end
 		return ws;
 	}

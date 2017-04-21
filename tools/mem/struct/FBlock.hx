@@ -22,15 +22,15 @@ Fixed Block
 	public inline function toBytes(): haxe.io.Bytes {
 		var b = haxe.io.Bytes.alloc(length);
 		#if flash
-		Ram.readBytes(this, length, b.getData());
+		Fraw.readBytes(this, length, b.getData());
 		#else
-		Ram.readBytes(this, length, b);
+		Fraw.readBytes(this, length, b);
 		#end
 		return b;
 	}
 
 	static public inline function fromBytes(b, align = 128):FBlock {
-		return Ram.mallocFromBytes(b, align);
+		return Fraw.mallocFromBytes(b, align);
 	}
 
 	@:arrayAccess inline function get(i: Int):Int return Memory.getByte((this:Int) + i);

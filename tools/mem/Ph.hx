@@ -62,11 +62,11 @@ class Ph{
 	static public function toAscii(ptr: Ptr, len:Int): String {
 	#if flash
 		@:privateAccess @:mergeBlock {
-			Ram.current.position = ptr;
-			return Ram.current.readMultiByte(len, "us-ascii");
+			Fraw.current.position = ptr;
+			return Fraw.current.readMultiByte(len, "us-ascii");
 		}
 	#elseif (hl || neko || cpp || lua)
-		return Ram.readUTFBytes(ptr, len);
+		return Fraw.readUTFBytes(ptr, len);
 	#elseif (js && (js_es > 3))
 		return untyped __js__("String.fromCharCode.apply(null, {0})", Memory.b.b.slice(ptr, ptr + len));
 	#else

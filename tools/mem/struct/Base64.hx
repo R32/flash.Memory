@@ -30,8 +30,8 @@ class Base64 {
 
 	static public function init():Void {
 		if (encoding_table != NUL) return;
-		encoding_table = Ram.malloc(64, false);
-		decoding_table = Ram.malloc(128, true);
+		encoding_table = Fraw.malloc(64, false);
+		decoding_table = Fraw.malloc(128, true);
 	/*
 		var i = 0;
 		for (c in "A".code..."Z".code + 1)

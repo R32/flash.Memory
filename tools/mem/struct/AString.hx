@@ -34,14 +34,14 @@ abstract AString(Ptr) to Ptr {
 	public static function fromString(str:String):AString @:privateAccess {
 		var sa = alloc(str.length);
 	#if flash
-		Ram.current.position = sa;
-		Ram.current.writeMultiByte(str, "us-ascii");
+		Fraw.current.position = sa;
+		Fraw.current.writeMultiByte(str, "us-ascii");
 	#elseif hl
 		var size = 0;
 		var b = str.bytes.utf16ToUtf8(0, size);
-		Ram.current.b.blit(sa, b, 0, str.length);
+		Fraw.current.b.blit(sa, b, 0, str.length);
 	#elseif (neko || cpp || lua)
-		Ram.writeUTFBytes(sa, str);
+		Fraw.writeUTFBytes(sa, str);
 	#else
 		for (i in 0...sa.length)
 			sa[i] = StringTools.fastCodeAt(str, i);
