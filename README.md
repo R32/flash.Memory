@@ -5,6 +5,8 @@ A way to typedef struct like c language
 
 ### normal struct
 
+[all of `@idx` Supported types in Struct.hx](tools/mem/Struct.hx#L20)
+
 ```haxe
 import mem.Ptr;                   // 1. import mem.Ptr
 
@@ -83,7 +85,7 @@ offset: (-4) - 0x00, bytes: 4, length: 9
 offset: 0x00 - 0x00, bytes: 0, __s: [...]
 ```
 
-### mem.Mini
+### [mem.Mini](tools/mem/Mini.hx#L8)
 
 this a simple fixed-width memory allocator.
 
