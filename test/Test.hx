@@ -16,13 +16,11 @@ import mem.Utf8;
 import mem.Malloc.dump;
 #if cpp
 import mem.cpp.Gbk;
-import mem.cpp.BytesData;
-import mem.cpp.NRam;
 #end
-import haxe.Log;
 
 class Test {
-	public static function main(){
+
+	static function init() {
 		Ram.attach(1024);
 		Ram.malloc(Ut.rand(128, 1), false);
 		Hex.init();
@@ -33,13 +31,17 @@ class Test {
 		Sha256.init();
 		AES128.init();
 		mem.obs.Crc32.init();
-		ASS.test();
+	}
+
+	static function main(){
+		init();
 		test_utf8();
 		test_md5();
 		test_sha1();
 		test_aes128();
 		test_xor_domainLock();
 		test_raw();
+		ASS.test();
 	}
 
 	static function test_raw() @:privateAccess {
@@ -118,9 +120,7 @@ class Test {
 		AES128.cbcDecryptBuff(out, key, out, multi_of_16, cast 0);
 		var sec = haxe.Timer.stamp() - last;
 
-		trace('file: ${file.length/1024}Kb, DEC(output <> input) sec: $sec.\nfile.last_32_ascii: '
-		+ Ph.toAscii((out:Ptr) + file.length - 32, 32)
-		+ ", memcmp: " + Ram.memcmp(org, out, file.length)
+		trace('-- File: ${toFixed(file.length/1024, 2)}Kb, AES_CBC,Encry&DeCry Sec: ${toFixed(sec, 4)}. Memcmp: ${Ram.memcmp(org, out, file.length)} '
 		);
 		trace(dump());
 	}
@@ -139,8 +139,8 @@ class Test {
 		now = haxe.Timer.stamp();
 		for(i in 0...3) out1 = haxe.crypto.Sha1.make(file);
 		var time1 = haxe.Timer.stamp() - now;
-		Hex.trace(out0, 20, true, "_SHA1(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash:");
-		trace("SHA1(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
+		Hex.trace(out0, 20, true, "SHA1(loop*3) mem sec: " + toFixed(time0, 5) + ", hash: ");
+		trace("SHA1(loop*3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
 
 
 		trace("----------- SHA256 ------------");
@@ -152,14 +152,13 @@ class Test {
 		now = haxe.Timer.stamp();
 		for (i in 0...3) out11 = haxe.crypto.Sha256.make(file);
 		var time01 = haxe.Timer.stamp() - now;
-		Hex.trace(out00, 32, true, "SHA256(loop * 3) mem sec: " + toFixed(time00, 5) + ", hash:");
-		trace("SHA256(loop * 3) std sec: " + toFixed(time01, 5)  +", hash: "  + out11.toHex());
+		Hex.trace(out00, 32, true, "SHA256(loop*3) mem sec: " + toFixed(time00, 5) + ", hash: ");
+		trace("SHA256(loop*3) std sec: " + toFixed(time01, 5)  +", hash: "  + out11.toHex());
 	}
 
 	public static function test_md5():Void {
 		var file = haxe.Resource.getBytes("testjs");
 		var filePtr = Ram.mallocFromBytes(file);
-		trace('******* filesize: ${file.length/1024}Kb *******');
 		trace("----------- MD5 ------------");
 		var out0 = Ram.malloc(16, true);
 		var now = haxe.Timer.stamp();
@@ -175,42 +174,27 @@ class Test {
 		now = haxe.Timer.stamp();
 		for (i in 0...3) out2 = mem.obs.Crc32.make(filePtr, file.length);
 		var time2 = haxe.Timer.stamp() - now;
-		Hex.trace(out0, 16, true, "_MD5(loop * 3) mem sec: " + toFixed(time0, 5) + ", hash: ");
-		trace("MD5(loop * 3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
-		trace("Crc32(loop * 3) mem sec: " + toFixed(time2, 5)  +", hash: 0x"  + StringTools.hex(out2));
+
+		var out3:Int = 0;
+		now = haxe.Timer.stamp();
+		for (i in 0...3) out3 = haxe.crypto.Crc32.make(file);
+		var time3 = haxe.Timer.stamp() - now;
+
+		Hex.trace(out0, 16, true, "MD5(loop*3) mem sec: " + toFixed(time0, 5) + ", hash: ");
+		trace("MD5(loop*3) std sec: " + toFixed(time1, 5)  +", hash: "  + out1.toHex());
+		trace("Crc32(loop*3) mem sec: " + toFixed(time2, 5)  +", hash: 0x"  + StringTools.hex(out2));
+		trace("Crc32(loop*3) std sec: " + toFixed(time3, 5)  +", hash: 0x"  + StringTools.hex(out3));
 	}
 
 	public static function test_utf8() {
 		trace("----------- Utf8 ------------");
-		/*
-		var utf8d = @:privateAccess Utf8.utf8d;
-		var t = [];
-		for (i in 0...400)
-			t[i] = utf8d[i];
-		var p = 0;
-		for (i in 0...7) {
-			trace(t.slice(p, p + 0x20).join(", "));
-			p += 0x20;
-		}
-		for (i in 0...3) {
-			trace(t.slice(p, p + 0x10).map(function(v) { return "0x" + StringTools.hex(v); } ).join(", "));
-			p += 0x10;
-		}
-		for (i in 0...4) {
-			trace(t.slice(p, p + 0x20).join(", "));
-			p += 0x20;
-		}
-		trace("");
-		*/
 		var str = "这里有几a个中b文c字符";
 		#if cpp
 		trace(Gbk.u2Gbk('str: $str, utf-length: ${str.length}'));
 		#else
 		trace(('str: $str, utf-length: ${str.length}'));
 		#end
-
 		var ws = Ram.mallocFromString(str);
-
 		trace("Utf8.length(str): " + Utf8.length(ws, ws.length));
 		var a = [];
 		Utf8.iter(ws, ws.length, function(ch) {
@@ -250,25 +234,25 @@ class ASS implements mem.IStruct{
 	@idx(10) var f8:AF8;
 	public static function test() {
 		var len = 10;
-		if(( ASS.__U8_BYTE == len
+		if((ASS.__U8_BYTE == len
 		&& ASS.__U16_BYTE == len * 2
 		&& ASS.__I32_BYTE == len * 4
-		&& ASS.__F4_BYTE == len * 4
-		&& ASS.__F8_BYTE == len * 8
+		&& ASS.__F4_BYTE  == len * 4
+		&& ASS.__F8_BYTE  == len * 8
 		) && (
-		   ASS.__U8_OF == len * 4 + len * 2 + len
-		&& ASS.__U16_OF == len + len * 4 + len * 2 + len
-		&& ASS.__I32_OF == len * 2 + len + len * 4 + len * 2 + len
-		&& ASS.__F4_OF  == len * 4 + len * 2 + len + len * 4 + len * 2 + len
-		&& ASS.__F8_OF  == len * 4 + len * 4 + len * 2 + len + len * 4 + len * 2 + len
-		&& ASS.CAPACITY == len * 8 + len * 4 + len * 4 + len * 2 + len + len * 4 + len * 2 + len
+		   ASS.__U8_OF  == 0
+		&& ASS.__U16_OF == len
+		&& ASS.__I32_OF == len + len * 2
+		&& ASS.__F4_OF  == len + len * 2 + len * 4
+		&& ASS.__F8_OF  == len + len * 2 + len * 4 + len * 4
+		&& ASS.CAPACITY == len + len * 2 + len * 4 + len * 4 + len * 8
 		) && (
-		   ASS.__U8_LEN == len
+		   ASS.__U8_LEN  == len
 		&& ASS.__U16_LEN == len
 		&& ASS.__I32_LEN == len
-		&& ASS.__F4_LEN == len
-		&& ASS.__F8_LEN == len
-		)) trace("----------- struct done. ------------");
-		else throw "struct";
+		&& ASS.__F4_LEN  == len
+		&& ASS.__F8_LEN  == len
+		)) trace("-- struct done.");
+		else throw "-- struct fail";
 	}
 }
