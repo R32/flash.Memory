@@ -32,7 +32,7 @@ class Bench {
 
 	static function main() {
 		Fraw.attach(1024 * 1024 * 2);
-		trace("- " + flatform() +" ------ fraw vs std ------");
+		trace("- " + flatform());
 		VectorWR(); // uint_8
 		objectCreate();
 	}
