@@ -5,7 +5,7 @@ import mem.Ptr;
 import mem.Malloc.NUL;
 
 /**
-a simple fixed-width memory allocator. These chunk sizes are 8, 16, 24 ... 128
+a simple fixed-block memory allocator. These block sizes are 8, 16, 24 ... 128
 
 Note: have not tested
 */

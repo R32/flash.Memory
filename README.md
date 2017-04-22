@@ -87,7 +87,7 @@ offset: 0x00 - 0x00, bytes: 0, __s: [...]
 
 ### [mem.Mini](tools/mem/Mini.hx#L8)
 
-this a simple fixed-width memory allocator.
+this a simple fixed-block memory allocator.
 
 ```haxe
 @:build(mem.Struct.make(mem.Mini))  // use Mini as memory allocter
