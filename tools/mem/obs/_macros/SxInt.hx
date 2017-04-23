@@ -115,7 +115,7 @@ import mem.Ut;
 				args:[],
 				expr: macro {
 					if (@:privateAccess Fraw.current == null) throw "Fraw.current is null";
-					if (sa != mem.Malloc.NUL) return;
+					if (sa != mem.Ptr.NUL) return;
 					sa = Fraw.malloc($v { SX_MAX }, false);
 					var p:Int = cast sa;
 					$a{codes};

@@ -1,7 +1,6 @@
 package mem.struct;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 
 /**
 Utf8 String

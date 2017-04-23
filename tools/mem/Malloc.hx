@@ -40,36 +40,36 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 @:access(Fraw) class Malloc {
 
-	public static inline var NUL:Ptr = cast 0;
+	//public static inline var NUL:Ptr = mem.Ptr.NUL; // moved to mem.Ptr
 	public static inline var LB = 8;
 
-	static var top(default, null):Block = cast NUL;
-	static var bottom(default, null):Block = cast NUL;
+	static var top(default, null):Block = cast Ptr.NUL;
+	static var bottom(default, null):Block = cast Ptr.NUL;
 	public static var frag_count(default, null):Int = 0;
 	public static var length(default, null):Int = 0;
 
 	public static function getUsed():Int {
-		return bottom == NUL ? 16 : (bottom:Int) + bottom.size; // Reserve 16 bytes
+		return bottom == Ptr.NUL ? 16 : (bottom:Int) + bottom.size; // Reserve 16 bytes
 	}
 
 	// e.g: .calcEntrySize( someStruct.realEntry() )
 	public static function calcEntrySize(entry: Ptr): Int {
 		var b = indexOf(entry);
-		if (b != NUL)
+		if (b != Ptr.NUL)
 			return b.entrySize;
 		return 0;
 	}
 
 	static function clear() {
-		top = cast NUL;
-		bottom = cast NUL;
+		top = cast Ptr.NUL;
+		bottom = cast Ptr.NUL;
 		frag_count = 0;
 		length = 0;
 	}
 
 	// add element at the end of this chain, Only for New Empty Block
 	static function add(b:Block):Void {
-		if (top == NUL) {
+		if (top == Ptr.NUL) {
 			top = b;
 		} else {
 			bottom.next = b;
@@ -85,7 +85,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 		a.next = b;
 		b.prev = a;
 		b.next = cc;
-		if (cc == NUL)
+		if (cc == Ptr.NUL)
 			bottom = b;
 		else
 			cc.prev = b;
@@ -93,7 +93,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	}
 
 	static function indexOf(entry:Ptr):Block {
-		if (entry - Block.CAPACITY > NUL) {
+		if (entry - Block.CAPACITY > Ptr.NUL) {
 			var b:Block = cast entry - Block.CAPACITY;
 			//if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b))
 			//	return b;
@@ -101,7 +101,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 			var prev = b.prev, next = b.next;      // for Too many local variables
 			if (prev.next == b && next.prev == b) return b;
 		}
-		return cast NUL;
+		return cast Ptr.NUL;
 	}
 
 	public static function make(req_size:Int, zero:Bool, pb:Int):Ptr {
@@ -112,16 +112,16 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 		//if (frag_count > 0) mergeFragment();
 
 		var tmp_frag_count = frag_count;
-		var block:Block = cast NUL;
+		var block:Block = cast Ptr.NUL;
 		var poolEntrySize = 0;
 		var cc:Block = top;
-		while (tmp_frag_count > 0 && cc != NUL) {
+		while (tmp_frag_count > 0 && cc != Ptr.NUL) {
 			if (cc.is_free) {
 				poolEntrySize = cc.entrySize;
 				if (poolEntrySize == req_size) {
 					block = cc;
 					break;
-				} else if (block == NUL && poolEntrySize > req_size) {
+				} else if (block == Ptr.NUL && poolEntrySize > req_size) {
 					block = cc;
 				}
 				-- tmp_frag_count;
@@ -131,7 +131,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 
 		var entrySizeAb = req_size + Block.CAPACITY;
 
-		if(block == NUL) {
+		if(block == Ptr.NUL) {
 			var blockAddr = getUsed();
 			Fraw.req(blockAddr + entrySizeAb); // check
 			block = new Block(cast blockAddr, req_size, zero);
@@ -154,7 +154,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	public static inline function free(p:Ptr) freeBlock(indexOf(p));
 
 	static function freeBlock(b: Block) :Void {
-		if (b == NUL || bottom == NUL || b.is_free) return;
+		if (b == Ptr.NUL || bottom == Ptr.NUL || b.is_free) return;
 
 		b.is_free = true;
 
@@ -165,10 +165,10 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 				bottom = bottom.prev;
 				-- length;
 				-- frag_count;
-				if (bottom == NUL)
+				if (bottom == Ptr.NUL)
 					top = bottom;
 				else
-					bottom.next = cast NUL;
+					bottom.next = cast Ptr.NUL;
 			}
 		}
 	}
@@ -178,14 +178,14 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	}
 
 	static function mergeFragment() {
-		var next:Block = cast NUL;
+		var next:Block = cast Ptr.NUL;
 		var head:Block = top;
-		while (head != NUL && frag_count > 0) {		// if head == null, Is empty
+		while (head != Ptr.NUL && frag_count > 0) {		// if head == null, Is empty
 			if (head.is_free) {
 				next = head.next;
-				if (next != NUL && next.is_free) {	// if next == null, next is BOTTOM
+				if (next != Ptr.NUL && next.is_free) {	// if next == null, next is BOTTOM
 					head.next = next.next;			// Note: next.next
-					if (head.next == NUL) {
+					if (head.next == Ptr.NUL) {
 						bottom = head;
 					} else {
 						head.next.prev = head;
@@ -209,9 +209,9 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	public static function check():Bool {
 		var cur = top;
 		var prev: Block;
-		while (cur != NUL) {
+		while (cur != Ptr.NUL) {
 			if (Memory.getUI16(cur) != 0) return false; // zero
-			if (cur.next == NUL) break;
+			if (cur.next == Ptr.NUL) break;
 
 			prev = cur;
 			cur = cur.next;
@@ -229,7 +229,7 @@ private class BlockIterator {
 
 	public inline function new(h:Block) head = h;
 
-	public inline function hasNext():Bool return head != Malloc.NUL;
+	public inline function hasNext():Bool return head != Ptr.NUL;
 
 	public inline function next():Block {
 		var block = head;

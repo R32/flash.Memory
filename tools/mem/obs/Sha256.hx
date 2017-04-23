@@ -28,10 +28,10 @@ import StringTools.hex;
 
 class Sha256{
 
-	static var sa: Sha256Context = cast Malloc.NUL;
+	static var sa: Sha256Context = cast Ptr.NUL;
 
 	public static function init() {
-		if (sa != Malloc.NUL) return;
+		if (sa != Ptr.NUL) return;
 		sa = new Sha256Context();
 		var ktable = [
 			0x428A2F98,0x71374491,0xB5C0FBCF,0xE9B5DBA5,0x3956C25B,

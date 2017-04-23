@@ -47,10 +47,10 @@ import mem.obs._macros.Md5Macros.*;
 
 class Md5 {
 
-	static var m5:Md5Context = cast Malloc.NUL;
+	static var m5:Md5Context = cast Ptr.NUL;
 
 	public static function init():Void {
-		if (m5 == Malloc.NUL) m5 = new Md5Context();
+		if (m5 == Ptr.NUL) m5 = new Md5Context();
 	}
 
 	public static function make(input: Ptr, ilen:Int, output: Ptr) {

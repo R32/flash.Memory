@@ -1,19 +1,18 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 import mem.struct.AString;
 
 class Hex{
 
-	static var hexchar(default, null): AString = cast NUL;
+	static var hexchar(default, null): AString = cast Ptr.NUL;
 
 	public static function init() {
 		_init();
 	}
 
 	inline static function _init() {
-		if (hexchar == NUL)
+		if (hexchar == Ptr.NUL)
 			hexchar = AString.fromString("0123456789ABCDEF");
 	}
 

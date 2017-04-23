@@ -429,7 +429,7 @@ class Struct {
 					ret : null,
 					expr: macro {
 						$alloc.free(realEntry());
-						$i{context} = cast mem.Malloc.NUL;
+						$i{context} = cast mem.Ptr.NUL;
 					}
 				}),
 				pos: here()
@@ -444,7 +444,7 @@ class Struct {
 					args: [],
 					ret : macro :Bool,
 					expr: macro {
-						return ($i{context}: Ptr) == mem.Malloc.NUL;
+						return ($i{context}: mem.Ptr) == Ptr.NUL;
 					}
 				}),
 				pos: here()
@@ -483,11 +483,11 @@ class Struct {
 					if ($v{clsname} != "Block") @:privateAccess {
 						if ($v{alloc_s} == "Fraw") {
 							var b = mem.Malloc.indexOf($i{context} + OFFSET_FIRST);
-							if (b != mem.Malloc.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
+							if (b != mem.Ptr.NUL) // if the "Ptr" is not directly allocated by "malloc" so "b" is Null
 								actual_space = "ACTUAL_SPACE: " + (b.size - mem.Malloc.Block.CAPACITY) + ", ";
 						} else if ($v{alloc_s} == "Mini" || $v{alloc_s} == "mem.Mini") {
 							var node = mem.Mini.indexOf($i { context } + OFFSET_FIRST);
-							if (node != mem.Malloc.NUL)
+							if (node != mem.Ptr.NUL)
 								actual_space = "ACTUAL_SPACE: " + (mem.Mini.lvl2Size(node.lvl) - 1) + ", ";
 						}
 					}

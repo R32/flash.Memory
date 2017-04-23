@@ -2,7 +2,6 @@ package mem;
 
 import mem.Ut;
 import mem.Ptr;
-import mem.Malloc.NUL;
 
 /**
 a simple fixed-block memory allocator. These block sizes are 8, 16, 24 ... 128
@@ -18,12 +17,12 @@ class Mini {
 	function new (l: Int) {
 		if (l < 1 || l > LVL_MAX) l = 1;
 		lvl = l;
-		h = q = cast NUL;
+		h = q = cast Ptr.NUL;
 		add(new MiniNode(lvl));
 	}
 
 	function add(b: MiniNode) {
-		if( h == NUL )
+		if( h == Ptr.NUL )
 			h = b;
 		else
 			q.next = b;
@@ -31,21 +30,21 @@ class Mini {
 	}
 
 	function destory() {
-		var prev: MiniNode = cast NUL;
+		var prev: MiniNode = cast Ptr.NUL;
 		var lop = h;
-		while (lop != NUL) {
+		while (lop != Ptr.NUL) {
 			prev = lop;
 			lop = lop.next;
 			prev.free();
 		}
 		chain[lvl] = null;
-		h = q = cast NUL;
+		h = q = cast Ptr.NUL;
 	}
 
 	function req(zero: Bool): Ptr {
-		var ret = NUL;
+		var ret = Ptr.NUL;
 		var lop = h;
-		while (lop != NUL) {
+		while (lop != Ptr.NUL) {
 			if (lop.avail > 0 || lop.frags > 0) {
 				ret = lop.request();
 				if (zero) Fraw.memset(ret, 0, lvl2Size(lvl) - 1);
@@ -60,13 +59,13 @@ class Mini {
 
 	function which(p: Ptr): MiniNode {
 		var lop = h;
-		while (lop != NUL) {
+		while (lop != Ptr.NUL) {
 			if (lop.here(p)) {
 				return lop;
 			}
 			lop = lop.next;
 		}
-		return cast NUL;
+		return cast Ptr.NUL;
 	}
 
 	/////////////// static ///////////////
@@ -93,7 +92,7 @@ class Mini {
 
 	public static function free(chunk: Ptr): Void {
 		var node = indexOf(chunk);
-		if (node != NUL)
+		if (node != Ptr.NUL)
 			node.release(chunk);
 		else
 			Fraw.free(chunk);
@@ -106,13 +105,13 @@ class Mini {
 				var mini = chain[lvl];
 				if (mini != null) {
 					var node = mini.which(p);
-					if (node != NUL && valid(p, node, lvl)) {
+					if (node != Ptr.NUL && valid(p, node, lvl)) {
 						return node;
 					}
 				}
 			}
 		}
-		return cast NUL;
+		return cast Ptr.NUL;
 	}
 
 	// Note: [0~8]=>8, [9~16] => 16
@@ -159,7 +158,7 @@ class Mini {
 			trace('----- lvl: $i, chunk width: ${lvl2Size(i)} -----');
 			var lop = node.h;
 			var j = 0;
-			while (lop != NUL) {
+			while (lop != Ptr.NUL) {
 				total += (MiniNode.DATA_SIZE + MiniNode.CAPACITY);
 				trace('MNode: $j, Available: ${lop.avail}, Fragments: ${lop.frags}, Caret: ${lop.caret}');
 			++ j;
@@ -245,7 +244,7 @@ Layout:
 		return entry <= chunk && (entry + DATA_SIZE) > chunk;
 
 	function request(): Ptr {
-		var ret: Ptr = NUL;
+		var ret: Ptr = Ptr.NUL;
 		var width = Mini.lvl2Size(lvl);
 		var offset = caret;
 

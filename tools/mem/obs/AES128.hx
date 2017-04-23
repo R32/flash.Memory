@@ -1,7 +1,6 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 import mem.Ptr.Memory.setI32;
 import mem.Ptr.Memory.getI32;
 import mem.Ptr.Memory.getByte;
@@ -57,12 +56,12 @@ Ported by r32
 @:analyzer(no_copy_propagation)
 class AES128 {
 
-	static var aes:AES128Context = cast NUL;
+	static var aes:AES128Context = cast Ptr.NUL;
 
 	static var pstate: Ptr;
 
 	static public function init():Void {
-		if (aes != NUL) return;
+		if (aes != Ptr.NUL) return;
 		// write to mem
 		aes = new AES128Context();
 
@@ -89,7 +88,7 @@ class AES128 {
 
 		pstate = output;
 
-		if (key != NUL) KeyExpansion(key);
+		if (key != Ptr.NUL) KeyExpansion(key);
 
 		Cipher();
 	}
@@ -99,7 +98,7 @@ class AES128 {
 
 		pstate = output;
 
-		if (key != NUL) KeyExpansion(key);
+		if (key != Ptr.NUL) KeyExpansion(key);
 
 		InvCipher();
 	}
@@ -133,11 +132,11 @@ class AES128 {
 		pstate = output;
 
 		// Skip the key expansion if key is passed as 0
-		if (key != NUL) KeyExpansion(key);
+		if (key != Ptr.NUL) KeyExpansion(key);
 
 		while (i < length) {
 			if (input != output) BlockCopy(output, input);
-			if (iv != NUL) XorWithIv(output, iv);
+			if (iv != Ptr.NUL) XorWithIv(output, iv);
 			pstate = output;
 			Cipher();
 			iv = output;
@@ -166,14 +165,14 @@ class AES128 {
 		pstate = output;
 
 		// Skip the key expansion if key is passed as 0
-		if (key != NUL) KeyExpansion(key);
+		if (key != Ptr.NUL) KeyExpansion(key);
 
 		while (i < length) {
 			BlockCopy(output, input);
 			pstate = output;
 			InvCipher();
 			// If iv is passed as 0, we continue to encrypt without re-setting the Iv
-			if (iv != NUL) XorWithIv(output, iv);
+			if (iv != Ptr.NUL) XorWithIv(output, iv);
 			iv = input;
 			input += KEYLEN;
 			output += KEYLEN;
@@ -199,11 +198,11 @@ class AES128 {
 		var tb:Ptr = aes.tbuf; // 32 bites
 
 		pstate = io;
-		if (key != NUL) KeyExpansion(key);
+		if (key != Ptr.NUL) KeyExpansion(key);
 
 		BlockCopy(tb + KEYLEN, io);
 		InvCipher();
-		if (iv != NUL) XorWithIv(io, iv);
+		if (iv != Ptr.NUL) XorWithIv(io, iv);
 		io += KEYLEN;
 		i += KEYLEN;
 

@@ -27,6 +27,8 @@ abstract Ptr(Int) to Int {
 
 	@:op(A == B) private static inline function eqInt( a : Ptr, b : Ptr ) : Bool
 		return (a:Int) == (b:Int);
+
+	public static inline var NUL:Ptr = cast 0;
 }
 
 /**

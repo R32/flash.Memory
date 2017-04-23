@@ -12,10 +12,10 @@ import mem.obs._macros.Utf8Macos.*;
 // See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
 class Utf8 {
 
-	static var utf8d_table(default, null):AU8 = cast Malloc.NUL;
+	static var utf8d_table(default, null):AU8 = cast Ptr.NUL;
 
 	public static function init() {
-		if (utf8d_table != Malloc.NUL) return;
+		if (utf8d_table != Ptr.NUL) return;
 
 		var data = utf8DataTo32(); // I32;
 

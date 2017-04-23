@@ -41,10 +41,10 @@ import mem.obs._macros.Sha1Macros.*;
 
 class Sha1{
 
-	static var sa: Sha1Context = cast Malloc.NUL;
+	static var sa: Sha1Context = cast Ptr.NUL;
 
 	public static function init():Void {
-		if (sa == Malloc.NUL) sa = new Sha1Context();
+		if (sa == Ptr.NUL) sa = new Sha1Context();
 	}
 
 	public static function make(input: Ptr, ilen:Int, output: Ptr):Void {

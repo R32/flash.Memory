@@ -1,7 +1,6 @@
 package mem.struct;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 import mem.struct.AString;
 
 @:build(mem.Struct.make())
@@ -43,11 +42,11 @@ trace(b58.toBytes().toHex(), b58.toBytes().toHex() == strhex);
 */
 class Base58 {
 
-	static var alphabet: AString = cast NUL;  // padmul(58, 8) = 64
+	static var alphabet: AString = cast Ptr.NUL;  // padmul(58, 8) = 64
 	static var alphapos: AU8;                 // 128
 
 	public static function init() {
-		if (alphabet != NUL) return;
+		if (alphabet != Ptr.NUL) return;
 		var b = AString.fromString("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 		var p = Fraw.malloc(128, true);
 		for (i in 0...58)

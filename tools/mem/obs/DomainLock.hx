@@ -100,7 +100,7 @@ only in flash - DomainLock.check()
 		for (p in left...left + len){
 			if(Memory.getByte(p) == ",".code && p - left > 1){
 				//trace(Fraw.readUTFBytes(left, p - left));
-				if (findA(left, p - left, url, urlend) != Malloc.NUL)
+				if (findA(left, p - left, url, urlend) != mem.Ptr.NUL)
 					throw "no";		// in fact, it have done without nothing error.
 				left = cast p + 1;
 			}
@@ -109,7 +109,7 @@ only in flash - DomainLock.check()
 
 	// Same as Fraw.findA except inline
 	static inline function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr{
-		var ptr = Malloc.NUL;
+		var ptr = mem.Ptr.NUL;
 		end -= len;
 		while (end >= start){
 			var size = len;

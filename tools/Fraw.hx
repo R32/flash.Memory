@@ -79,7 +79,7 @@ class Fraw{
 
 	public static function realloc(src: Ptr, new_size:Int):Ptr @:privateAccess {
 		var src_blk = Malloc.indexOf(src);
-		if (new_size <= 0 || src_blk == Malloc.NUL) throw "Invalid arguments";
+		if (new_size <= 0 || src_blk == Ptr.NUL) throw "Invalid arguments";
 
 		new_size = mem.Ut.padmul(new_size, 8);
 		var src_size = src_blk.entrySize;
@@ -353,9 +353,9 @@ class Fraw{
 
 	// public static inline function strr(ptr:Ptr):String return readUTFBytes(ptr, strlen(ptr));
 	// below only for test
-	public static function find(str:String, start:Ptr, end:Ptr = Malloc.NUL):Ptr {
-		if ((start:Int) < 0) return Malloc.NUL;
-		if (end == Malloc.NUL) end = cast Malloc.getUsed();
+	public static function find(str:String, start:Ptr, end:Ptr = Ptr.NUL):Ptr {
+		if ((start:Int) < 0) return Ptr.NUL;
+		if (end == Ptr.NUL) end = cast Malloc.getUsed();
 		var wstr = mallocFromString(str);
 		var ptr = findA(wstr, wstr.length, start, end);
 		wstr.free();
@@ -363,7 +363,7 @@ class Fraw{
 	}
 
 	public static function findA(src:Ptr, len:Int, start:Ptr, end:Ptr):Ptr {
-		var ptr = Malloc.NUL;
+		var ptr = Ptr.NUL;
 		end -= len;
 		while(end >= start){
 			if(memcmp(start, src, len) == 0){

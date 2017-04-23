@@ -1,7 +1,6 @@
 package;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 
 #if !macro
 @:build(mem.Struct.make())
@@ -92,7 +91,7 @@ class Bench {
 	}
 
 	static inline function toPoint(v: Int):Point_0 {
-		return untyped ((NUL + v): Point_0);
+		return untyped ((Ptr.NUL + v): Point_0);
 	}
 
 	static function rand() {

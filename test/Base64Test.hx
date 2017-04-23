@@ -4,7 +4,7 @@ import StringTools.hex;
 
 class Base64Test {
 	public static function main() {
-		Ram.select();
+		Fraw.select();
 		mem.obs.Crc32.init();
 		mem.struct.Base64.init();
 		mem.obs.Hex.init();
@@ -12,7 +12,7 @@ class Base64Test {
 		var file = haxe.Resource.getBytes("testjs"); // -resource
 		if (file == null)
 			throw "need -resource XXXXX@testjs";
-		var fp = Ram.mallocFromBytes(file);
+		var fp = Fraw.mallocFromBytes(file);
 		trace('file: ${file.length / 1024}KB');
 
 		// crc32
@@ -50,6 +50,6 @@ class Base64Test {
 		trace('mem base64 enc/dec : time sec: $bt1');
 
 		trace(b0 == b1.toString());
-		trace(Ram.memcmp(fp, bd1, file.length));
+		trace(Fraw.memcmp(fp, bd1, file.length));
 	}
 }

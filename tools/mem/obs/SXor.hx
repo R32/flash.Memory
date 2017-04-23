@@ -15,7 +15,7 @@ class SXor {
 	static var x_1: AU8;
 	static var x_2: AU8;
 	static var x_3: AU8;
-	static var  sa: Ptr = Malloc.NUL;
+	static var  sa: Ptr = Ptr.NUL;
 
 	static function x_n(low:Int, high:Int):AU8 {
 		var r:AU8 = cast Fraw.malloc(8, false);

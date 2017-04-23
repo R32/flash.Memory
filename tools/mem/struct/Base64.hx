@@ -1,7 +1,6 @@
 package mem.struct;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 
 @:build(mem.Struct.make())
 @:allow(mem.struct.Base64) @:dce abstract Base64String(Ptr) to Ptr {
@@ -25,11 +24,11 @@ import mem.Malloc.NUL;
 
 class Base64 {
 
-	static var encoding_table: Ptr = NUL;
+	static var encoding_table: Ptr = Ptr.NUL;
 	static var decoding_table: Ptr;
 
 	static public function init():Void {
-		if (encoding_table != NUL) return;
+		if (encoding_table != Ptr.NUL) return;
 		encoding_table = Fraw.malloc(64, false);
 		decoding_table = Fraw.malloc(128, true);
 	/*
@@ -138,7 +137,7 @@ class Base64 {
 	static public function decode(data: Ptr, len: Int): FBlock {
 		var i = 0, j = 0, pad = 0, quart = 0, triple = 0;
 
-		if (len & (4 - 1) > 0) return cast NUL;
+		if (len & (4 - 1) > 0) return cast Ptr.NUL;
 
 		var olen:Int = (len >> 2) * 3;
 

@@ -1,17 +1,16 @@
 package mem.obs;
 
 import mem.Ptr;
-import mem.Malloc.NUL;
 
 /**
 Crc32 checksum using a const table
 */
 class Crc32 {
 
-	static var table:AI32 = cast NUL;
+	static var table:AI32 = cast Ptr.NUL;
 
 	public static function init() {
-		if (table != NUL) return;
+		if (table != Ptr.NUL) return;
 		table = cast Fraw.malloc(256 << 2, false);
 
 		var i = 0, j = 0, d = 0;
