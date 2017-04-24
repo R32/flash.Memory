@@ -444,7 +444,7 @@ class Struct {
 					args: [],
 					ret : macro :Bool,
 					expr: macro {
-						return ($i{context}: mem.Ptr) == Ptr.NUL;
+						return ($i{context}: mem.Ptr) == mem.Ptr.NUL;
 					}
 				}),
 				pos: here()
