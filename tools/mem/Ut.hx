@@ -69,6 +69,18 @@ package mem;
 			|| c == 0x0b || c == 0x0c;  // 0x0b = \v, 0x0c = \f
 	}
 
+	public static function hex2bytes(s: String): haxe.io.Bytes {
+		var len = s.length >> 1;
+		var ret = haxe.io.Bytes.alloc(len);
+		var j = 0;
+
+		for (i in 0...len) {
+			j = i + i;
+			ret.set(i, Std.parseInt("0x" + s.charAt(j) + s.charAt(j + 1)));
+		}
+		return ret;
+	}
+
 	// xor for for macro build
 	public static function xxx(dst:haxe.io.Bytes, key:haxe.io.Bytes):Void{
 		var len = dst.length;

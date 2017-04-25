@@ -53,7 +53,6 @@ Ported by r32
 }
 
 // N.B: 现在 haxe 编译器局部变量过多, 看以后是否会解决再优化这一块, 先不管它
-@:analyzer(no_copy_propagation)
 class AES128 {
 
 	static var aes:AES128Context = cast Ptr.NUL;
@@ -125,8 +124,6 @@ class AES128 {
 	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		var i = 0;
 
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
-
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
 		pstate = output;
@@ -158,8 +155,6 @@ class AES128 {
 
 		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
 
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
-
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
 
 		pstate = output;
@@ -188,10 +183,8 @@ class AES128 {
 	}
 
 	// when output == input
-	static public function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
+	static function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
 		var i = 0, j = 0;
-
-		if (!Ut.divisible(length, 16)) throw "length must be multiple of 16.";
 
 		var remainders:Int = length & (KEYLEN - 1); // eq length % KEYLEN;
 
@@ -229,8 +222,8 @@ class AES128 {
 		}
 	}
 
-	// This function produces Nb(Nr+1) round keys. The round keys are used in each round to decrypt the states.
-	static function KeyExpansion(key: Ptr): Void {
+	// Note: Actually, We could call this method only once If you use the same "key/passwd"
+	static public function KeyExpansion(key: Ptr): Void {
 		var i = 0;
 
 		var tempa: AU8 = aes.tempa;

@@ -1,16 +1,12 @@
 package mem.obs._macros;
 
 
-@:dce class AES128Macros{
+@:dce class AES128Macros {
 	static public inline var Nb = 4;
 	static public inline var Nk = 4;
 	static public inline var KEYLEN = 16;
 	static public inline var Nr = 10;
 
-	macro static public function checkKeyLen() {
-		if (KEYLEN != 16) haxe.macro.Context.error("KEYLEN is not equal to 16", haxe.macro.Context.currentPos());
-		return macro null;
-	}
 	macro static public function xtime(x) return macro (($x << 1) ^ ((($x >> 7) & 1) * 0x1b));
 	macro static public function P(row, col) return macro (($row << 2) + $col); // for state[row][col]
 	macro static public function getSBoxValue(i)  return macro sbox[$i];   // sbox defined in local function
