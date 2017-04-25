@@ -1,10 +1,9 @@
 -dce full
 -cp ../tools
 -main Test
--resource test.js@testjs
+-resource Bench.hx@test
 -D sx-pwd=hello
 -D dm-lock=test.com,helloworld.com,example.com
---connect 6000
 --each
 
 -swf bin/test.swf

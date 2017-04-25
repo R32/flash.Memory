@@ -99,19 +99,15 @@ class Test {
 
 		trace("----------- AES CBC -----------");
 		var as4 = AString.fromHexString("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52ef");
-		Hex.trace(as4, as4.length, true, "cbc org str: ");
+		Hex.trace(as4, as4.length, true, "aes128/cbc orgin  : ");
 
-		var as4out = AString.alloc(as4.length);
-		AES128.cbcEncryptBuff(as4, cast 0, as4, as4.length, cast 0);
+		AES128.cbcEncryptBuff(as4, key, as4, as4.length, cast 0); // init iv = 0;
+		Hex.trace(as4, as4.length, true, "aes128/cbc cipher : ");
 
-		AES128.cbcDecryptBuff(as4, cast 0, as4out, as4out.length, cast 0);
-		Hex.trace(as4out, as4.length, true, "cbc dec out: ");
+		AES128.cbcDecryptBuff(as4, key, as4, as4.length, cast 0);
+		Hex.trace(as4, as4.length, true, "aes128/cbc decrypt: ");
 
-		// input==output
-		AES128.cbcDecryptBuffIO(as4, cast 0, as4.length, cast 0);
-		Hex.trace(as4, as4.length, true, "cbc dec i=o: ");
-
-		var file = haxe.Resource.getBytes("testjs");
+		var file = haxe.Resource.getBytes("test");
 		var multi_of_16 = Ut.padmul(file.length, 16);
 		var org = Fraw.mallocFromBytes(file, 16);
 		var out = Fraw.malloc(multi_of_16);
@@ -127,7 +123,7 @@ class Test {
 
 	static function test_sha1() {
 		trace("----------- SHA1 ------------");
-		var file = haxe.Resource.getBytes("testjs");
+		var file = haxe.Resource.getBytes("test");
 		var filePtr = Fraw.mallocFromBytes(file);
 
 		var out0 = Fraw.malloc(20, true);
@@ -157,7 +153,7 @@ class Test {
 	}
 
 	public static function test_md5():Void {
-		var file = haxe.Resource.getBytes("testjs");
+		var file = haxe.Resource.getBytes("test");
 		var filePtr = Fraw.mallocFromBytes(file);
 		trace("----------- MD5 ------------");
 		var out0 = Fraw.malloc(16, true);
