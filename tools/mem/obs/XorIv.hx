@@ -27,19 +27,19 @@ class XorIv {
 		var i = 0;
 		// xor with IV
 		#if (flash || hl || cpp)
-		if (i < IV_SIZE) {
+		var b4 = len - (len & (4 - 1));
+		if (i < IV_SIZE && i < b4) {
 			Memory.setI32(dst + i, Memory.getI32(src + i) ^ Memory.getI32(iv + i));
 		i += 4;
 		}
 		#end
-		while (i < IV_SIZE) {
+		while (i < IV_SIZE && i < len) {
 			Memory.setByte(dst + i, Memory.getByte(src + i) ^ Memory.getByte(iv + i));
 		++ i;
 		}
 
 		// xor with src
 		#if (flash || hl || cpp)
-		var b4 = len - (len & (4 - 1));
 		while (i < b4) {
 			Memory.setI32(dst + i, Memory.getI32(dst + i) ^ Memory.getI32(src));
 		i   += 4;
