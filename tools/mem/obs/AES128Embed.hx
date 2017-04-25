@@ -9,14 +9,11 @@ class AES128Embed {
 
 	static var b: Ptr;
 
-	static var pstate: Ptr;
-
 	public static function init() {
 		if (b == Ptr.NUL)
 			b = Fraw.mallocFromBytes(haxe.Resource.getBytes(_R)); // _R defined by macro
 		AES128.init();
-		var aes = @:privateAccess AES128.aes;
-		Fraw.memcpy(aes, b, 176 + 4);  // override "roundKey" + "tempa"
+		Fraw.memcpy(@:privateAccess AES128.aes, b, 176 + 4);      // override "roundKey" + "tempa"
 	}
 
 	public static inline function cbcEncryptBuff(input: Ptr, output: Ptr, length:Int, iv:Ptr): Void {
