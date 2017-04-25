@@ -26,7 +26,7 @@ package mem;
 	}
 
 	// Note: "by" must be pow of 2
-	static inline function divisible(x, by) return (x & (by - 1)) == 0;
+	static public inline function divisible(x, by) return (x & (by - 1)) == 0;
 
 	static public inline function isPowOf2(x) return divisible(x, x);
 
@@ -79,6 +79,10 @@ package mem;
 			ret.set(i, Std.parseInt("0x" + s.charAt(j) + s.charAt(j + 1)));
 		}
 		return ret;
+	}
+
+	public static inline function inZone(a: Int, b: Int, len: Int): Bool {
+		return (a < b && a + len > b) || (b < a && b + len > a); // || (a == b);
 	}
 
 	// xor for for macro build

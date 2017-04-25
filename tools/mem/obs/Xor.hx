@@ -20,7 +20,7 @@ class Xor {
 		var tpr:Int = this.sa;
 		var offset = 0;
 	#if (flash || cpp)
-		var b4 = size - (size % 4);
+		var b4 = size - (size & (4 - 1));
 		while (b4 > offset){
 			Memory.setI32(dst + offset, Memory.getI32(src + offset) ^ Memory.getI32(tpr + (offset % len) ));
 			offset += 4;
@@ -34,9 +34,5 @@ class Xor {
 
 	public inline static function fromHexString(hex:String):Xor{
 		return new Xor(AString.fromHexString(hex));
-	}
-
-	public inline static function fromString(str:String):Xor{
-		return new Xor(AString.fromString(str));
 	}
 }
