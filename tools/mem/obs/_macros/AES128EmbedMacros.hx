@@ -47,7 +47,7 @@ class AES128EmbedMacros {
 		var rsbox = @:privateAccess AES128Macros.rsbox_org;
 		var rcon  = @:privateAccess AES128Macros.Rcon_org;
 
-		var bin = haxe.io.Bytes.alloc(176 + 4 + 256 + 256); // see AES128Embed.KeyExpansionBin;
+		var bin = haxe.io.Bytes.alloc(176 + 4); // see AES128Embed.KeyExpansionBin;
 
 		var roundKey = 0; // see AES128Embed.KeyExpansionBin;
 		var tempa = 176;
