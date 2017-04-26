@@ -1,7 +1,5 @@
 package mem;
 
-import mem.RawData;
-
 abstract Ptr(Int) to Int {
 
 	@:arrayAccess inline function get(i: Int):Int return Memory.getByte(this + i);

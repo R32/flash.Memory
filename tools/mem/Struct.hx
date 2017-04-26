@@ -182,7 +182,7 @@ class Struct {
 							}
 							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, $expr_value))];
 						case "mem.ABit"	:
-							Context.error("build macor do not currently support \"" + ts + "\"", f.pos);
+							Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
 							is_array = true;
 							unsafe_cast = true;

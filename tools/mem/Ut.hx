@@ -46,6 +46,20 @@ package mem;
 	#end
 	}
 
+	static public function toBits(n: Int): String {
+		var ret = haxe.io.Bytes.alloc(32);
+		ret.fill(0, 32, "0".code);
+		var i = 0;
+		do {
+			++ i;
+			if ((n & 1) == 1) ret.set(32 - i, "1".code);
+			n >>>= 1;
+		} while (n > 0 && i < 32);
+		var p8 = i & (8 - 1);
+		if (p8 > 0) i += 8 - p8;
+		return ret.getString(32 - i, i);
+	}
+
 	// start <= (value) < max
 	static public inline function rand(max:Int, start:Int = 0):Int
 		return Std.int(Math.random() * (max - start)) + start;
