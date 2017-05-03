@@ -46,6 +46,7 @@ package mem;
 	#end
 	}
 
+	// 0x0F => "00001111"
 	static public function toBits(n: Int): String {
 		var ret = haxe.io.Bytes.alloc(32);
 		ret.fill(0, 32, "0".code);
@@ -64,7 +65,7 @@ package mem;
 	static public inline function rand(max:Int, start:Int = 0):Int
 		return Std.int(Math.random() * (max - start)) + start;
 
-	#if (!macro && (sys || flash)) @:generic #end
+	#if !js @:generic #end
 	public static function shuffle<T>(a : Array<T>,count:Int = 1, start:Int = 0) : Void{
 		var len = a.length;
 		var r:Int, t:T;
@@ -95,8 +96,25 @@ package mem;
 		return ret;
 	}
 
+	// used to prevent overwrite
 	public static inline function inZone(a: Int, b: Int, len: Int): Bool {
 		return (a < b && a + len > b) || (b < a && b + len > a); // || (a == b);
+	}
+
+	public static inline function signExtend16(value: Int): Int {
+	#if flash
+		return mem.impl.FlashMemory.signExtend16(value);
+	#else
+		return value & 0x8000 == 0x8000 ? value | 0xffff0000: value;
+	#end
+	}
+
+	public static inline function signExtend8(value: Int): Int {
+	#if flash
+		return mem.impl.FlashMemory.signExtend8(value);
+	#else
+		return value & 0x80 == 0x80 ? value | 0xffffff00: value;
+	#end
 	}
 
 	// xor for for macro build
