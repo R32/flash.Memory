@@ -25,15 +25,15 @@ mem.Ptr          @idx(?offset)         [sizeof(4), default offset = 0]
 
 Bool:            @idx(?offset)         [sizeof(1)]
 Enum             @idx(?offset)         [sizeof(1)]
-String           @idx(length, ?offset) [length]
+String           @idx(bytesLength, ?offset)
 Int: (1), 2, 4   @idx(?sizeof,?offset) [default sizeof(1)]
 Float: (4), 8    @idx(?sizeof,?offset) [default sizeof(4)]
-AU8              @idx(length, ?offset) [space = length * sizeof(1)]
-AU16             @idx(length, ?offset) [space = length * sizeof(2)]
-AI32             @idx(length, ?offset) [space = length * sizeof(4)]
-AF4              @idx(length, ?offset) [space = length * sizeof(4)]
-AF8              @idx(length, ?offset) [space = length * sizeof(8)]
-Ucs2             @idx(length, ?offset) [space = length * sizeof(2)]
+AU8              @idx(count, ?offset) [bytesLength = count * sizeof(1)]
+AU16             @idx(count, ?offset) [bytesLength = count * sizeof(2)]
+AI32             @idx(count, ?offset) [bytesLength = count * sizeof(4)]
+AF4              @idx(count, ?offset) [bytesLength = count * sizeof(4)]
+AF8              @idx(count, ?offset) [bytesLength = count * sizeof(8)]
+Ucs2             @idx(count, ?offset) [bytesLength = count * sizeof(2)]
 ```
 */
 class Struct {
