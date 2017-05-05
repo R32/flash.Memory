@@ -35,7 +35,7 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 		size = req_size + CAPACITY;	// Note: must after memset
 	}
 
-	inline public function free() @:privateAccess Malloc.freeBlock(cast this);
+	public inline function free() @:privateAccess Malloc.freeBlock(cast this);
 }
 
 @:access(Fraw) class Malloc {
@@ -95,11 +95,11 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 	static function indexOf(entry:Ptr):Block {
 		if (entry - Block.CAPACITY > Ptr.NUL) {
 			var b:Block = cast entry - Block.CAPACITY;
-			//if (b == bottom || b == top || (b.prev.next == b && b.next.prev == b))
-			//	return b;
 			if (b == bottom || b == top) return b;
-			var prev = b.prev, next = b.next;      // for Too many local variables
-			if (prev.next == b && next.prev == b) return b;
+			if ((b: Ptr) < (bottom: Ptr)) {
+				var prev = b.prev, next = b.next;
+				if (prev.next == b && next.prev == b) return b;
+			}
 		}
 		return cast Ptr.NUL;
 	}
