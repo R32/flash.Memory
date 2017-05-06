@@ -20,8 +20,8 @@ typedef Param = {
 Supported Types:
 
 ```
-mem.Ptr          @idx(?offset)         [sizeof(4), default offset = 0]
-  - or "abstruct Other(Ptr){}"
+mem.Ptr          @idx(bytesLength = 4, offset = 0):
+  - or "abstract Some(Ptr){}"
 
 Bool:            @idx(?offset)         [sizeof(1)]
 Enum             @idx(?offset)         [sizeof(1)]
@@ -35,19 +35,34 @@ AF4              @idx(count, ?offset) [bytesLength = count * sizeof(4)]
 AF8              @idx(count, ?offset) [bytesLength = count * sizeof(8)]
 Ucs2             @idx(count, ?offset) [bytesLength = count * sizeof(2)]
 ```
+
+Note: If the argument type of @idx is a String or Ident, which will be assigned to "param_extra",
+
+currently, the "param_extra" only works on the field type is a "Struct". see: @:note_1
 */
 class Struct {
 #if macro
 	static inline var IDX = "idx";
 
-	static function parseInt(s:String):Int {
-		var i:Int = Std.parseInt(s);
-		if (s == null || i == null || Math.isNaN(i))
-			throw "todo";
-		return i;
-	}
-
 	static inline function notZero(v:Int, def:Int = 1) return v <= 0 ? def : v;
+
+	static var param_extra: String = null;
+	static function paramIDX(e: Expr): Int {
+		var x = 0;
+		switch (e.expr) {
+		case EConst(c):
+			switch (c) {
+			case CString(s) | CIdent(s):
+				param_extra = s;
+				x = -1; // to skip
+			case CInt(s) | CFloat(s):
+				x = Std.parseInt(s);
+			case _:
+			}
+		case _:
+		}
+		return x;
+	}
 
 	static function parseMeta(arr:Array<Int>, type:String):Param {
 		var ret;
@@ -56,7 +71,7 @@ class Struct {
 			case "Bool", "Enum":
 				ret = {width:1, dx: arr[0], nums: 1};
 			case "mem.Ptr":
-				ret = { width:4, dx: arr[0], nums: 1 };
+				ret = { width:arr[0], dx: (len > 1 ? arr[1] : 0), nums: 1 };
 			case "mem.AU8":
 				ret = { width:1, dx: (len > 1 ? arr[1] : 0), nums: arr[0] };
 			case "mem.AU16" | "mem.Ucs2":
@@ -100,7 +115,7 @@ class Struct {
 		var offset = 0;
 		var flexible = false;
 		var params:Param;
-		var metaParams;
+		var metaParams:Array<Int>;
 
 		var all_in_map = new haxe.ds.StringMap<Field>();
 
@@ -119,6 +134,7 @@ class Struct {
 		for (f in filter) {
 			var is_array = false;
 			var unsafe_cast = false;
+			param_extra = null; // static var
 			metaParams = null;
 			params = null;
 			for (meta in f.meta) {
@@ -126,7 +142,8 @@ class Struct {
 					metaParams = [];
 					for (ex in meta.params) {
 						try {
-							metaParams.push(parseInt(ExprTools.getValue(ex)));
+							var x = paramIDX(ex);
+							if (x != -1) metaParams.push(x);
 						} catch(err: Dynamic) {
 							Context.error("Invalid Meta value for @" + IDX, f.pos);
 						}
@@ -139,7 +156,7 @@ class Struct {
 			if (f.access.indexOf(AStatic) > -1) Context.error("Does not support static properties", f.pos);
 
 			switch (f.kind) {
-			case FVar(vt = TPath({pack: pack, name: name, params:arrType}), init):
+			case FVar(vt = TPath({pack: pack, name: name, params:arrType}), _):
 				var path = pack.copy();
 				path.push(name);
 				var t = Context.getType(path.join("."));
@@ -198,15 +215,31 @@ class Struct {
 							[(macro ($i{ context } + $v{ offset })), null]; // null is never
 						case "mem.Ptr":
 							unsafe_cast = true;
+							if (params.width == 0) params.width = 4;
+							if (params.width != 4) Context.error("first argument of @idx must be empty or 4.", f.pos);
 							offset += params.dx;
+
 							[macro (Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset}, $expr_value))];
 						default:
-							ts = TypeTools.toString(a.get().type);
-							if (abs_type != null && ts == "mem.Ptr") {  // for abstruct Other(Ptr) {}
+							var ats = TypeTools.toString(a.get().type);
+							if (ats == "mem.Ptr") {
 								unsafe_cast = true;
-								params = parseMeta(metaParams, ts);
+								params = parseMeta(metaParams, ats);
 								offset += params.dx;
-								[macro (Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset}, $expr_value))];
+								if (param_extra == "&" && params.width > 0) {    // Struct, @:note_1
+									if (abs_type != null) {
+										var apath = abs_type.pack.copy();
+										apath.push(abs_type.name);
+										if (ts == apath.join(".")) Context.error("nested error", f.pos);
+									}
+
+									[(macro ($i{context} + $v{offset})), null];
+								} else {                                         // Point to Struct
+									if (params.width == 0) params.width = 4;
+									if (params.width != 4) Context.error("first argument of @idx must be empty or 4.", f.pos);
+
+									[(macro Memory.getI32($i{context} + $v{offset})), (macro Memory.setI32($i{context} + $v{offset}, $expr_value))];
+								}
 							} else {
 								null;
 							}
