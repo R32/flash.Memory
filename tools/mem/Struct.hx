@@ -17,7 +17,7 @@ typedef Param = {
 #end
 
 /**
-Supported Types:
+Supported field types:
 
 ```
 mem.Ptr          @idx(bytesLength = 4, offset = 0):
@@ -86,6 +86,10 @@ class Struct {
 				ret = { width: notZero(arr[0]), dx: (len > 1 ? arr[1] : 0), nums: 1 };
 		}
 		return ret;
+	}
+
+	static function UnsafeCast(e: Expr, unsafe_cast: Bool): Expr {
+		return unsafe_cast ? { expr: ECast(e, null), pos: e.pos } : e;
 	}
 
 	// example: @:build(mem.Struct.make(mem.Mini))
@@ -166,14 +170,17 @@ class Struct {
 						if (a.get().meta.has(":enum"))
 							switch (Context.followWithAbstracts(t)) {
 							case TAbstract(follow_a , _):
-								unsafe_cast = true;
-								a = follow_a;
+								var fas = follow_a.toString();
+								if (fas == "Int" || fas == "Float"){
+									unsafe_cast = true;
+									a = follow_a;
+								}
 							case _:
 							}
 
 						ts = Std.string(a);
 						params = parseMeta(metaParams, ts);
-						var expr_value = unsafe_cast == false ? (macro v) : (macro cast v); // argument name are "v"
+						var expr_value = UnsafeCast((macro v), unsafe_cast);
 						expr_value.pos = f.pos;
 						switch (ts) {
 						case "Bool":
@@ -198,8 +205,8 @@ class Struct {
 								params.width = 4;
 							}
 							[macro Memory.$sget($i{context} + $v{offset}), macro (Memory.$sset($i{context} + $v{offset}, $expr_value))];
-						case "mem.ABit"	:
-							Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+						case "mem.ABit":
+							null;
 						case "mem.AU8" | "mem.AU16" | "mem.AI32" | "mem.AF4" | "mem.AF8" | "mem.Ucs2":
 							is_array = true;
 							unsafe_cast = true;
@@ -271,7 +278,7 @@ class Struct {
 				if (exprs == null) {
 					Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 				} else {
-					var getter = unsafe_cast == false ? exprs[0] : {expr: ECast(exprs[0], null), pos: f.pos};
+					var getter = UnsafeCast(exprs[0], unsafe_cast);
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
 					var setter_name = "set_" + f.name;
