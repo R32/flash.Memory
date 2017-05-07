@@ -443,7 +443,6 @@ class Struct {
 		if (!all_fields.exists("mallocAbind")) // malloc and bind Context
 			fields.push({
 				name : "mallocAbind",
-				meta: [{name: ":dce", pos: cls.pos}],
 				doc: ' help for custom constructor',
 				access: [AInline, APrivate],
 				kind: FFun({
