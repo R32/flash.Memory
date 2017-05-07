@@ -377,7 +377,7 @@ class Struct {
 						out_block.push( macro buf.push(  // buf was defined inside __toOut
 							  "offset: [" + $v{ _start } + " - " + $v{ _end } + "), "
 							+  "bytes: " + $v{ StrPadd("" + param.bytes, 2) } + ", "
-							+ $v{ StrPadd(f.name, 6) } + ": " + $_exval + "\n"
+							+ $v{ f.name } + ": " + $_exval + "\n"
 						));
 					}
 					offset += param.bytes;
