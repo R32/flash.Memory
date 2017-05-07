@@ -17,11 +17,11 @@ offset: 0x0C - 0x10, bytes: 4, next: 376
 #end
 @:allow(mem.Malloc) @:dce abstract Block(Ptr) to Ptr {
 	@idx(2) var zero: Int;      // 2 bytes, always 0
-	@idx(0) var is_free: Bool;  // 1 bytes, if true, will be remove from chain
+	@idx(1) var is_free: Bool;  // 1 bytes, if true, will be remove from chain
 	@idx(1) var unknown: Int;   // 1 bytes
 	@idx(4) var size: Int;      // 4 bytes, The whole block
-	@idx(0) var prev: Block;    // 4 bytes, Pointer to prev Block, idx(0) is a offset
-	@idx(0) var next: Block;    // 4 bytes
+	@idx(4) var prev: Block;    // 4 bytes, Pointer to prev Block, idx(0) is a offset
+	@idx(4) var next: Block;    // 4 bytes
 
 	public var entry(get, never):Ptr;
 	inline function get_entry():Ptr return this + OFFSET_END;

@@ -62,11 +62,11 @@ package mem;
 	}
 
 	// start <= (value) < max
-	static public inline function rand(max:Int, start:Int = 0):Int
+	static public inline function rand(max: Int, start = 0)
 		return Std.int(Math.random() * (max - start)) + start;
 
-	#if !js @:generic #end
-	public static function shuffle<T>(a : Array<T>,count:Int = 1, start:Int = 0) : Void{
+	#if !(js || neko || macro)  @:generic #end
+	public static function shuffle<T>(a: Array<T>, count = 1, start = 0) {
 		var len = a.length;
 		var r:Int, t:T;
 		for (j in 0...count) {

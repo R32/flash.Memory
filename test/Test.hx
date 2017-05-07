@@ -230,24 +230,18 @@ class ASS implements mem.IStruct{
 	@idx(10) var f8:AF8;
 	public static function test() {
 		var len = 10;
-		if((ASS.__U8_BYTE == len
-		&& ASS.__U16_BYTE == len * 2
-		&& ASS.__I32_BYTE == len * 4
-		&& ASS.__F4_BYTE  == len * 4
-		&& ASS.__F8_BYTE  == len * 8
+		if((ASS.__U8_BYTES_LENGTH == len
+		&& ASS.__U16_BYTES_LENGTH == len * 2
+		&& ASS.__I32_BYTES_LENGTH == len * 4
+		&& ASS.__F4_BYTES_LENGTH  == len * 4
+		&& ASS.__F8_BYTES_LENGTH == len * 8
 		) && (
-		   ASS.__U8_OF  == 0
-		&& ASS.__U16_OF == len
-		&& ASS.__I32_OF == len + len * 2
-		&& ASS.__F4_OF  == len + len * 2 + len * 4
-		&& ASS.__F8_OF  == len + len * 2 + len * 4 + len * 4
+		   ASS.__U8_OFFSET  == 0
+		&& ASS.__U16_OFFSET == len
+		&& ASS.__I32_OFFSET == len + len * 2
+		&& ASS.__F4_OFFSET  == len + len * 2 + len * 4
+		&& ASS.__F8_OFFSET  == len + len * 2 + len * 4 + len * 4
 		&& ASS.CAPACITY == len + len * 2 + len * 4 + len * 4 + len * 8
-		) && (
-		   ASS.__U8_LEN  == len
-		&& ASS.__U16_LEN == len
-		&& ASS.__I32_LEN == len
-		&& ASS.__F4_LEN  == len
-		&& ASS.__F8_LEN  == len
 		)) trace("-- struct done.");
 		else throw "-- struct fail";
 	}

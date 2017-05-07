@@ -75,7 +75,7 @@ class Sha256{
 	static function update(ctx: Sha256Context/*Context*/, input: Ptr/*Buffer*/, ilen:Int /*BufferSize*/):Void {
 		var n = 0;
 
-		if (ctx.curlen > Sha256Context.__BUF_LEN) return;
+		if (ctx.curlen > Sha256Context.__BUF_BYTES_LENGTH) return;
 
 		while (ilen > 0) {
 			if (ctx.curlen == 0 && ilen >= BLOCK_SIZE) {
@@ -145,7 +145,7 @@ class Sha256{
 	static function finish(ctx: Sha256Context, output: AU8/* SHA256_HASH* Digest */): Void {
 		var i = 0, curlen = ctx.curlen;
 
-		if (curlen >= Sha256Context.__BUF_LEN) return;
+		if (curlen >= Sha256Context.__BUF_BYTES_LENGTH) return;
 
 		ctx.length += curlen * 8;
 

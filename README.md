@@ -5,7 +5,7 @@ A way to typedef struct like c language
 
 ### normal struct
 
-all of `@idx` Supported types in [Struct.hx](tools/mem/Struct.hx#L20)
+all of `@idx` Supported types in [Struct.hx](tools/mem/Struct.hx#L98)
 
 ```haxe
 import mem.Ptr;                   // 1. import mem.Ptr

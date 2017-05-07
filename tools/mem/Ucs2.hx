@@ -2,7 +2,7 @@ package mem;
 
 import mem.Ptr;
 
-abstract Ucs2(Ptr) to Ptr {
+@idx(2, "&") abstract Ucs2(Ptr) to Ptr {
 
 	public function toString(): String @:privateAccess {
 	#if (js || flash || hl)
@@ -26,12 +26,12 @@ abstract Ucs2(Ptr) to Ptr {
 	#else
 		var utf8 = new haxe.Utf8();
 		var pos:Int = cast this;
-		while (true) {
-			var code = Memory.getUI16(pos);
-			if (code == 0) break;
+		var code = 0
+		do {
+			code = Memory.getUI16(pos);
 			utf8.addChar(code);
 			pos += 2;
-		}
+		} while (code != 0);
 		return utf8.toString();
 	#end
 	}

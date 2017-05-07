@@ -32,37 +32,37 @@ abstract Ptr(Int) to Int {
 /**
  Array<Unsigned Char>
 */
-abstract AU8(Ptr) to Ptr from Ptr {
+@idx(1, "&") abstract AU8(Ptr) to Ptr from Ptr {
 	@:arrayAccess inline function get(k:Int):Int return Memory.getByte(this + k);
 	@:arrayAccess inline function set(k:Int, v:Int):Void Memory.setByte(this + k, v);
 	public static inline var SIZEOF = 1;
 }
 
-abstract AU16(Ptr) to Ptr{
+@idx(2, "&") abstract AU16(Ptr) to Ptr {
 	@:arrayAccess inline function get(k:Int):Int return Memory.getUI16(this + (k + k));
 	@:arrayAccess inline function set(k:Int, v:Int):Void Memory.setI16(this + (k + k), v);
 	public static inline var SIZEOF = 2;
 }
 
-abstract AI32(Ptr) to Ptr{
+@idx(4, "&") abstract AI32(Ptr) to Ptr {
 	@:arrayAccess inline function get(k:Int):Int return Memory.getI32(this + (k << 2));
 	@:arrayAccess inline function set(k:Int, v:Int):Void Memory.setI32(this + (k << 2), v);
 	public static inline var SIZEOF = 4;
 }
 
-abstract AF4(Ptr) to Ptr{
+@idx(4, "&") abstract AF4(Ptr) to Ptr {
 	@:arrayAccess inline function get(k:Int):Float return Memory.getFloat(this + (k << 2));
 	@:arrayAccess inline function set(k:Int, v:Float):Void Memory.setFloat(this + (k << 2), v);
 	public static inline var SIZEOF = 4;
 }
 
-abstract AF8(Ptr) to Ptr{
+@idx(8, "&") abstract AF8(Ptr) to Ptr {
 	@:arrayAccess inline function get(k:Int):Float return Memory.getDouble(this + (k << 3));
 	@:arrayAccess inline function set(k:Int, v:Float):Void Memory.setDouble(this + (k << 3), v);
 	public static inline var SIZEOF = 8;
 }
 
-abstract ABit(Ptr) to Ptr {
+@idx("no") abstract ABit(Ptr) to Ptr {
 	@:arrayAccess function get(k:Int):Int {
 		var byte = Memory.getByte(this + (k >> 3));
 		var p = k & (8 - 1);
