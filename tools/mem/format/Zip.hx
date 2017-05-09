@@ -1,10 +1,7 @@
-package mem.struct;
+package mem.format;
 
 import mem.Ptr;
 
-/**
- Only archive
-*/
 #if !macro
 @:build(mem.Struct.make())
 #end
@@ -56,9 +53,17 @@ abstract ZFile(Ptr) to Ptr {
 		var day = d & 31;
 		return new Date(year + 1980, month-1, day, hour, min, sec << 1);
 	}
+
+	public inline function encrypted():Bool return (flags & 1) == 1;
+
+	public inline function toString(){
+		return '[name: $filename, csize: $csize, usize: $usize, compression: $compression]';
+	}
 }
 
 /**
+Only archive
+
 example:
 
 ```
@@ -67,8 +72,7 @@ var fblock = Fraw.mallocFromBytes(file);
 var zf: ZFile = cast fblock;
 
 while (zf.valid()) {
-	var name = zf.filename;
-	trace('addr: $zf, name: $name, flag: ${zf.flags}, csize: ${zf.csize}, usize: ${zf.usize}');
+	trace(zf.toString());
 	zf = zf.next;
 }
 ```
