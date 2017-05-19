@@ -73,7 +73,7 @@ class Mini {
 	static var chain: haxe.ds.Vector<Mini>;
 
 	// Note: size: [0~7]=>8, [8~15] => 16, ...
-	public static function malloc(req_size: UInt, zero:Bool = false): Ptr {
+	public static function malloc(req_size: Int, zero:Bool = false): Ptr {
 		if (chain == null)
 			chain = new haxe.ds.Vector(LVL_MAX + 1); // begin at 1, first item always null
 

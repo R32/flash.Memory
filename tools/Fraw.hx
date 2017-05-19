@@ -75,7 +75,7 @@ class Fraw{
 #end
 
 	// in bytes
-	public static inline function malloc(size:UInt, zero:Bool = false):Ptr return Malloc.make(size, zero, 8);
+	public static inline function malloc(size:Int, zero:Bool = false):Ptr return Malloc.make(size, zero, 8);
 
 	public static function realloc(src: Ptr, new_size:Int):Ptr @:privateAccess {
 		var src_blk = Malloc.indexOf(src);
@@ -240,7 +240,7 @@ class Fraw{
 	#end
 	}
 
-	public static inline function writeUTFBytes(dst:Ptr, str:String):Int {
+	public static function writeUTFBytes(dst:Ptr, str:String):Int {
 	#if flash
 		current.position = dst;
 		current.writeUTFBytes(str);
