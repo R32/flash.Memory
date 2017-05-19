@@ -37,7 +37,7 @@ Note: Could not assign multiple values to there types directly.
 @:build(mem.Struct.make())
 abstract UString(Ptr) to Ptr {
     @idx(4) var length: Int;
-    @idx(0) var __s: mem.Ucs2;    // idx({length: 0})
+    @idx(0) var __s: mem.Ucs2;                       // idx({length: 0})
 }
 ```
 
@@ -48,23 +48,23 @@ import mem.Ptr;
 
 @:build(mem.Struct.make())
 abstract UString(Ptr) to Ptr {
-    @idx(4, -4) var length: Int;  // idx({sizeof: 4, offset: -4})
+    @idx(4, -4) var length: Int;                     // idx({sizeof: 4, offset: -4})
     @idx(0) var __s: mem.Ucs2;
     public function new(str: String) {
-        var bytesLength = (str.length + 1) << 1;
+        var len = haxe.Utf8.length(str);
+        var bytesLength = (len + 1) << 1;
         mallocAbind(bytesLength + CAPACITY, false);  // mallocAbind & CAPACITY defined by macro
-        length = str.length;      // assign values after malloc
-        __s.copyfromString(str);
+        length = len;
+        __s.setString(str);
         Memory.setI16(bytesLength - 2, 0);
     }
-    public function toString() return __s.toString();
+    public function toString() return __s.getString(length << 1);
 }
 
 class App {
     static function main() {
         Fraw.attach();
         var us = new UString("hello 世界!");
-        log(cast us); // UString => mem.Ucs2, since (us: Ptr) == (us.__s: Ptr)
         trace(us.__toOut());
     }
 

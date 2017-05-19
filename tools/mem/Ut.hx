@@ -20,11 +20,6 @@ package mem;
 		return i == p && n > 0 ? n : n + i;
 	}
 
-	// (7 => 16-7), (17 => 32-17), (16 => 16), (0 => 16), for AES padding
-	static public function pad16(size) {
-		return 16 - (size & (16 - 1));
-	}
-
 	// Note: "by" must be pow of 2
 	static public inline function divisible(x, by) return (x & (by - 1)) == 0;
 
@@ -60,6 +55,10 @@ package mem;
 		if (p8 > 0) i += 8 - p8;
 		return ret.getString(32 - i, i);
 	}
+
+	static public inline function imax( a : Int, b : Int ) return a < b ? b : a;
+
+	static public inline function imin( a : Int, b : Int ) return a > b ? b : a;
 
 	// start <= (value) < max
 	static public inline function rand(max: Int, start = 0)
