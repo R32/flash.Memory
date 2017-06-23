@@ -39,16 +39,15 @@ class XorIv {
 		}
 
 		// xor with src
+		var src_prev = src - IV_SIZE;// dst1 = src0 ^ src1
 		#if (flash || hl || cpp)
 		while (i < b4) {
-			Memory.setI32(dst + i, Memory.getI32(dst + i) ^ Memory.getI32(src));
+			Memory.setI32(dst + i, Memory.getI32(src_prev + i) ^ Memory.getI32(src + i));
 		i   += 4;
-		src += 4;
 		}
 		#end
 		while (i < len) {
-			Memory.setByte(dst + i, Memory.getByte(dst + i) ^ Memory.getByte(src));
-		++ src;
+			Memory.setByte(dst + i, Memory.getByte(src_prev + i) ^ Memory.getByte(src + i));
 		++ i;
 		}
 	}
