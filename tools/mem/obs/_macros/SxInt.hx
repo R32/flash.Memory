@@ -94,7 +94,7 @@ import mem.Ut;
 				codes.push( macro Memory.setI32(p + $v{i << 2}, $v{bytes.getInt32($v{i << 2})}) );
 			Ut.shuffle(codes, 3);
 		}else{
-			codes.push(macro {
+			codes.push(macro @:mergeBlock {
 				var hex = $v{bytes.toHex()};
 				var i = 0;
 				while (i < $v{SX_MAX << 1}){ // 256 * 2
@@ -118,7 +118,7 @@ import mem.Ut;
 					if (sa != mem.Ptr.NUL) return;
 					sa = Fraw.malloc($v { SX_MAX }, false);
 					var p:Int = cast sa;
-					$a{codes};
+					$b{codes};
 					x_0 = x_n(Memory.getI32(p + $v{cx[4 + 0]}), Memory.getI32(p + $v{cx[8 + 0]}));
 					x_1 = x_n(Memory.getI32(p + $v{cx[4 + 1]}), Memory.getI32(p + $v{cx[8 + 1]}));
 					x_2 = x_n(Memory.getI32(p + $v{cx[4 + 2]}), Memory.getI32(p + $v{cx[8 + 2]}));
