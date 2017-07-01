@@ -149,11 +149,11 @@ class Raw {
 		return current.getString(src.toInt(), len);
 	}
 
-	public static function writeUcs2(out: Ptr, str: String, max = SMAX): Int {
+	public static inline function writeUcs2(out: Ptr, str: String, max = SMAX): Int {
 		return raw.Ucs2.ofstr(out, str, max);
 	}
 
-	public static function readUcs2(src: Ptr, len: Int): String {
+	public static inline function readUcs2(src: Ptr, len: Int): String {
 		return raw.Ucs2.tostr(src, len);
 	}
 }

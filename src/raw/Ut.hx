@@ -35,6 +35,15 @@ class Ut {
 		}
 	}
 
+	static public function toFixed(f: Float, n: Int): String {
+	#if (js || flash)
+		return untyped (f).toFixed(n);
+	#else
+		var p10 = Math.pow(10, n);
+		return "" + Std.int(f * p10) / p10;
+	#end
+	}
+
 	static public inline function divisible(x, by) return (x & (by - 1)) == 0;
 
 	static public inline function isPowOf2(x) return divisible(x, x);

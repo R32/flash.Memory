@@ -2,6 +2,13 @@ package raw;
 
 import raw.Ptr;
 
+/**
+--- [Block] CAPACITY: 8, OFFSET_FIRST: 0, OFFSET_END: 8
+--- baseAddr: xx, Allocter: Raw
+offset: [0x0000 - 0x0004), bytes:  4, psize: 0
+offset: [0x0004 - 0x0008), bytes:  4, _size: 128
+offset: [0x0007 - 0x0008), bytes:  1, _freeb: 0
+*/
 #if !macro
 @:build(raw.Struct.make())
 #end

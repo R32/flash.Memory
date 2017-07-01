@@ -113,6 +113,8 @@ class Struct {
 				var t = Context.getType(path.join("."));
 				var ts = "";
 				var exprs: Array<Expr> = null;
+				var setter_value: Expr = macro v;
+				setter_value.pos = f.pos;
 				switch (t) {
 				case TAbstract(a, _):
 					var at = a.get();
@@ -120,8 +122,9 @@ class Struct {
 						switch (Context.followWithAbstracts(t)) {
 						case TAbstract(_na , _):
 							var _fas = _na.toString();
-							if (_fas == "Int" || _fas == "Float"){
+							if (_fas == "Int" || _fas == "Float") {
 								unsafe_cast = true;
+								setter_value = expr_wrap(setter_value, true);
 								a = _na;
 							}
 						case _:
@@ -129,9 +132,6 @@ class Struct {
 					}
 
 					ts = Std.string(a);
-
-					var setter_value = expr_wrap((macro v), unsafe_cast);
-					setter_value.pos = f.pos;
 
 					switch (ts) {
 					case "Bool":
@@ -158,6 +158,7 @@ class Struct {
 						exprs = [macro Memory.$sget($i { context } + $v { offset } ), macro (Memory.$sset($i { context } + $v { offset }, $setter_value))];
 					case "raw.Ptr":
 						unsafe_cast = true;
+						setter_value = expr_wrap(setter_value, true);
 						param.sizeOf = 4;
 						offset += param.offset;
 						exprs = [macro (Memory.getI32($i{context} + $v{offset})), macro (Memory.setI32($i{context} + $v{offset}, $setter_value))];
@@ -165,6 +166,7 @@ class Struct {
 						var ats = TypeTools.toString(at.type);
 						if (ats == "raw.Ptr") {
 							unsafe_cast = true;
+							setter_value = expr_wrap(setter_value, true);
 							if (at.meta.has(IDX)) {
 								var cfg = def.get(ts);
 								if (cfg == null) {
@@ -291,8 +293,8 @@ class Struct {
 						kind: FVar(macro :Int, macro $v{param.bytes}),
 						pos: f.pos
 					});
-/*
-					{  // XXX.__toOut()
+
+					{  // .__toOut() for debug
 						var _start = offset               >= 0 ? "0x" + hex(offset              , 4) : (StrPadd("" +  offset               , 6));
 						var _end   = offset + param.bytes >= 0 ? "0x" + hex(offset + param.bytes, 4) : (StrPadd("" + (offset + param.bytes), 6));
 						var _exval = param.isArray() ? macro "[...]" : macro $i{ f.name };
@@ -302,7 +304,7 @@ class Struct {
 							+ $v{ f.name } + ": " + $_exval + "\n"
 						));
 					}
-*/
+
 					offset += param.bytes;
 				}
 
@@ -433,10 +435,10 @@ class Struct {
 				pos: here()
 			});
 		}
-/*
+
 		var clsname = abs_type == null ? cls.name : abs_type.name;
 		fields.push({
-			name : "__toOut",
+			name : "__toOut", // for debug
 			meta: [{name: ":dce", pos: here()}],
 			access: [APublic],
 			kind: FFun({
@@ -449,7 +451,7 @@ class Struct {
 							var b = raw.Malloc.indexOf($i{context} + OFFSET_FIRST);
 							if (b != raw.Ptr.NUL)
 								actual_space = "ACTUAL_SPACE: " + (b.size - raw.Malloc.Block.CAPACITY) + ", ";
-						} else if ($v{alloc_s} == "Mini" || $v{alloc_s} == "mem.Mini") {
+						} else if ($v{alloc_s} == "Mini" || $v{alloc_s} == "raw.Mini") {
 							var node = raw.Mini.indexOf($i { context } + OFFSET_FIRST);
 							if (node != raw.Ptr.NUL)
 								actual_space = "ACTUAL_SPACE: " + (raw.Mini.lvl2Size(node.lvl) - 1) + ", ";
@@ -465,7 +467,7 @@ class Struct {
 			}),
 			pos: here()
 		});
-*/
+
 		return fields;
 	}
 #end

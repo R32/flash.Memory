@@ -50,7 +50,7 @@ import raw.Ptr;
 	public static function tostr(ptr: Ptr, size: Int): String @:privateAccess {
 	#if js
 		return untyped __js__("String.fromCharCode.apply(null, {0})",
-			new js.html.Int16Array(Raw.current.b.buffer.slice(ptr.toInt() +  size))
+			new js.html.Int16Array(Raw.current.b.buffer.slice(ptr.toInt(), ptr.toInt() +  size))
 		);
 	#elseif flash
 		Raw.current.b.position = ptr.toInt();
