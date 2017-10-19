@@ -214,7 +214,7 @@ Layout:
 #end
 @:allow(raw.Mini) abstract MiniNode(Ptr) to Ptr {
 
-	@idx    var next: MiniNode;
+	@idx(4) var next: MiniNode;
 
 	@idx(2) var avail: Int; // available
 	@idx(2) var frags: Int; // fragments

@@ -64,7 +64,7 @@ class Malloc {
 	public static var length(default, null):Int = 0;
 
 	public static inline function getUsed(): Int {
-		return isEmpty() ? 16 : (last: Ptr).toInt() + last.size;
+		return isEmpty() ? ADDR_START : (last: Ptr).toInt() + last.size;
 	}
 
 	public static inline function isEmpty() {
@@ -118,7 +118,7 @@ class Malloc {
 	}
 
 	static function indexOf(entry: Ptr):Block {
-		if (entry - Block.CAPACITY > Ptr.NUL) {
+		if (entry.toInt() - Block.CAPACITY >= ADDR_START) {
 			var b: Block = new Block(entry - Block.CAPACITY);
 			if (b == last || b == first) return b;
 			if ((b: Ptr) < (last: Ptr)) {
@@ -132,6 +132,7 @@ class Malloc {
 	public static inline function free(p: Ptr) blockFree(indexOf(p));
 
 	static inline var LB = 8;
+	static inline var ADDR_START = 16;
 	public static function make(req_size: Int, zero: Bool, pb: Int): Ptr {
 		pb = pb <= LB ? LB : Ut.nextPow(pb);
 		req_size = Ut.align(req_size & 0x7FFFFFFF, pb);

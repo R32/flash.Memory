@@ -4,7 +4,7 @@ import raw.Ptr;
 
 @idx(2, "&") abstract Ucs2(Ptr) to Ptr {
 
-	public inline function getString(max: Int): String @:privateAccess {
+	public inline function getString(max: Int): String {
 		return tostr(this, max);
 	}
 
