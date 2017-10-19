@@ -51,15 +51,9 @@ class Struct {
 	}
 
 	// example: @:build(mem.Struct.make(mem.Mini))
-	static public function make(?alloc:Expr, align = 8, context:String = "addr") {
+	static public function make(context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
-
-		var alloc_s = ExprTools.toString(alloc);
-		if (alloc_s == "null") {
-			alloc_s = "Raw";
-			alloc = macro $i{alloc_s};
-		}
 
 		var abs_type: AbstractType = null;
 		switch (cls.kind) {
@@ -374,7 +368,7 @@ class Struct {
 				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
 					ret : macro :Void,
 					expr: macro {
-						$i{context} = $alloc.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
+						$i{context} = Raw.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -405,7 +399,7 @@ class Struct {
 					args: [],
 					ret : null,
 					expr: macro {
-						$alloc.free(realEntry());
+						Raw.free(realEntry());
 						$i{context} = cast raw.Ptr.NUL;
 					}
 				}),
@@ -447,20 +441,14 @@ class Struct {
 				expr: macro {
 					var actual_space = "";
 					if ($v{clsname} != "Block") @:privateAccess {
-						if ($v{alloc_s} == "Raw") {
-							var b = raw.Malloc.indexOf($i{context} + OFFSET_FIRST);
-							if (b != raw.Ptr.NUL)
-								actual_space = "ACTUAL_SPACE: " + (b.size - raw.Malloc.Block.CAPACITY) + ", ";
-						} else if ($v{alloc_s} == "Mini" || $v{alloc_s} == "raw.Mini") {
-							var node = raw.Mini.indexOf($i { context } + OFFSET_FIRST);
-							if (node != raw.Ptr.NUL)
-								actual_space = "ACTUAL_SPACE: " + (raw.Mini.lvl2Size(node.lvl) - 1) + ", ";
-						}
+						var b = raw.Malloc.indexOf($i{context} + OFFSET_FIRST);
+						if (b != raw.Ptr.NUL)
+							actual_space = "ACTUAL_SPACE: " + (b.size - raw.Malloc.Block.CAPACITY) + ", ";
 					}
-					var buf = ["\n--- [" + $v { clsname } + "] CAPACITY: " + $i { "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
+					var buf = ["\n--- [" + $v{ clsname } + "] CAPACITY: " + $i{ "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
 						+ ", OFFSET_END: " + OFFSET_END  + $v{flexible ? ", FLEXIBLE: True" : ""}
-						+ "\n--- " + actual_space + "baseAddr: " + ($i { context } + OFFSET_FIRST)
-						+ ", Allocter: " + $v { alloc_s } + "\n"];
+						+ "\n--- " + actual_space + "baseAddr: " + ($i{ context } + OFFSET_FIRST)
+						+ "\n"];
 					$a{out_block};
 					return buf.join("");
 				}
