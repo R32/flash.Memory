@@ -87,12 +87,12 @@ abstract Ptr(Int) {
 @idx("no") abstract ABit(Ptr) to Ptr {
 	@:arrayAccess function get(k:Int):Int {
 		var byte = Memory.getByte(this + (k >> 3));
-		var p = k & (8 - 1);
+		var p = 7 - (k & 7);
 		return (byte >> p) & 1;
 	}
 	@:arrayAccess function set(k:Int, v:Int):Void {
 		var byte = Memory.getByte(this + (k >> 3));
-		var p = k & (8 - 1);
+		var p = 7 - (k & 7);
 		Memory.setByte(this + (k >> 3),
 			v == 0
 			? byte & (~(1 << p))
