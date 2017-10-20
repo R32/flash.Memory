@@ -1,6 +1,7 @@
 bin
 obj
 dump
+old*
 *.swc
 *.swf
 *.p12
