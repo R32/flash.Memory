@@ -159,7 +159,7 @@ class Malloc {
 			var blockAddr = getUsed();
 			@:privateAccess Raw.reqCheck(blockAddr + req_size + Block.CAPACITY);
 			block = new Block(Ptr.ofInt(blockAddr));
-			block.setup(req_size, zero);
+			block.setup(req_size + Block.CAPACITY, zero);
 			add(block);
 		} else if(!split(block, req_size + Block.CAPACITY)) {
 			block.is_free = false;
