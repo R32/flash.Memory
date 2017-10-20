@@ -50,17 +50,25 @@ class Struct {
 		return s;
 	}
 
+	static function toFull(pack, name) {
+		return pack.length == 0 ? name : pack.join(".") + "." + name;
+	}
+
 	// example: @:build(mem.Struct.make(mem.Mini))
-	static public function make(context:String = "addr") {
+	static public function make(?fixed: {count: Int, extra: Int}, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 
+		var alloc_s = "Raw";
 		var abs_type: AbstractType = null;
 		switch (cls.kind) {
 			case KAbstractImpl(_.get() => t):
 				abs_type = t;
+				if (fixed != null) alloc_s = toFull(t.pack, t.name + "Alc");
 			default:
+				//if (fixed != null) alloc_s = toFull(cls.pack, cls.name + "Alc"); // only for abstract
 		}
+		var alloc = macro $i{ alloc_s };
 		if (abs_type != null) context = "this";
 
 		var ct_ptr = macro :raw.Ptr;
@@ -149,7 +157,7 @@ class Struct {
 						} else {
 							param.sizeOf = 4;
 						}
-						exprs = [macro Memory.$sget($i { context } + $v { offset } ), macro (Memory.$sset($i { context } + $v { offset }, $setter_value))];
+						exprs = [macro Memory.$sget($i{ context } + $v{ offset } ), macro (Memory.$sset($i{ context } + $v{ offset }, $setter_value))];
 					case "raw.Ptr":
 						unsafe_cast = true;
 						setter_value = expr_wrap(setter_value, true);
@@ -317,6 +325,16 @@ class Struct {
 			pos: cls.pos
 		});
 
+		if (fixed != null && abs_type != null) {
+			raw._macros.FixedMacros.make(
+				fixed.extra + offset - offset_first,
+				fixed.count,
+				{pack: abs_type.pack, name: abs_type.name + "Alc" },
+				toFull(abs_type.pack, abs_type.module),
+				abs_type.pos
+			);
+		}
+
 		fields.push({
 			name : "OFFSET_FIRST",// This field may be "Negative"
 			doc:  "== " + $v{offset_first},
@@ -344,7 +362,7 @@ class Struct {
 			fields.push({
 				name : "new",
 				access: [AInline, APublic],
-				kind: flexible ? FFun({
+				kind: flexible && fixed == null ? FFun({
 					args: [{name: "extra", type: macro :Int}],
 					ret : null,
 					expr: macro {
@@ -368,7 +386,7 @@ class Struct {
 				args: [{name: "entry_size", type: macro :Int}, {name: "zero", type: macro :Bool}],
 					ret : macro :Void,
 					expr: macro {
-						$i{context} = Raw.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
+						$i{context} = $alloc.malloc(entry_size, zero) - OFFSET_FIRST; // offset_first <= 0
 					}
 				}),
 				pos: here()
@@ -399,7 +417,7 @@ class Struct {
 					args: [],
 					ret : null,
 					expr: macro {
-						Raw.free(realEntry());
+						$alloc.free(realEntry());
 						$i{context} = cast raw.Ptr.NUL;
 					}
 				}),
@@ -438,7 +456,7 @@ class Struct {
 			kind: FFun({
 				args: [],
 				ret : macro :String,
-				expr: macro {
+				expr: fixed == null ? (macro {
 					var actual_space = "";
 					if ($v{clsname} != "Block") @:privateAccess {
 						var b = raw.Malloc.indexOf($i{context} + OFFSET_FIRST);
@@ -451,7 +469,13 @@ class Struct {
 						+ "\n"];
 					$a{out_block};
 					return buf.join("");
-				}
+				}) : (macro {
+					var buf = ["\n--- [" + $v{ clsname } + "(Fixed-Alloter)] CAPACITY: " + $i{ "CAPACITY" } + ", SIZEOF: " + $v{ Ut.align(fixed.extra + offset - offset_first, 8) }
+					+ ", COUNT: " + $v{ Ut.align(fixed.count, 8) }
+					+ "\n"];
+					$a{out_block};
+					return buf.join("");
+				})
 			}),
 			pos: here()
 		});
