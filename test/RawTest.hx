@@ -14,8 +14,6 @@ class RawTest {
 
 		var j2 = new Monkey(202, "Xo 什么");
 		trace(j2.__toOut());
-
-		trace((j2: Ptr) - (jojo: Ptr));
 	}
 
 
@@ -74,7 +72,7 @@ class RawTest {
 }
 
 #if !macro
-@:build(raw.Struct.make({extra: 0, count: 64}))
+@:build(raw.Struct.make({count: 64}))
 #end
 abstract Monkey(Ptr) to Ptr {
 	@idx(4 ) var id: Int;

@@ -18,7 +18,7 @@ abstract Monkey(Ptr) {            // 2. define struct
 
 class App {
     static function main() {
-        Fraw.attach();            // 3. init Fraw
+        Raw.attach();            // 3. init Raw
         var jojo = new Monkey();
         jojo.name = "jojo";
         jojo.id = 101;

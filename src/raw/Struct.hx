@@ -55,7 +55,7 @@ class Struct {
 	}
 
 	// example: @:build(mem.Struct.make(mem.Mini))
-	static public function make(?fixed: {count: Int, extra: Int}, context:String = "addr") {
+	static public function make(?fixed: {count: Int, ?extra: Int}, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 
@@ -66,7 +66,6 @@ class Struct {
 				abs_type = t;
 				if (fixed != null) alloc_s = toFull(t.pack, t.name + "Alc");
 			default:
-				//if (fixed != null) alloc_s = toFull(cls.pack, cls.name + "Alc"); // only for abstract
 		}
 		var alloc = macro $i{ alloc_s };
 		if (abs_type != null) context = "this";
@@ -326,10 +325,11 @@ class Struct {
 		});
 
 		if (fixed != null && abs_type != null) {
+			if (fixed.extra == null) fixed.extra = 0;
 			raw._macros.FixedMacros.make(
 				fixed.extra + offset - offset_first,
 				fixed.count,
-				{pack: abs_type.pack, name: abs_type.name + "Alc" },
+				{pack: abs_type.pack, name: abs_type.name + "Alc"},
 				toFull(abs_type.pack, abs_type.module),
 				abs_type.pos
 			);
@@ -461,17 +461,18 @@ class Struct {
 					if ($v{clsname} != "Block") @:privateAccess {
 						var b = raw.Malloc.indexOf($i{context} + OFFSET_FIRST);
 						if (b != raw.Ptr.NUL)
-							actual_space = "ACTUAL_SPACE: " + (b.size - raw.Malloc.Block.CAPACITY) + ", ";
+							actual_space = "SIZEOF: " + (b.size - raw.Malloc.Block.CAPACITY) + ", ";
 					}
 					var buf = ["\n--- [" + $v{ clsname } + "] CAPACITY: " + $i{ "CAPACITY" } + ", OFFSET_FIRST: " + OFFSET_FIRST
 						+ ", OFFSET_END: " + OFFSET_END  + $v{flexible ? ", FLEXIBLE: True" : ""}
-						+ "\n--- " + actual_space + "baseAddr: " + ($i{ context } + OFFSET_FIRST)
+						+ "\n--- " + actual_space + "ADDR: " + ($i{ context } + OFFSET_FIRST)
 						+ "\n"];
 					$a{out_block};
 					return buf.join("");
 				}) : (macro {
-					var buf = ["\n--- [" + $v{ clsname } + "(Fixed-Alloter)] CAPACITY: " + $i{ "CAPACITY" } + ", SIZEOF: " + $v{ Ut.align(fixed.extra + offset - offset_first, 8) }
+					var buf = ["\n--- [" + $v{ clsname } + " (Fixed)] CAPACITY: " + $i{ "CAPACITY" } + ", SIZEOF: " + $v{ Ut.align(fixed.extra + offset - offset_first, 8) }
 					+ ", COUNT: " + $v{ Ut.align(fixed.count, 8) }
+					+ ", ADDR: " + ($i{ context } + OFFSET_FIRST)
 					+ "\n"];
 					$a{out_block};
 					return buf.join("");
