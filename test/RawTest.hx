@@ -7,6 +7,7 @@ class RawTest {
 
 	static function main() {
 		Raw.attach();
+		t_base64();
 		//t_malloc();
 		//t_fixed();
 		var jojo = new Monkey(101, "Jo 乔");
@@ -16,6 +17,16 @@ class RawTest {
 		trace(j2.__toOut());
 	}
 
+	static function t_base64() {
+		var str = "hi 为什么这样子";
+		var s1 = Raw.mallocFromString(str);
+		var b64 = raw.fmt.Base64.encode(s1, s1.length);
+		eq(b64.toString() == haxe.crypto.Base64.encode(haxe.io.Bytes.ofString(str)), "Base64");
+
+		var b1 = Raw.mallocFromHex("003c176e659bea0f29a3e9bf7880c112b1b31b4dc826268187");
+		var b58 = raw.fmt.Base58.encode(b1, b1.length);
+		eq(b58.toString() == "16UjcYNBG9GTK4uq2f7yYEbuifqCzoLMGS", "Base58");
+	}
 
 	static function t_malloc() {
 		function randAlloc() {
