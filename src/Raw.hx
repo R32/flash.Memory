@@ -132,17 +132,28 @@ class Raw {
 		return i;
 	}
 
-	public static inline function mallocFromString(str: String): raw.struct.WString {
-		return raw.struct.WString.ofString(str);
+	public static inline function mallocFromString(str: String): raw.fmt.WString {
+		return raw.fmt.WString.ofString(str);
 	}
 
-	public static inline function mallocFromBytes(b: haxe.io.Bytes): raw.struct.FBlock {
-		return raw.struct.FBlock.ofBytes(b);
+	public static inline function mallocFromBytes(b: haxe.io.Bytes): raw.fmt.FBlock {
+		return raw.fmt.FBlock.ofBytes(b);
+	}
+
+	public static function mallocFromHex(hex: String): raw.fmt.FBlock {
+		var len = hex.length >> 1;
+		var b = new raw.fmt.FBlock(len, false, 8);
+		var j: Int;
+		for (i in 0...len) {
+			j = i + i;
+			b[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1));
+		}
+		return b;
 	}
 
 	// max in bytes
 	public static inline function writeUtf8(dst: Ptr, str: String, max = SMAX): Int {
-		return raw.struct.WString.ofstrn(dst, str, max);
+		return raw.fmt.WString.ofstrn(dst, str, max);
 	}
 
 	public static inline function readUtf8(src: Ptr, len: Int): String {

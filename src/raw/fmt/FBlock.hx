@@ -1,4 +1,4 @@
-package raw.struct;
+package raw.fmt;
 
 import raw.Ptr;
 
@@ -9,7 +9,7 @@ abstract FBlock(Ptr) to Ptr {
 	public var length(get, never): Int;
 	private inline function get_length() return _len;
 
-	public inline function new(size: Int, zero = false, pad = 16) {
+	public inline function new(size: Int, zero: Bool, pad: Int) {
 		this = Malloc.make(size + CAPACITY, zero, pad) - OFFSET_FIRST;
 		_len = size;
 	}
@@ -25,4 +25,7 @@ abstract FBlock(Ptr) to Ptr {
 		Raw.writeBytes((ret: Ptr), b.length, b);
 		return ret;
 	}
+
+	@:arrayAccess inline function get(i: Int):Int return Memory.getByte(this + i);
+	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte(this + i, v);
 }

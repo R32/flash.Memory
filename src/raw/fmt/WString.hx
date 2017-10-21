@@ -1,4 +1,4 @@
-package raw.struct;
+package raw.fmt;
 
 import raw.Ptr;
 
