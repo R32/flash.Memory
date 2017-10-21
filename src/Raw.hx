@@ -58,7 +58,7 @@ class Raw {
 	}
 
 	public static inline function memcpy(dst: Ptr, src: Ptr, size: Int):Void {
-		if (dst == src || size <= 0) return;
+		if (dst == src) return;
 		current.blit(dst.toInt(), current, src.toInt(), size);
 	}
 
@@ -125,10 +125,10 @@ class Raw {
 		current.blit(ptr.toInt(), src, 0, len);
 	}
 
-	public static inline var SMAX = LLB;  // 512K
-	public static function strlen(ptr: Ptr, max = SMAX): Int {
+	static inline var SMAX = LLB;  // 512K
+	public static function strlen(ptr: Ptr): Int {
 		var i = 0;
-		while (i < max && Memory.getByte(ptr + i) != 0) ++i;
+		while (Memory.getByte(ptr + i) != 0) ++i;
 		return i;
 	}
 
@@ -152,7 +152,7 @@ class Raw {
 	}
 
 	// max in bytes
-	public static inline function writeUtf8(dst: Ptr, str: String, max = SMAX): Int {
+	public static inline function writeUtf8(dst: Ptr, str: String, max = -1): Int {
 		return raw.fmt.WString.ofstrn(dst, str, max);
 	}
 
@@ -160,7 +160,7 @@ class Raw {
 		return current.getString(src.toInt(), len);
 	}
 
-	public static inline function writeUcs2(out: Ptr, str: String, max = SMAX): Int {
+	public static inline function writeUcs2(out: Ptr, str: String, max = -1): Int {
 		return raw.Ucs2.ofstr(out, str, max);
 	}
 

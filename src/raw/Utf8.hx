@@ -25,7 +25,7 @@ class Utf8 {
 		}
 	}
 
-	public static function length(src: Ptr, max = Raw.SMAX): Int {
+	public static function length(src: Ptr, max: Int): Int {
 		if (utf8d_table == Ptr.NUL) init();
 		var i = 0, len = 0, state = 0, utf8d = utf8d_table;
 		var byte:Int, type:Int;

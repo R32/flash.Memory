@@ -73,19 +73,25 @@ abstract WString(Ptr) to Ptr {
 
 	// "max" of bytes to write to out;
 	public static function ofstrn(out: Ptr, str: String, max: Int): Int {
+		var len = 0;
 	#if (cpp || neko || python || lua)
-		max = Ut.imin(max, str.length);
-		if (out != Ptr.NUL) {
-			for (i in 0...max) {
+		if (out == Ptr.NUL) {
+			len = str.length;
+		} else if (max == -1) {
+			len = ofstr(out, str);
+		} else {
+			len = Ut.imin(max, str.length);
+			for (i in 0...len) {
 				out[i] = StringTools.fastCodeAt(str, i);
 			}
+			if (max > len) out[len] = 0;
 		}
-		return max;
 	#else
 		var c: Int;
-		var len = 0;
 		if (out == Ptr.NUL) {
-			return ofstr(Ptr.NUL, str);
+			len = ofstr(Ptr.NUL, str);
+		} else if (max == -1) {
+			len = ofstr(out, str);
 		} else {
 			for (i in 0...str.length) {
 				c = StringTools.fastCodeAt(str, i);
@@ -103,8 +109,9 @@ abstract WString(Ptr) to Ptr {
 					out[len++] = (0x80 | (c & 63));
 				}
 			}
+			if (max > len) out[len] = 0;
 		}
-		return len;
 	#end
+		return len;
 	}
 }
