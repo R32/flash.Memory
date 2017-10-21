@@ -1,8 +1,10 @@
 @echo off
 cd bin
-::@echo ----- nodejs ------
-::node test.js
-::@echo ----- hl ------
+@echo ----- nodejs ------
+node test.js
+@echo ----- hl ------
 hl test.hl
-::start test.swf
+@echo ----- neko ------
+neko test.n
+start test.swf
 pause

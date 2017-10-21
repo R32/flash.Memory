@@ -24,7 +24,7 @@
     <option noInlineOnDebug="False" />
     <option mainClass="RawTest" />
     <option enabledebug="True" />
-    <option additional="-dce std&#xA;-hl bin/test.hl" />
+    <option additional="-dce std&#xA;--flash-strict &#xA;-swf-version 10.3" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
