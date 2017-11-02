@@ -84,6 +84,7 @@ class Raw {
 	#end
 	}
 
+	#if !flash inline #end
 	public static function memset(dst: Ptr, v: Int, size: Int):Void {
 	#if flash
 		var w = v == 0 ? 0 : (v | (v << 8) | (v << 16) | (v << 24));

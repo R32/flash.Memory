@@ -6,6 +6,7 @@ import raw.Ptr;
 Mbs
 */
 @:build(raw.Struct.make())
+@:native("WString")
 abstract WString(Ptr) to Ptr {
 	@idx(4, -4) private var _len:Int;
 	public var length(get, never): Int;
@@ -21,7 +22,7 @@ abstract WString(Ptr) to Ptr {
 		return Raw.readUtf8(this, length);
 	}
 
-	public static inline function ofString(str: String): WString {
+	public static function ofString(str: String): WString {
 		var len = ofstr(Ptr.NUL, str);
 		var ws = new WString(len);
 		ofstr(cast ws, str);
