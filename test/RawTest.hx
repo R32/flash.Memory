@@ -4,6 +4,7 @@ import raw.Ptr;
 import raw.Fixed;
 import raw.Ucs2;
 import raw.fmt.WString;
+import haxe.io.Bytes;
 
 class RawTest {
 
@@ -19,7 +20,8 @@ class RawTest {
 		// malloc by fixed-alloter
 		var j1 = new Monkey(101, "Jo 乔");
 		var j2 = new Monkey(202, "Shi 什");
-		eq((j2: Ptr) - (j1: Ptr) == MonkeyAlc.SIZEOF, "Monkey(fixed-alloter)");
+		trace(j1.__toOut());
+		trace(j2.__toOut());
 	}
 	static inline function BLK16(size) return new raw.fmt.FBlock(size, false, 16);
 
@@ -130,39 +132,40 @@ class RawTest {
 	}
 
 	static function t_fixed() @:privateAccess {
+		var fixed = Monkey.__fx;
 		function iter(v) {
-			var cur = Chunk.h;
+			var cur = fixed.h;
 			var rest = 0;
 			while (cur != Ptr.NUL) {
-				//trace(cur.toString());
-				rest += cur.rest;
+				//trace(fixed.chunk_detail(cur));
+				rest += fixed.chunk_rest(cur);
 				cur = cur.next;
 			}
 			eq(v == rest, "t_fixed");
-			//trace('-----------------');
+			//trace(fixed.toString());
 		}
 
 		var ap = [];
-		for (i in 0...64) ap.push(Chunk.malloc(0, false));
+		for (i in 0...512) ap.push(fixed.malloc(0, false));
 		raw.Ut.shuffle(ap);
 
-		for (i in 0...32) Chunk.free(ap.pop());     // free 256
-		iter(32);
+		for (i in 0...256) fixed.free(ap.pop());     // free 256
+		iter(256);
 
-		for (i in 0...32) ap.push(Chunk.malloc(0, false));
+		for (i in 0...256) ap.push(fixed.malloc(0, false));
 		iter(0);
 		raw.Ut.shuffle(ap);
-		for (i in 0...64) Chunk.free(ap.pop());     // free 512
-		iter(64);
 
-		Chunk.destory();
+		for (i in 0...512) fixed.free(ap.pop());     // free 512
+		iter(512);
+		fixed.destory();
 		eq(raw.Malloc.isEmpty(), "after Chunk.destory");
 	}
 	static inline function eq(expr, msg) if (!expr) throw msg;
 }
 
 #if !macro
-@:build(raw.Struct.make({count: 64}))
+@:build(raw.Struct.make({count: 128}))
 #end
 abstract Monkey(Ptr) to Ptr {
 	@idx(4 ) var id: Int;

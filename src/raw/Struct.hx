@@ -64,7 +64,7 @@ class Struct {
 		switch (cls.kind) {
 			case KAbstractImpl(_.get() => t):
 				abs_type = t;
-				if (fixed != null) alloc_s = toFull(t.pack, t.name + "Alc");
+				if (fixed != null) alloc_s = toFull(t.pack, t.name);
 			default:
 		}
 		var alloc = macro $i{ alloc_s };
@@ -325,14 +325,17 @@ class Struct {
 		});
 
 		if (fixed != null && abs_type != null) {
+			alloc = macro $alloc.__fx;
 			if (fixed.extra == null) fixed.extra = 0;
-			raw._macros.FixedMacros.make(
-				fixed.extra + offset - offset_first,
-				fixed.count,
-				{pack: abs_type.pack, name: abs_type.name + "Alc"},
-				toFull(abs_type.pack, abs_type.module),
-				abs_type.pos
-			);
+			var f_sz = Ut.align(fixed.extra + offset - offset_first, 8);
+			var f_ct = fixed.count < 32 ? 32 : Ut.align(fixed.count, 8);
+			if (f_ct > 0xFFFF) f_ct = 0xFFFF;
+			fields.push({
+			name : "__fx",
+			access: [AStatic],
+			kind: FVar(macro :raw.Fixed, macro @:privateAccess new raw.Fixed($v{f_sz}, $v{f_ct})),
+			pos: cls.pos
+			});
 		}
 
 		fields.push({

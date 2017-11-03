@@ -7,28 +7,8 @@ import haxe.macro.Type;
 //using haxe.macro.Tools;
 #end
 
-class FixedMacros {
+@:deprecated("has been replaced by raw.Fixed") class FixedMacros {
 #if macro
-	@:deprecated public static function gen() {
-		var pos = Context.currentPos();
-		var sizof = 0;
-		var count = 0;
-		var info: TypePath;
-		var mod: String;
-		switch (Context.getLocalType()) {
-		case TInst(_, [TAbstract(_.get() => t, _), TInst(_.get() => { kind: KExpr(macro $v{(i: Int)}) },_)]):
-			var n = Std.parseInt(i);
-			sizof = n & 0xFFFF;
-			count = (n >> 16) & 0xFFFF;
-			info = { pack: t.pack, name: t.name + "Alc" };
-			mod = t.pack.length == 0 ? t.module : info.pack.join(".") + "." + t.module;
-			//trace('mod: ${t.module}, pack: ${t.pack}, name: ${t.name}, sizeof: $sizof, count: $count');
-		default:
-			Context.error("Class expected", pos);
-		}
-		return make(sizof, count, info, mod, pos);
-	}
-
 	public static function make(sizof, count, info, mod, pos) {
 		sizof = Ut.align(sizof, 8);
 		count = Ut.align(count, 8);
