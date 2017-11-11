@@ -80,11 +80,29 @@ class Fixed {
 	}
 
 	function TRAILING_ONES(x) {
-		// TODO: There may be other more efficient ways.
 		// if (x == 0xFFFFFFFF) return 32;
-		var i = 0;
-		while (((x >> i) & 1) == 1) ++i;
-		return i;
+		x = ~x;
+		var n = 0;
+		if ((x & 0x0000FFFF) == 0) {
+			n += 16;
+			x >>= 16;
+		}
+		if ((x & 0x000000FF) == 0) {
+			n += 8;
+			x >>= 8;
+		}
+		if ((x & 0x0000000F) == 0) {
+			n += 4;
+			x >>= 4;
+		}
+		if ((x & 0x00000003) == 0) {
+			n += 2;
+			x >>= 2;
+		}
+		if ((x & 0x00000001) == 0) {
+			n += 1;
+		}
+		return n;
 	}
 
 	// ------ ChunkHelps ------

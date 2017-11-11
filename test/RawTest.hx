@@ -138,7 +138,8 @@ class RawTest {
 		eq(fixed.TRAILING_ONES(0x7FFFFFFF) == 31, "TRAILING_ONES 1");
 		eq(fixed.TRAILING_ONES(0xFFFFFFF7) ==  3, "TRAILING_ONES 2");
 		eq(fixed.TRAILING_ONES(0x00000000) ==  0, "TRAILING_ONES 3");
-		eq(fixed.TRAILING_ONES(0xFFFFFFFE) ==  0, "TRAILING_ONES 4");
+		eq(fixed.TRAILING_ONES(0xFFF0FFFF) == 16, "TRAILING_ONES 4");
+		eq(fixed.TRAILING_ONES(0xFFFFFF0F) ==  4, "TRAILING_ONES 5");
 
 		function iter(v, ?pos: haxe.PosInfos) {
 			var cur = fixed.h;
