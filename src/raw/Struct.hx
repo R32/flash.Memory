@@ -55,7 +55,7 @@ class Struct {
 	}
 
 	// example: @:build(mem.Struct.make(mem.Mini))
-	static public function make(?fixed: {count: Int, ?extra: Int}, context:String = "addr") {
+	static public function make(?fixed: {bulk: Int, ?extra: Int}, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;
 
@@ -193,7 +193,6 @@ class Struct {
 								if (param.count == 0) {
 									if (f == filter[filter.length - 1]) {
 										flexible = true;
-										param.offset = 0;
 									} else {
 										Context.error("the flexible array member is supports only for the final field.", f.pos);
 									}
@@ -327,13 +326,12 @@ class Struct {
 		if (fixed != null && abs_type != null) {
 			alloc = macro $alloc.__fx;
 			if (fixed.extra == null) fixed.extra = 0;
+			if (fixed.bulk < 1) fixed.bulk = 1;
 			var f_sz = Ut.align(fixed.extra + offset - offset_first, 8);
-			var f_ct = fixed.count < 32 ? 32 : Ut.align(fixed.count, 8);
-			if (f_ct > 0xFFFF) f_ct = 0xFFFF;
 			fields.push({
 			name : "__fx",
 			access: [AStatic],
-			kind: FVar(macro :raw.Fixed, macro @:privateAccess new raw.Fixed($v{f_sz}, $v{f_ct})),
+			kind: FVar(macro :raw.Fixed, macro @:privateAccess new raw.Fixed($v{f_sz}, $v{fixed.bulk})),
 			pos: cls.pos
 			});
 		}
@@ -474,7 +472,7 @@ class Struct {
 					return buf.join("");
 				}) : (macro {
 					var buf = ["\n--- [" + $v{ clsname } + " (Fixed)] CAPACITY: " + $i{ "CAPACITY" } + ", SIZEOF: " + $v{ Ut.align(fixed.extra + offset - offset_first, 8) }
-					+ ", COUNT: " + $v{ Ut.align(fixed.count, 8) }
+					+ ", COUNT: " + $v{ fixed.bulk << 5 }
 					+ ", ADDR: " + ($i{ context } + OFFSET_FIRST)
 					+ "\n"];
 					$a{out_block};

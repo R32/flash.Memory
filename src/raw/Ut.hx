@@ -44,9 +44,8 @@ class Ut {
 	#end
 	}
 
-	static public inline function divisible(x, by) return (x & (by - 1)) == 0;
-
-	static public inline function isPowOf2(x) return divisible(x, x);
+	// issue: when x == 1 or 0, the result is true.
+	static public inline function isPowOf2(x) return ((x & x - 1) == 0);
 
 	static public inline function imax(a: Int, b: Int) return a < b ? b : a;
 

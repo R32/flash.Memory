@@ -32,18 +32,20 @@ class Fixed {
 
 	public function free(p: Ptr): Void {
 		var cur = h;
+		var diff;
 		while (cur != Ptr.NUL) {
-			if (valid(cur, p)) {
-				release(cur, p);
+			diff = p.toInt() - chunk_data_ptr(cur).toInt();
+			if (diff >= 0 && diff < ct * sz && diff % sz == 0) {
+				release(cur, Std.int(diff / sz));
 				break;
 			}
 			cur = cur.next;
 		}
 	}
 
-	function new(sz, ct) {
+	function new(sz, bulk) {
 		this.sz = sz;
-		this.ct = ct;
+		this.ct = (bulk & 2047) << 5;
 		this.h = cast raw.Ptr.NUL;
 	}
 
@@ -77,53 +79,71 @@ class Fixed {
 		return '[chunk: $n, total: ${n * (Chunk.CAPACITY + ct + ct * sz)}B, used: ${n * ct - r}, rest: $r]';
 	}
 
-	// ------ ChunkHelps ------
+	function TRAILING_ONES(x) {
+		// TODO: There may be other more efficient ways.
+		// if (x == 0xFFFFFFFF) return 32;
+		var i = 0;
+		while (((x >> i) & 1) == 1) ++i;
+		return i;
+	}
 
-	inline function chunk_entry(c: Chunk) return (c: Ptr) + Chunk.CAPACITY + ct;
+	// ------ ChunkHelps ------
+	inline function meta_bytes(n) return (n >> 3);
+	inline function meta_pos(ci) return ((ci >> 3) & 0xFFFC);
+	inline function chunk_data_ptr(c: Chunk) return (c: Ptr) + Chunk.CAPACITY + meta_bytes(ct);
+	inline function chunk_piece_ptr(c: Chunk, ci: Int) return chunk_data_ptr(c) + ci * sz;
 	inline function chunk_rest(c: Chunk) return ct - c.caret + c.frags;
 	inline function chunk_detail(c: Chunk): String {
 		return 'SIZEOF: $sz, COUNT: $ct, frags: ${c.frags}, caret: ${c.caret}, rest: ${chunk_rest(c)}';
 	}
 
-	function valid(c: Chunk, p: Ptr) {
-		var diff = p.toInt() - chunk_entry(c).toInt();
-		return diff >= 0 && diff < ct * sz && diff % sz == 0;
+	function in_using(p: Ptr, caret: Int, t: Bool) {
+		p = p + meta_pos(caret);
+		if (t) {
+			Memory.setI32(p, (1 << (caret & 31)) | Memory.getI32(p));
+		} else {
+			Memory.setI32(p, (~(1 << (caret & 31))) & Memory.getI32(p));
+		}
+	}
+
+	function is_free(p: Ptr, caret: Int) {
+		return ((Memory.getI32(p + meta_pos(caret)) >> (caret & 31)) & 1) == 0;
 	}
 
 	// make sure "c.caret < ct || c.frags > 0"
 	function request(c: Chunk, z: Bool): Ptr {
 		var ret = raw.Ptr.NUL;
 		var cr = c.caret;
-		var fg = c.frags;
 		var meta = c.meta;
 		if (cr < ct) {
-			ret = chunk_entry(c) + cr * sz;
-			meta[cr] = 1;
+			ret = chunk_piece_ptr(c, cr);
+			in_using(meta, cr, true);
 			c.caret = cr + 1;
 		} else {
-			for (i in 0...ct) { // in bytes, TODO: not performance..
-				if( meta[i] == 0) {
-					meta[i] = 1;
-					c.frags = fg - 1;
-					ret = chunk_entry(c) + i * sz;
+			var i = 0, value = 0, len = meta_pos(ct);
+			while (i < len) {
+				value = Memory.getI32(meta + i);
+				if (value != 0xFFFFFFFF) {
+					cr = (i << 3) + TRAILING_ONES(value);
+					in_using(meta, cr, true);
+					c.frags = c.frags - 1;
+					ret = chunk_piece_ptr(c, cr);
 					break;
 				}
+				i += 4;
 			}
 		}
-		//if (ret == Ptr.NUL) throw "TODO";
 		if (z) Raw.memset(ret, 0, sz);
 		return ret;
 	}
 
-	function release(c: Chunk, p: Ptr) {
-		var i = Std.int((p.toInt() - chunk_entry(c).toInt()) / sz);
+	function release(c: Chunk, cr: Int) {
 		var meta = c.meta;
-		if (meta[i] == 0) return;
-		meta[i] = 0;
+		if (is_free(meta, cr)) return;
+		in_using(meta, cr, false);
 		var fg = c.frags + 1;
-		var cr = c.caret - 1; // last elem. same as `a[a.length - 1]`
-		//if (cr < 0) throw "TODO";
-		while (fg > 0 && meta[cr] == 0) {
+		cr = c.caret - 1;
+		while (fg > 0 && is_free(meta, cr)) {
 			-- cr;
 			-- fg;
 		}
@@ -160,8 +180,8 @@ extern abstract Chunk(Ptr) to Ptr {
 	inline function get_meta(): Ptr return this + CAPACITY;
 
 	inline function new(count: Int, sizof: Int) {
-		this = Raw.malloc(CAPACITY + count + count * sizof, false);
-		Raw.memset(this, 0, CAPACITY + count); // .next = 0, .frags = 0, .caret = 0;
+		this = Raw.malloc(CAPACITY + (count >> 3) + count * sizof, false);
+		Raw.memset(this, 0, CAPACITY + (count >> 3)); // .next = 0, .frags = 0, .caret = 0;
 	}
 
 	public static inline var CAPACITY = 8;

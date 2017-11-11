@@ -17,11 +17,12 @@ class RawTest {
 		t_base64();
 		t_aes128();
 
-		// malloc by fixed-alloter
 		var j1 = new Monkey(101, "Jo 乔");
 		var j2 = new Monkey(202, "Shi 什");
+		// malloc by fixed-alloter
 		trace(j1.__toOut());
 		trace(j2.__toOut());
+		trace("done!");
 	}
 	static inline function BLK16(size) return new raw.fmt.FBlock(size, false, 16);
 
@@ -35,6 +36,8 @@ class RawTest {
 	}
 
 	static function t_aes128() {
+		raw.fmt.AES128.init();
+		raw.fmt.AES128Embed.init();
 		var sa = [
 			"6bc1bee22e409f96e93d7e117393172a",
 			"ae2d8a571e03ac9c9eb76fac45af8e51",
@@ -47,7 +50,6 @@ class RawTest {
 			"43b1cd7f598ece23881b00e3ed030688",
 			"7b0c785e27e8ad3f8223207104725dd4"
 		];
-
 		var key = Raw.mallocFromHex("2b7e151628aed2a6abf7158809cf4f3c");
 		for (i in 0...sa.length) {
 			var b = Raw.mallocFromHex(sa[i]);
@@ -133,7 +135,12 @@ class RawTest {
 
 	static function t_fixed() @:privateAccess {
 		var fixed = Monkey.__fx;
-		function iter(v) {
+		eq(fixed.TRAILING_ONES(0x7FFFFFFF) == 31, "TRAILING_ONES 1");
+		eq(fixed.TRAILING_ONES(0xFFFFFFF7) ==  3, "TRAILING_ONES 2");
+		eq(fixed.TRAILING_ONES(0x00000000) ==  0, "TRAILING_ONES 3");
+		eq(fixed.TRAILING_ONES(0xFFFFFFFE) ==  0, "TRAILING_ONES 4");
+
+		function iter(v, ?pos: haxe.PosInfos) {
 			var cur = fixed.h;
 			var rest = 0;
 			while (cur != Ptr.NUL) {
@@ -141,38 +148,42 @@ class RawTest {
 				rest += fixed.chunk_rest(cur);
 				cur = cur.next;
 			}
-			eq(v == rest, "t_fixed");
+			eq(v == rest, "t_fixed: line: ", pos);
 			//trace(fixed.toString());
 		}
 
 		var ap = [];
-		for (i in 0...512) ap.push(fixed.malloc(0, false));
+		for (i in 0...960) ap.push(fixed.malloc(0, false));
+		eq(ap[23] == fixed.chunk_piece_ptr(fixed.h, 23), "chunk_piece_ptr");
+		eq(((fixed.chunk_data_ptr(fixed.h) - fixed.h.meta) << 3) == fixed.ct, "chunk_data_ptr");
 		raw.Ut.shuffle(ap);
+		iter(0);
 
-		for (i in 0...256) fixed.free(ap.pop());     // free 256
-		iter(256);
+		for (i in 0...480) fixed.free(ap.pop());     // free 480
+		iter(480);
 
-		for (i in 0...256) ap.push(fixed.malloc(0, false));
+		for (i in 0...480) ap.push(fixed.malloc(0, false));
 		iter(0);
 		raw.Ut.shuffle(ap);
 
-		for (i in 0...512) fixed.free(ap.pop());     // free 512
-		iter(512);
+		for (i in 0...960) fixed.free(ap.pop());     // free 960
+		iter(960);
 		fixed.destory();
 		eq(raw.Malloc.isEmpty(), "after Chunk.destory");
+
 	}
-	static inline function eq(expr, msg) if (!expr) throw msg;
+	static function eq(expr, msg, ?pos: haxe.PosInfos) if (!expr) throw '$msg: ----- line: ${pos.lineNumber}';
 }
 
 #if !macro
-@:build(raw.Struct.make({count: 128}))
+@:build(raw.Struct.make({bulk: 10}))
 #end
 abstract Monkey(Ptr) to Ptr {
 	@idx(4 ) var id: Int;
 	@idx(16) var name: String;
 
 	public inline function new(i, n) {
-		mallocAbind(CAPACITY, false);
+		mallocAbind(CAPACITY, false); // the fixed allocater will ignore the value of first params.
 		id = i;
 		name = n;
 	}
