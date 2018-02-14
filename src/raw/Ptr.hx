@@ -13,22 +13,22 @@ abstract Ptr(Int) {
 	@:arrayAccess inline function set(i: Int, v:Int):Void Memory.setByte(add(i), v);
 
 	@:op(A + B)  private inline function add(b: Int): Ptr
-		return new Ptr(this + b);
+		return ofInt(this + b);
 
 	@:op(A - B)  private inline function sub(b: Int): Ptr
-		return new Ptr(this - b);
+		return ofInt(this - b);
 
 	@:op(++A)  private inline function incr_a(): Ptr
-		return new Ptr(++this);
+		return ofInt(++this);
 
 	@:op(A++)  private inline function incr_b(): Ptr
-		return new Ptr(this++);
+		return ofInt(this++);
 
 	@:op(--A)  private inline function decr_a(): Ptr
-		return new Ptr(--this);
+		return ofInt(--this);
 
 	@:op(A--)  private inline function decr_b(): Ptr
-		return new Ptr(this--);
+		return ofInt(this--);
 
 	@:op(A < B)  private static inline function lt (a: Ptr, b: Ptr): Bool
 		return a.toInt() < b.toInt();
@@ -50,7 +50,7 @@ abstract Ptr(Int) {
 
 	public static inline var NUL: Ptr = new Ptr(0);
 
-	public static inline function ofInt(i) return new Ptr(i);
+	public static inline function ofInt(i): Ptr return cast i;
 }
 
 
