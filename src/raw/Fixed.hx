@@ -12,6 +12,7 @@ class Fixed {
 	var ct: Int; // COUNT
 	var sz: Int; // SIZEOF
 
+	// The first argument is only a placeholder for compatibility with Raw.malloc
 	public function malloc(x: Int, z: Bool): Ptr {
 		var ret = Ptr.NUL;
 		var cur = h;

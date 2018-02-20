@@ -54,7 +54,6 @@ class Struct {
 		return pack.length == 0 ? name : pack.join(".") + "." + name;
 	}
 
-	// example: @:build(mem.Struct.make(mem.Mini))
 	static public function make(?fixed: {bulk: Int, ?extra: Int}, context:String = "addr") {
 		var cls:ClassType = Context.getLocalClass().get();
 		if (cls.isInterface) return null;

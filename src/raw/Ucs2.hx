@@ -2,6 +2,7 @@ package raw;
 
 import raw.Ptr;
 
+// for @idx: 2 = 2bytes and "&" means that this is an "array" not "pointer". see raw/Struct.hx#L167-L198
 @idx(2, "&") abstract Ucs2(Ptr) to Ptr {
 
 	public inline function getString(max: Int): String {

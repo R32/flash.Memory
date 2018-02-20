@@ -11,5 +11,5 @@ abstract Bits(Int) to Int {
 		this = v == 0 ? this & (~(1 << p)) : this | (1 << p);
 
 	public static inline function toInt(): Int return this;
-	public static inline function ofInt(i: Int): Bits return new Bits(i);
+	public static inline function ofInt(i: Int): Bits return cast i;
 }
