@@ -35,8 +35,8 @@ extern class Memory {
 	public static inline function getDouble(addr: Ptr): Float
 		return flash.Memory.getDouble(addr.toInt());
 
-	//public static inline function signExtend1(v: Int): Int
-	//	return flash.Memory.signExtend1(v);
+	public static inline function signExtend1(v: Int): Int
+		return flash.Memory.signExtend1(v);
 
 	public static inline function signExtend8(v: Int): Int
 		return flash.Memory.signExtend8(v);

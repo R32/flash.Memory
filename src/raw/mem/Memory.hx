@@ -17,6 +17,8 @@ class Memory {
 	public static inline function getFloat ( addr : Ptr ): Float return b.getFloat(addr.toInt());
 	public static inline function getDouble( addr : Ptr ): Float return b.getDouble(addr.toInt());
 
+	public static inline function signExtend1(v: Int): Int
+		return v & 1 == 1 ? 0xffffffff : 0;
 	public static inline function signExtend8(v: Int): Int
 		return v & 0x80 == 0x80 ? v | 0xffffff00: v;
 	public static inline function signExtend16(v: Int): Int

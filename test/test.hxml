@@ -1,15 +1,14 @@
--dce std
+-dce full
 -lib raw
 -main RawTest
 -D old-error-format
 -D analyzer-optimize
--D nodejs
 --each
 
--swf bin/test.swf
 -swf-header 800:500:24:000000
 --flash-strict
 -swf-version 10.3
+-swf bin/test.swf
 
 --next
 -hl bin/test.hl
@@ -17,12 +16,8 @@
 --next
 -js bin/test.js
 
---next
--neko bin/test.n
+#--next
+#-neko bin/test.n
 
 #--next
 #-cpp bin/cpp
-
-
-
-
