@@ -3,6 +3,26 @@ package raw;
 import raw.Ptr;
 /**
 This Class is auto called by macro.
+
+Note: do not use with "flexible struct" unless you can handle it accurately
+
+example:
+
+```hx
+// The "bulk" value will be a multiple of 32 that indicates how many blocks can be stored in a single pool
+// the "extra" indicates how many extra bytes are allocated for each block
+@:build(raw.Struct.make({bulk: 10, extra: 0}))
+abstract Monkey(Ptr) to Ptr {
+	@idx(4 ) var id: Int;
+	@idx(16) var name: String;
+	public inline function new(i, n) {
+		mallocAbind(CAPACITY, false);
+		id = i;
+		name = n;
+	}
+}
+new Monkey(101, "jojo");
+```
 */
 class Fixed {
 
