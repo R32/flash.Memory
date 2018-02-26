@@ -8,6 +8,19 @@ import haxe.io.Bytes;
 
 class RawTest {
 
+	static inline function platform() {
+		return
+		#if flash
+		"flash";
+		#elseif hl
+		"hl";
+		#elseif js
+		"js";
+		#else
+		"others";
+		#end
+	}
+
 	static function main() {
 		Raw.attach();
 		t_malloc();
@@ -16,13 +29,14 @@ class RawTest {
 		t_ucs2();
 		t_base64();
 		t_aes128();
+		t_hash();
 
+		// malloc by fixed-alloter
 		var j1 = new Monkey(101, "Jo 乔");
 		var j2 = new Monkey(202, "Shi 什");
-		// malloc by fixed-alloter
-		trace(j1.__toOut());
-		trace(j2.__toOut());
-		trace("done!");
+		//trace(j1.__toOut());
+		//trace(j2.__toOut());
+		trace(platform() + " done!");
 	}
 	static inline function BLK16(size) return new raw.fmt.FBlock(size, false, 16);
 
@@ -109,6 +123,22 @@ class RawTest {
 		eq(Raw.memcmp(b1, b2, b1.length) == 0, "Base58 Decode");
 	}
 
+	static function t_hash() {
+		function eq_sha1(s: String) {
+			var b = haxe.crypto.Sha1.make(haxe.io.Bytes.ofString(s));
+			var si = Raw.mallocFromString(s);
+			var so = new raw.fmt.FBlock(16, false, 8);
+			raw.fmt.Sha1.make(si, si.length, so);
+			var sb = Raw.mallocFromBytes(b);
+			eq(Raw.memcmp(sb, so, so.length) == 0, "sha1");
+			si.free();
+			so.free();
+			sb.free();
+		}
+		eq_sha1("hello world!");
+		eq_sha1("0123456789");
+		eq_sha1("明月几时有 把酒问青天");
+	}
 	static function t_malloc() {
 		function randAlloc() {
 			return Raw.malloc(Std.int(512 * Math.random()) + 16);
