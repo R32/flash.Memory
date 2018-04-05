@@ -216,7 +216,6 @@ class Struct {
 					exprs = [macro haxe.EnumTools.createByIndex($ex, Memory.getByte($i{context} + $v{offset})),
 						macro Memory.setByte($i{context} + $v{offset}, Type.enumIndex(v))
 					];
-
 				case TInst(s, _):
 					ts = Std.string(s);
 					if (ts == "String") {
@@ -228,6 +227,7 @@ class Struct {
 						];
 					}
 				default:
+					ts = haxe.macro.TypeTools.toString(t); // for error.
 				}
 
 				if (exprs == null) {

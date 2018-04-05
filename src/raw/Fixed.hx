@@ -125,10 +125,11 @@ class Fixed {
 		}
 		return n;
 	}
-
+	// How many bytes are needed to store the meta
+	static inline function meta_bytes(n) return (n >> 3);
+	// e.g: "[0][1][2][3] [4][5][6][7]" if ci = 6 then return 4.
+	static inline function meta_pos(ci) return ((ci >> 3) & 0xFFFC);
 	// ------ ChunkHelps ------
-	inline function meta_bytes(n) return (n >> 3);
-	inline function meta_pos(ci) return ((ci >> 3) & 0xFFFC);
 	inline function chunk_data_ptr(c: Chunk) return (c: Ptr) + Chunk.CAPACITY + meta_bytes(ct);
 	inline function chunk_piece_ptr(c: Chunk, ci: Int) return chunk_data_ptr(c) + ci * sz;
 	inline function chunk_rest(c: Chunk) return ct - c.caret + c.frags;
@@ -192,9 +193,10 @@ class Fixed {
 }
 
 /*
-0x00 ~ 0x04: Ptr to   next,
-0x04 ~ 0x06: uint16_t frags
-0x06 ~ 0x08: uint16_t caret
+Chunk-header:
+0x00 ~ 0x04: Ptr to   next : a pointer to the NEXT Chunk.
+0x04 ~ 0x06: uint16_t frags: how many fragments in the current chunk
+0x06 ~ 0x08: uint16_t caret: similar to the current index of the array
 
 capacity: 8
 */
@@ -215,10 +217,11 @@ extern abstract Chunk(Ptr) to Ptr {
 	inline function get_caret(): Int return Ptr.Memory.getUI16(this + 6);
 	inline function set_caret(v: Int): Int { Ptr.Memory.setI16(this + 6, v); return v; }
 
-	public var meta(get, never): Ptr;
+	public var meta(get, never): Ptr;    // a flexible field.
 	inline function get_meta(): Ptr return this + CAPACITY;
 
 	inline function new(count: Int, sizof: Int) {
+		// memory spaces: chunk_header(8) + byte_len(meta) + (sizeof(data) * count)
 		this = Raw.malloc(CAPACITY + (count >> 3) + count * sizof, false);
 		Raw.memset(this, 0, CAPACITY + (count >> 3)); // .next = 0, .frags = 0, .caret = 0;
 	}

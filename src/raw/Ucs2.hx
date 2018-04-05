@@ -2,7 +2,7 @@ package raw;
 
 import raw.Ptr;
 
-// for @idx: 2 = 2bytes and "&" means that this is an "array" not "pointer". see raw/Struct.hx#L167-L198
+// the "&" is means an "array" not "pointer(index of memory)".
 @idx(2, "&") abstract Ucs2(Ptr) to Ptr {
 
 	public inline function getString(max: Int): String {
@@ -47,14 +47,18 @@ import raw.Ptr;
 			out += 2;
 		});
 	#end
+	#if js
+		if (max > len) Raw.memset(out + len, 0, max - len); // fill 0
+	#else
 		if (max - len >= 2) Memory.setI16(out + len, 0);
+	#end
 		return len;
 	}
 
 	// read str from (ptr + size)
 	public static function tostr(ptr: Ptr, size: Int): String @:privateAccess {
 	#if (js && js_es >= 5)
-		return untyped __js__("String.fromCharCode.apply(null, {0})",
+		return js.Syntax.code("String.fromCharCode.apply(null, {0})",
 			new js.html.Int16Array(Raw.current.b.buffer.slice(ptr.toInt(), ptr.toInt() +  size))
 		);
 	#elseif js
@@ -64,7 +68,7 @@ import raw.Ptr;
 			a.set(i >> 1, ptr[i] | (ptr[i+1] << 8));
 			i += 2;
 		}
-		return untyped __js__("String.fromCharCode.apply(null, {0})", a);
+		return js.Syntax.code("String.fromCharCode.apply(null, {0})", a);
 	#elseif flash
 		Raw.current.b.position = ptr.toInt();
 		return Raw.current.b.readMultiByte(size, "unicode");
