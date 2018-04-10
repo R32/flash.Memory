@@ -100,35 +100,32 @@ class Fixed {
 		return '[chunk: $n, total: ${n * (Chunk.CAPACITY + ct + ct * sz)}B, used: ${n * ct - r}, rest: $r]';
 	}
 
-	function TRAILING_ONES(x) {
+	inline function TRAILING_ONES(x) {
 		// if (x == 0xFFFFFFFF) return 32;
-		x = ~x;
 		var n = 0;
-		if ((x & 0x0000FFFF) == 0) {
+		if ((x & 0xFFFF) == 0xFFFF) {
 			n += 16;
 			x >>= 16;
 		}
-		if ((x & 0x000000FF) == 0) {
+		if ((x & 0xFF) == 0xFF) {
 			n += 8;
 			x >>= 8;
 		}
-		if ((x & 0x0000000F) == 0) {
+		if ((x & 0xF) == 0xF) {
 			n += 4;
 			x >>= 4;
 		}
-		if ((x & 0x00000003) == 0) {
+		if ((x & 3) == 3) {
 			n += 2;
 			x >>= 2;
 		}
-		if ((x & 0x00000001) == 0) {
+		if ((x & 1) == 1) {
 			n += 1;
 		}
 		return n;
 	}
 	// How many bytes are needed to store the meta
 	static inline function meta_bytes(n) return (n >> 3);
-	// e.g: "[0][1][2][3] [4][5][6][7]" if ci = 6 then return 4.
-	static inline function meta_pos(ci) return ((ci >> 3) & 0xFFFC);
 	// ------ ChunkHelps ------
 	inline function chunk_data_ptr(c: Chunk) return (c: Ptr) + Chunk.CAPACITY + meta_bytes(ct);
 	inline function chunk_piece_ptr(c: Chunk, ci: Int) return chunk_data_ptr(c) + ci * sz;
@@ -137,17 +134,17 @@ class Fixed {
 		return 'SIZEOF: $sz, COUNT: $ct, frags: ${c.frags}, caret: ${c.caret}, rest: ${chunk_rest(c)}';
 	}
 
-	function in_using(p: Ptr, caret: Int, t: Bool) {
-		p = p + meta_pos(caret);
+	function USING_FLAG(p: Ptr, caret: Int, t: Bool) {
+		p = p + meta_bytes(caret);
 		if (t) {
-			Memory.setI32(p, (1 << (caret & 31)) | Memory.getI32(p));
+			Memory.setByte(p, (1 << (caret & 7)) | Memory.getByte(p));
 		} else {
-			Memory.setI32(p, (~(1 << (caret & 31))) & Memory.getI32(p));
+			Memory.setByte(p, (~(1 << (caret & 7))) & Memory.getByte(p));
 		}
 	}
 
 	function is_free(p: Ptr, caret: Int) {
-		return ((Memory.getI32(p + meta_pos(caret)) >> (caret & 31)) & 1) == 0;
+		return ((Memory.getByte(p + meta_bytes(caret)) >> (caret & 7)) & 1) == 0;
 	}
 
 	// make sure "c.caret < ct || c.frags > 0"
@@ -157,15 +154,15 @@ class Fixed {
 		var meta = c.meta;
 		if (cr < ct) {
 			ret = chunk_piece_ptr(c, cr);
-			in_using(meta, cr, true);
+			USING_FLAG(meta, cr, true);
 			c.caret = cr + 1;
 		} else {
-			var i = 0, value = 0, len = meta_pos(ct);
+			var i = 0, value = 0, len = meta_bytes(ct);
 			while (i < len) {
 				value = Memory.getI32(meta + i);
 				if (value != 0xFFFFFFFF) {
 					cr = (i << 3) + TRAILING_ONES(value);
-					in_using(meta, cr, true);
+					USING_FLAG(meta, cr, true);
 					c.frags = c.frags - 1;
 					ret = chunk_piece_ptr(c, cr);
 					break;
@@ -180,7 +177,7 @@ class Fixed {
 	function release(c: Chunk, cr: Int) {
 		var meta = c.meta;
 		if (is_free(meta, cr)) return;
-		in_using(meta, cr, false);
+		USING_FLAG(meta, cr, false);
 		var fg = c.frags + 1;
 		cr = c.caret - 1;
 		while (fg > 0 && is_free(meta, cr)) {
