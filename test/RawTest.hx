@@ -144,23 +144,17 @@ class RawTest {
 			return Raw.malloc(Std.int(512 * Math.random()) + 16);
 		}
 		var ap = [];
-
 		for (i in 0...512) ap.push(randAlloc());   // alloc 512
 		raw.Ut.shuffle(ap);
 
 		for (i in 0...256) Raw.free(ap.pop());     // free 256
-		//trace(raw.Malloc.toString());
 
 		for (i in 0...256) ap.push(randAlloc());   // alloc 256
 		raw.Ut.shuffle(ap);
 
 		for (i in 0...256) Raw.free(ap.pop());     // free 256
-		//trace(raw.Malloc.toString());
-
 		for (i in 0...256) Raw.free(ap.pop());     // free 256
-		//trace(raw.Malloc.toString());
-
-		eq(raw.Malloc.isEmpty(), "raw.Malloc");
+		eq(raw.Malloc.isEmpty() && raw.Malloc.frag_count == 0 && raw.Malloc.length == 0, "raw.Malloc");
 	}
 
 	static function t_fixed() @:privateAccess {
