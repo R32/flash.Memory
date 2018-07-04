@@ -1,7 +1,6 @@
 @echo off
 cd bin
-node test.js
-hl test.hl
-::neko test.n
-start test.swf
+hl mtest.hl
+node mtest.js
+start mtest.swf
 pause
