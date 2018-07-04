@@ -1,6 +1,7 @@
 package;
 
 import mem.Ptr;
+import mem.Utf8;
 
 class MemTest {
 	static inline function platform() {
@@ -19,7 +20,19 @@ class MemTest {
 	}
 
 	static function test_utf8() {
-		mem.Utf8.length(cast 0, 0);
+		var s = "你好, 中文和abc𨰻"; // 12
+		var b = haxe.io.Bytes.ofString(s);
+		var len = b.length;
+		var p1: Ptr = Ptr.ofInt(0);
+		var p2: Ptr = p1 + len;
+		Mem.writeBytes(p1, len, b);
+		var wlen = mem.Utf8.length(p1, len);
+		eq(wlen == 12);
+		eq(mem.Utf8.toUcs2(p2, p1, len) == wlen);
+		eq(mem.Utf8.ofUcs2(Ptr.NUL, p2, wlen << 1) == len);
+		var p3: Ptr = p2 + (wlen << 1);
+		eq(mem.Utf8.ofUcs2(p3, p2, wlen << 1) == len);
+		eq(Mem.memcmp(p1, p3, len) == 0);
 	}
 
 	static function test_mem() {
@@ -90,6 +103,7 @@ class MemTest {
 	static function main() {
 		Mem.init();
 		test_mem();
+		test_utf8();
 		test_too_many_local_var();
 		trace(platform() + " done!");
 	}
