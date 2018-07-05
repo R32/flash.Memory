@@ -68,10 +68,9 @@ class Alloc {
 
 	static public function req(size: Int, z: Bool, pad: Int): Ptr {
 		pad = pad <= LB ? LB : Ut.nextPow(pad);
-		size = Ut.align(size, pad);
-		var bsize = Header.CAPACITY + size;
+		var bsize = Header.CAPACITY + Ut.align(size, pad) ;
 
-		var h: Header = cast Ptr.NUL; // TODO: Get the block from "fragments". see "abstract Frag"
+		var h: Header = frags > 16 ? fromFrags(bsize) : cast Ptr.NUL;
 
 		if (h == Ptr.NUL) {
 			var addr: Int = used();
@@ -84,6 +83,20 @@ class Alloc {
 			-- frags;
 		}
 		return h.entry;
+	}
+
+	// TODO: Temporary method, later should use "abstract Frag(Ptr){}" instead of it
+	static function fromFrags(bsize: Int): Header {
+		var ct = frags;
+		var h = first;
+		while (ct > 0 && h != last) {
+			if (h.is_free) {
+				if (bsize <= h.size) return h;
+				-- ct;
+			}
+			h = h.next();
+		}
+		return cast Ptr.NUL;
 	}
 
 	static function hd(entry: Ptr): Header {
@@ -169,9 +182,9 @@ class Alloc {
 	static inline var ADDR_START = 32;
 }
 
-
-
 /**
+ hasn't been used yet.
+
  Double linked list(Weird) for fragments
     ┌─prev──────────────────────────────────────┐
  ┌──┴───┐       ┌──────┐       ┌──────┐       ┌──────┐
@@ -204,8 +217,6 @@ class Alloc {
 
 	inline function alone() next = cast this;
 	inline function isAlone() return next == cast this;
-
-	static var fixed: mem.Fixed;
 
 	static var head:Frag = cast Ptr.NUL;
 
