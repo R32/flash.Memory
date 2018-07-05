@@ -1,73 +1,121 @@
 package;
 
+import mem.Ut;
 import mem.Ptr;
 import mem.Utf8;
+import mem.Alloc;
+import mem.Fixed;
+
 
 class MemTest {
-	static inline function platform() {
-		return
-		#if flash
-		"flash";
-		#elseif hl
-		"hashlink";
-		#elseif js
-		"js";
-		#elseif hxcpp
-		"hxcpp"
-		#else
-		"others";
-		#end
+
+	static function t_alloc() @:privateAccess {
+		function rand() return Mem.malloc(Std.int(512 * Math.random()) + 16);
+
+		var ap = [];
+		for (i in 0...512) ap.push(rand());    // alloc 512
+		shuffle(ap);
+		__eq(Alloc.length == 512 && Alloc.frags == 0);
+
+		for (i in 0...256) Mem.free(ap.pop()); // free 256
+		__eq(Alloc.length - Alloc.frags == 256);
+
+		for (i in 0...256) ap.push(rand());    // alloc 256
+		shuffle(ap);
+
+		for (i in 0...256) Mem.free(ap.pop()); // free 256
+		__eq(Alloc.length - Alloc.frags == 256);
+		__eq(Alloc.simpleCheck());
+
+		for (i in 0...256) Mem.free(ap.pop()); // free 256
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
-	static function test_utf8() {
-		var s = "你好, 中文和abc𨰻"; // 12
+	static function t_fixed() {
+		var fx = new Fixed(16, 10);
+		__eq(Alloc.length == 0); // not yet alloc chunk
+
+		var ap = [];
+		for (i in 0...480) ap.push(fx.malloc());
+		var chunks = Math.ceil(480 / (32 * 10));
+		__eq(Alloc.length == chunks);
+		shuffle(ap);
+
+		for (i in 0...240) fx.free(ap.pop());
+		shuffle(ap);
+		for (i in 0...240) ap.push(fx.malloc());
+		__eq(Alloc.length == chunks);
+		for (i in 0...480) fx.free(ap.pop());
+		@:privateAccess {
+			__eq(fx.h.caret == 0 && fx.h.frags == 0); // first chunk
+			__eq(fx.q.caret == 0 && fx.q.frags == 0); // last  chunk
+			fx.destory();
+			__eq((fx.h == cast Ptr.NUL) && (fx.q == cast Ptr.NUL));
+		}
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
+	}
+
+	static function t_utf8() {
+		var s = "万般皆下品, 𨰻"; // 9
 		var b = haxe.io.Bytes.ofString(s);
 		var len = b.length;
-		var p1: Ptr = Ptr.ofInt(0);
-		var p2: Ptr = p1 + len;
+		var p1: Ptr = Mem.malloc(len);
+		var p3: Ptr = Mem.malloc(len);
 		Mem.writeBytes(p1, len, b);
+
 		var wlen = mem.Utf8.length(p1, len);
-		eq(wlen == 12);
-		eq(mem.Utf8.toUcs2(p2, p1, len) == wlen);
-		eq(mem.Utf8.ofUcs2(Ptr.NUL, p2, wlen << 1) == len);
-		var p3: Ptr = p2 + (wlen << 1);
-		eq(mem.Utf8.ofUcs2(p3, p2, wlen << 1) == len);
-		eq(Mem.memcmp(p1, p3, len) == 0);
+		__eq(wlen == 9);
+		var p2: Ptr = Mem.malloc(wlen << 1);
+		__eq(mem.Utf8.toUcs2(p2, p1, len) == wlen);
+		__eq(mem.Utf8.ofUcs2(Ptr.NUL, p2, wlen << 1) == len);
+
+		__eq(mem.Utf8.ofUcs2(p3, p2, wlen << 1) == len);
+		__eq(Mem.memcmp(p1, p3, len) == 0);
+		Mem.free(p1);
+		Mem.free(p2);
+		Mem.free(p3);
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
-	static function test_mem() {
+	static function t_mem() {
 		// read/writeBytes
 		var b = haxe.io.Bytes.ofString("hello world! (e=mc^2)");
 		var len = b.length;
-		var p1: Ptr = Ptr.ofInt(0);
+		var p1 = Mem.malloc(len);
 		Mem.writeBytes(p1, len, b);
 
 		var out = Mem.readBytes(p1, len);
-		eq(b.compare(out) == 0);
+		__eq(b.compare(out) == 0);
 
 		// memcpy, memset, memcmp
-		var p2: Ptr = p1 + 128;
+		var p23 = Mem.malloc(128);
+		var p2 = p23 + 64; // center
 		Mem.memcpy(p2, p1, len);
 		var out = Mem.readBytes(p2, len);
-		eq(b.compare(out) == 0 && Mem.memcmp(p1, p2, len) == 0);
+		__eq(b.compare(out) == 0 && Mem.memcmp(p1, p2, len) == 0);
 		// memcpy(p2 - 1, p2)
-		var p3: Ptr = p2 - 1;
+		var p3 = p2 - 1;
 		Mem.memcpy(p3, p2, len);
-		eq(Mem.memcmp(p1, p3, len) == 0);
+		__eq(Mem.memcmp(p1, p3, len) == 0);
 		// memcpy(p3 + 1, p3)
 		Mem.memcpy(p2, p3, len);
-		eq(Mem.memcmp(p1, p2, len) == 0);
+		__eq(Mem.memcmp(p1, p2, len) == 0);
 		// memcpy(p2, p2)
 		Mem.memcpy(p2, p2, len);
-		eq(Mem.memcmp(p1, p2, len) == 0);
+		__eq(Mem.memcmp(p1, p2, len) == 0);
 		// memset
 		var p3 = p2 + len;
 		Mem.memset(p2, "a".code, len); Mem.memset(p3, "z".code, len);
-		eq(Mem.memcmp(p2, p3, len) < 0 && Mem.memcmp(p3, p2, len) > 0);
+		__eq(Mem.memcmp(p2, p3, len) < 0 && Mem.memcmp(p3, p2, len) > 0);
+		Mem.free(p1);
+		Mem.free(p23);
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
-	static function test_too_many_local_var() {
-		var p: Ptr = Ptr.ofInt(0);
+	// haxe generated too many unnecessary temporary variables
+	static function too_many_local_var() {
+		inline function rand() return MemTest.rand(100);
+		var p = Mem.malloc(256);
 		var i = 0;
 		p[i++] = rand();
 		p[i++] = rand();
@@ -98,22 +146,60 @@ class MemTest {
 		f64[i++] = Math.random();
 		f64[i++] = Math.random();
 		f64[i++] = Math.random();
+		Mem.free(p);
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
+	static function t_utils() {
+		__eq(Ut.TRAILING_ONES(0x7FFFFFFF) == 31);
+		__eq(Ut.TRAILING_ONES(0xFFFFFFF7) ==  3);
+		__eq(Ut.TRAILING_ONES(0x00000000) ==  0);
+		__eq(Ut.TRAILING_ONES(0xFFF0FFFF) == 16);
+		__eq(Ut.TRAILING_ONES(0xFFFFFF0F) ==  4);
+		__eq(Ut.align(0, 8) == 8 && Ut.align(8, 8) == 8 && Ut.align(1, 8) == 8 && Ut.align(9, 8) == 16);
+	}
+	///////
+
+	static function __eq(b, ?pos: haxe.PosInfos) {
+		if (!b) throw "ERROR: " + pos.lineNumber;
+	}
+	static function rand(max: Int, start = 0) {
+		return Std.int(Math.random() * (max - start)) + start;
+	}
+	static function shuffle<T>(a: Array<T>, count = 1, start = 0) {
+		var len = a.length;
+		var r:Int, t:T;
+		for (j in 0...count) {
+			for (i in start...len) {
+				r = rand(len, start);	// 0 ~ (len -1 )
+				t = a[r];
+				a[r] = a[i];
+				a[i] = t;
+			}
+		}
+	}
+	static inline function platform() {
+		return
+		#if flash
+		"flash";
+		#elseif hl
+		"hashlink";
+		#elseif js
+		"js";
+		#elseif hxcpp
+		"hxcpp"
+		#else
+		"others";
+		#end
+	}
 	static function main() {
 		Mem.init();
-		test_mem();
-		test_utf8();
-		test_too_many_local_var();
+		t_utils();
+		t_alloc();
+		t_fixed();
+		t_mem();
+		t_utf8();
+		too_many_local_var();
 		trace(platform() + " done!");
-	}
-
-	static function rand() {
-		return Std.int(Math.random() * 100);
-	}
-
-
-	static function eq(b, ?pos: haxe.PosInfos) {
-		if (!b) throw "ERROR: " + pos.lineNumber;
 	}
 }

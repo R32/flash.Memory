@@ -114,5 +114,9 @@ class Mem {
 	#end
 	}
 
+	static public inline function malloc(size, clear = false): Ptr return mem.Alloc.req(size, clear, 8);
+
+	static public inline function free(p: Ptr) mem.Alloc.free(@:privateAccess mem.Alloc.hd(p));
+
 	static inline var LLB = 16 << 15; // 512K
 }
