@@ -6,7 +6,6 @@ import mem.Utf8;
 import mem.Alloc;
 import mem.Fixed;
 
-
 class MemTest {
 
 	static function t_alloc() @:privateAccess {
@@ -158,6 +157,13 @@ class MemTest {
 		__eq(Ut.TRAILING_ONES(0xFFFFFF0F) ==  4);
 		__eq(Ut.align(0, 8) == 8 && Ut.align(8, 8) == 8 && Ut.align(1, 8) == 8 && Ut.align(9, 8) == 16);
 	}
+
+	static function t_struct() {
+		// no idea.
+		__eq(Monkey.CAPACITY == 21);
+		__eq(FixedBlock.CAPACITY == 70);
+		__eq(FlexibleStruct.CAPACITY == 4 && FlexibleStruct.OFFSET_FIRST == -4);
+	}
 	///////
 
 	static function __eq(b, ?pos: haxe.PosInfos) {
@@ -197,9 +203,38 @@ class MemTest {
 		t_utils();
 		t_alloc();
 		t_fixed();
+		t_struct();
 		t_mem();
 		t_utf8();
 		too_many_local_var();
 		trace(platform() + " done!");
 	}
+}
+
+enum abstract Color(Int) {
+	var R = 1;
+	var G = 1 << 1;
+	var B = 1 << 2;
+}
+
+@:build(mem.Struct.auto()) abstract Monkey(Ptr) {
+	@idx(16) var name: String;  // 16bytes for name
+	@idx var color: Color;      // same as Int, default is 1 byte.
+	@idx var favor: Monkey;     // pointer to another
+}
+
+@:build(mem.Struct.auto()) abstract FlexibleStruct(Ptr) {
+	@idx(4, -4) var length: Int; // @idx(bytes, offset); offset(relative to this) of the first field is -4
+	@idx(0) var _b: AU8;         // Specify size by `new FlexibleStruct(size)` and the variable Type must be "array",
+}
+
+@:build(mem.Struct.auto({bulk: 1})) abstract FixedBlock(Ptr) {
+	@idx(1) var b: Bool;
+	@idx(1) var u8: Int;
+	@idx(2) var u16: Int;
+	@idx(4) var i32: Int;
+	@idx(4) var f32: Float;
+	@idx(8) var f64: Float;
+	@idx(10) var au8: AU8;   // count = 10, byte = 1, bytes = 10 * 1
+	@idx(10) var ai32: AI32; // count = 10, byte = 4, bytes = 10 * 4.
 }

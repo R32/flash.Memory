@@ -85,7 +85,7 @@ class Alloc {
 		return h.entry;
 	}
 
-	// TODO: Temporary method, later should use "abstract Frag(Ptr){}" instead of it
+	// TODO: Need to be ReImplemented, such as using a linked list to store the fragments.
 	static function fromFrags(bsize: Int): Header {
 		var ct = frags;
 		var h = first;
@@ -99,7 +99,7 @@ class Alloc {
 		return cast Ptr.NUL;
 	}
 
-	static function hd(entry: Ptr): Header {
+	static public function hd(entry: Ptr): Header {
 		if (entry.toInt() >= (ADDR_START + Header.CAPACITY)) {
 			var h: Header = new Header(entry - Header.CAPACITY);
 			if ( h == last || h == first ) return h;
@@ -180,100 +180,4 @@ class Alloc {
 
 	static inline var LB = 8;
 	static inline var ADDR_START = 32;
-}
-
-/**
- hasn't been used yet.
-
- Double linked list(Weird) for fragments
-    ┌─prev──────────────────────────────────────┐
- ┌──┴───┐       ┌──────┐       ┌──────┐       ┌──────┐
- │  FN  │<--prev┤  F3  │<--prev┤  F2  │<--prev┤  F1  │
- │ last ├next-->│      ├next-->│      ├next-->│ tail ├next == NULL
- └──────┘       └──────┘       └──────┘       └──────┘
-*/
-@:native("mem_frag") private abstract Frag(Ptr) {
-	static inline var CAPACITY = 12;
-	public var next(get, set): Frag;   // [0 - 3]
-	public var prev(get, set): Frag;   // [4 - 7]
-	public var data(get, set): Header; // [8 - 11]
-
-	inline function get_next():Frag return cast this.getI32();
-	inline function get_prev():Frag return cast (this + 4).getI32();
-	inline function get_data():Header return cast (this + 8).getI32();
-
-	inline function set_next(f):Frag {
-		this.setI32(cast f);
-		return f;
-	}
-	inline function set_prev(f):Frag {
-		(this + 4).setI32(cast f);
-		return f;
-	}
-	inline function set_data(h):Header {
-		(this + 8).setI32(cast h);
-		return h;
-	}
-
-	inline function alone() next = cast this;
-	inline function isAlone() return next == cast this;
-
-	static var head:Frag = cast Ptr.NUL;
-
-	static public inline function isEmpty(): Bool return head == cast Ptr.NUL;
-
-	static public function add(f: Frag) {
-		if (isEmpty()) {
-			f.next = cast Ptr.NUL;
-			f.prev = f;
-		} else {
-			f.next = head;
-			f.prev = head.prev;
-			head.prev = f;
-		}
-		head = f;
-	}
-
-	static public function push(f: Frag) { // add to tail
-		f.next = cast Ptr.NUL;
-		if (isEmpty()) {
-			f.prev = f;
-			head = f;
-		} else {
-			var tail = head.prev;
-			f.prev = tail;
-			tail.next = f;
-			head.prev = f;
-		}
-	}
-
-	static public function remove(f: Frag) {
-		if (isEmpty()) return;
-		if (f == head) {             // head
-			if (f == head.prev) {    // singular
-				head = cast Ptr.NUL;
-			} else {
-				head = f.next;
-				head.prev = f.prev;
-			}
-		} else if (f == head.prev) { // tail and f is not head
-			var prev = f.prev;
-			prev.next = cast Ptr.NUL;
-		} else if (!f.isAlone()) {
-			var prev = f.prev;
-			var next = f.next;
-			prev.next = next;
-			next.prev = prev;
-		}
-		f.alone();
-	}
-
-	static public function find(check: Frag->Bool): Frag {
-		var f = head;
-		while (f != cast Ptr.NUL) {
-			if (check(f)) break;
-			f = f.next;
-		}
-		return f;
-	}
 }

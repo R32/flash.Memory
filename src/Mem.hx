@@ -6,17 +6,19 @@ class Mem {
 
 	static var b: mem.RawData;
 	static var bmax: Int;
+	static var gsize: Int;
 
-	static public function init(size: Int = LLB) {
+	static public function init(init = LLB, grow = LLB) {
 		if (b != null) return;
-		bmax = size >= 1024 ? mem.Ut.align(size, 16): LLB;
+		gsize = grow;
+		bmax = init >= 1024 ? mem.Ut.align(init, 16): LLB;
 		b = make(bmax);
 		mem.Memory.select(b);
 	}
 
 	static public function grow(size: Int): Void {
 		if (size > bmax) {
-			size = mem.Ut.align(size, 16);
+			size = mem.Ut.align(size, gsize);
 		#if flash
 			b.length = size;
 		#else
@@ -116,7 +118,20 @@ class Mem {
 
 	static public inline function malloc(size, clear = false): Ptr return mem.Alloc.req(size, clear, 8);
 
-	static public inline function free(p: Ptr) mem.Alloc.free(@:privateAccess mem.Alloc.hd(p));
+	static public inline function free(ptr: Ptr) mem.Alloc.free(mem.Alloc.hd(ptr));
+
+	/**
+	 write string as utf8 in [dst ~ dst + max]
+	*/
+	public static function writeUtf8(dst: Ptr, max: Int, src: String): Int {
+		throw "later";
+		return 0;
+	}
+
+	public static function readUtf8(src: Ptr, len: Int): String {
+		throw "later";
+		return "";
+	}
 
 	static inline var LLB = 16 << 15; // 512K
 }
