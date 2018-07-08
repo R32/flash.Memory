@@ -120,17 +120,25 @@ class Mem {
 
 	static public inline function free(ptr: Ptr) mem.Alloc.free(mem.Alloc.hd(ptr));
 
-	/**
-	 write string as utf8 in [dst ~ dst + max]
-	*/
-	public static function writeUtf8(dst: Ptr, max: Int, src: String): Int {
-		throw "later";
-		return 0;
+	static public function mallocFromString(s: String): mem.s.UTF8String {
+		var ts = new mem.s.UTF8String(mem.Utf8.ofString(Ptr.NUL, 0, s));
+		mem.Utf8.ofString(ts, ts.length, s);
+		return ts;
 	}
-
-	public static function readUtf8(src: Ptr, len: Int): String {
-		throw "later";
-		return "";
+	static public function mallocFromBytes(b: haxe.io.Bytes): mem.s.Block {
+		var ret = new mem.s.Block(b.length);
+		Mem.writeBytes(ret, b.length, b);
+		return ret;
+	}
+	static public function mallocFromHex(hex: String): mem.s.Block {
+		var len = hex.length >> 1;
+		var b = new mem.s.Block(len);
+		var j: Int;
+		for (i in 0...len) {
+			j = i + i;
+			b[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1));
+		}
+		return b;
 	}
 
 	static inline var LLB = 16 << 15; // 512K

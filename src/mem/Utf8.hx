@@ -2,7 +2,7 @@ package mem;
 
 class Utf8 {
 	// return the number of UCS2 characters
-	public static function length(utf: Ptr, bytes: Int): Int {
+	static public function length(utf: Ptr, bytes: Int): Int {
 		var max = utf + bytes;
 		var len = 0;
 		while (utf < max) {
@@ -34,9 +34,9 @@ class Utf8 {
 	* @param out
 	* @param utf: Ptr of utf8
 	* @param bytes: BytesLength of utf8
-	* @return The number of UCS2 characters to "out", not including the eventual terminating null character.
+	* @return The number of UCS2(wchar_t) to "out", not including the eventual terminating null character.
 	*/
-	public static function toUcs2(out: Ptr, utf: Ptr, bytes: Int): Int {
+	static public function toUcs2(out: Ptr, utf: Ptr, bytes: Int): Int {
 		if (out == Ptr.NUL) {
 			return length(utf, bytes);
 		} else {
@@ -68,7 +68,7 @@ class Utf8 {
 					if ( c2 & c3 & c4 & 0x80 == 0 ) break;
 					c = ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | (c4 & 0x7F);
 					out.setI16((c >> 10) + 0xD7C0);
-					(out + 2).setI16((c & 0x3FF) | 0xDC00);
+					(out + 2).setI16((c & 0x3FF) + 0xDC00);
 					out += 4;
 					utf += 4;
 					continue;
@@ -81,15 +81,22 @@ class Utf8 {
 	}
 
 	/**
+	* example:
+	*   ```hx
+	*   var bytes = Utf8.ofUcs2(Ptr.NUL, ucs2_ptr, wchar_len);
+	*   var out = Mem.malloc(bytes + 1);
+	*   Utf8.ofUcs2(out, ucs2_ptr, wchar_len);
+	*   out[bytes] = 0;
+	*   ```
 	* @param out: Ptr of utf8 long enough to contain the resulting sequence (at most, max bytes).
 	* 		if out == Ptr.NUL then only count the number of bytes needed for the conversion
 	* @param ucs: Ptr of ucs2
-	* @param bytes: Bytes of ucs2, Must be an integer multiple of 2.
+	* @param wlen: length of wchar_t(ucs2)
 	* @return The number of bytes written to out, not including the eventual ending null-character.
 	*/
-	public static function ofUcs2(out: Ptr, ucs: Ptr, bytes: Int): Int {
-		var max = ucs + (bytes & 0xFFFFFE); // limit in 24bit
-		bytes = 0;
+	static public function ofUcs2(out: Ptr, ucs: Ptr, wlen: Int): Int {
+		var max = ucs + (wlen << 1);
+		var bytes = 0;
 		if (out == Ptr.NUL) {
 			while (ucs < max) {
 				var c = ucs.getUI16();
@@ -132,5 +139,96 @@ class Utf8 {
 			}
 		}
 		return bytes;
+	}
+
+	/**
+	* @param out: utf8 string will be written.
+	* @param max: Limit the number of bytes written to out
+	* @param src: haxe String.
+	* @return The number of bytes written to out, not including the eventual ending null-character.
+	*/
+	static public function ofString(out: Ptr, max: Int, src: String): Int {
+		inline function char(i):Int return StringTools.fastCodeAt(src, i);
+	#if (cpp || neko || eval || python || lua)
+		if (out == Ptr.NUL) return src.length;
+		var len = Ut.imin(max, src.length);
+		for (i in 0...len)
+			out[i] = char(i);
+		if (max > len) out[len] = 0;
+		return len;
+	#else
+		var i = 0;
+		var len = src.length;
+		var bytes = 0;
+		if (out == Ptr.NUL) { // ignore the max
+			while (i < len) {
+				var c = char(i++);
+				if (c < 0x80) {
+					++ bytes;
+				} else if (c < 0x800) {
+					bytes += 2;
+				} else if (c >= 0xD800 && c <= 0xDFFF) {
+					if (i == len) break;
+					++ i;
+					bytes += 4;
+				} else {
+					bytes += 3;
+				}
+			}
+		} else {
+			while (i < len && bytes < max) {
+				var c = char(i++);
+				if (c < 0x80) {
+					out[bytes++] = c;
+				} else if (c < 0x800) {
+					if (bytes + 1 == max) break;
+					out[bytes++] = (0xC0 | (c >> 6));
+					out[bytes++] = (0x80 | (c & 63));
+				} else if (c >= 0xD800 && c <= 0xDFFF) {
+					if (i == len || bytes + 3 >= max) break;
+					c = (((c - 0xD800) << 10) | (char(i) - 0xDC00)) + 0x10000;
+					out[bytes++] = (0xF0 | (c>>18));
+					out[bytes++] = (0x80 | ((c >> 12) & 63));
+					out[bytes++] = (0x80 | ((c >> 6) & 63));
+					out[bytes++] = (0x80 | (c & 63));
+				} else {
+					if (bytes + 2 >= max) break;
+					out[bytes++] = (0xE0 | (c >> 12));
+					out[bytes++] = (0x80 | ((c >> 6) & 63));
+					out[bytes++] = (0x80 | (c & 63));
+				}
+			}
+			if (max > bytes) out[bytes] = 0;
+		}
+		return bytes;
+	#end
+	}
+
+	/**
+	* @param src: utf8 ptr
+	* @param len: The number of bytes will be readding from src
+	* @return
+	*/
+	@:access(Mem.b) static public function getString(src: Ptr, len: Int): String {
+	#if hl
+		var b = new hl.Bytes(len + 1);
+		b.blit(0, Mem.b, src.toInt(), len);
+		b[len] = 0;
+		return @:privateAccess String.fromUTF8(b);
+	#elseif flash
+		Mem.b.position = src.toInt();
+		return Mem.b.readUTFBytes(len);
+	#else
+		#if !js
+		var i = 0;
+		var utf = src;
+		while (i < len) {
+			if (utf.getByte() == 0) break;
+			++ utf;
+		}
+		len = Ut.imin(len, utf - src);
+		#end
+		return Mem.b.getString(src.toInt(), len);
+	#end
 	}
 }

@@ -21,6 +21,7 @@ mem.Ptr          @idx(sizeof = 4, offset = 0):
 
 Bool:            @idx(sizeof = 1, offset = 0)
 String           @idx(bytes  = 1, offset = 0)
+UCString         @idx(count  = 1, offset = 0, sizeof = 2)
 Int: (1), 2, 4   @idx(sizeof = 1, offset = 0)
 Float: (4), 8    @idx(sizeof = 4, offset = 0)
 AU8              @idx(count  = 1, offset = 0) [bytesLength = count * sizeof(1)]
@@ -150,12 +151,21 @@ class Struct {
 							idx.sizeOf = 4;
 						}
 						exprs = [macro (this+$v{offset}).$sget(), macro (this+$v{offset}).$sset($setter_value)];
+
 					case "mem.Ptr":
 						unsafe_cast = true;
 						setter_value = expr_cast(setter_value, true);
 						idx.sizeOf = 4;
 						offset += idx.offset;
 						exprs = [macro (this+$v{offset}).getI32(), macro (this+$v{offset}).setI32($setter_value)];
+					case "mem.UCString":
+						idx.count = idx.sizeOf; // first param
+						idx.sizeOf = 2;
+						offset += idx.offset;
+						vt = macro :String;     // convert UCString to String.
+						exprs = [macro mem.Ucs2.getString(this + $v{offset}, $v{idx.bytes >> 1}),
+							macro mem.Ucs2.ofString(this + $v{offset}, $v{idx.bytes >> 1}, $setter_value)
+						];
 					default:
 						if (is_tptr(at.type)) {
 							unsafe_cast = true;
@@ -199,8 +209,8 @@ class Struct {
 						offset += idx.offset;
 						idx.count = idx.sizeOf;
 						idx.sizeOf = 1;
-						exprs = [macro Mem.readUtf8(this + $v{offset}, $v{idx.count}),
-							macro Mem.writeUtf8(this + $v{offset}, $v{idx.count}, v)
+						exprs = [macro mem.Utf8.getString(this + $v{offset}, $v{idx.count}),
+							macro mem.Utf8.ofString(this + $v{offset}, $v{idx.count}, v)
 						];
 					}
 				default:
@@ -290,7 +300,7 @@ class Struct {
 			alloc = macro $alloc.__f;
 			if (fixedmem.extra == null) fixedmem.extra = 0;
 			if (fixedmem.bulk < 1) fixedmem.bulk = 1;
-			var f_sz = Ut.align(fixedmem.extra + offset - offset_first, 8);
+			var f_sz = mem.Ut.align(fixedmem.extra + offset - offset_first, 8);
 			fields.push({
 			name : "__f",
 			access: [AStatic],

@@ -3,8 +3,10 @@ package;
 import mem.Ut;
 import mem.Ptr;
 import mem.Utf8;
+import mem.Ucs2;
 import mem.Alloc;
 import mem.Fixed;
+import mem.s.Block;
 
 class MemTest {
 
@@ -66,13 +68,26 @@ class MemTest {
 		__eq(wlen == 9);
 		var p2: Ptr = Mem.malloc(wlen << 1);
 		__eq(mem.Utf8.toUcs2(p2, p1, len) == wlen);
-		__eq(mem.Utf8.ofUcs2(Ptr.NUL, p2, wlen << 1) == len);
+		__eq(mem.Utf8.ofUcs2(Ptr.NUL, p2, wlen) == len);
 
-		__eq(mem.Utf8.ofUcs2(p3, p2, wlen << 1) == len);
+		__eq(mem.Utf8.ofUcs2(p3, p2, wlen) == len);
 		__eq(Mem.memcmp(p1, p3, len) == 0);
+
+		__eq(Utf8.ofString(Ptr.NUL, 0, s) == len);
+		__eq(Utf8.ofString(p3, len, s) == len);
+		__eq(Mem.memcmp(p1, p3, len) == 0);
+		__eq(Utf8.getString(p3, len) == s);
+
+		// ucs2
+		__eq(Ucs2.getString(p2, wlen) == s);
+		__eq(Ucs2.ofString(Ptr.NUL, wlen, s) == wlen);
+		var p4: Ptr = Mem.malloc(wlen << 1);
+		__eq(Ucs2.ofString(p4, wlen, s) == wlen);
+		__eq(Mem.memcmp(p2, p4, wlen << 1) == 0);
 		Mem.free(p1);
 		Mem.free(p2);
 		Mem.free(p3);
+		Mem.free(p4);
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
@@ -106,6 +121,15 @@ class MemTest {
 		var p3 = p2 + len;
 		Mem.memset(p2, "a".code, len); Mem.memset(p3, "z".code, len);
 		__eq(Mem.memcmp(p2, p3, len) < 0 && Mem.memcmp(p3, p2, len) > 0);
+
+		// UTF8String, Block
+		var name = "abc 与 中文字符";
+		var ts = Mem.mallocFromString(name);
+		__eq(ts.toString() == name);
+		ts.free();
+		var bk = Mem.mallocFromBytes(b);
+		__eq(Mem.memcmp(bk, p1, len) == 0 && len == bk.length);
+		bk.free();
 		Mem.free(p1);
 		Mem.free(p23);
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
@@ -160,9 +184,17 @@ class MemTest {
 
 	static function t_struct() {
 		// no idea.
-		__eq(Monkey.CAPACITY == 21);
+		__eq(Monkey.CAPACITY == 16 + 1 + 4 + 32);
 		__eq(FixedBlock.CAPACITY == 70);
 		__eq(FlexibleStruct.CAPACITY == 4 && FlexibleStruct.OFFSET_FIRST == -4);
+
+		// utf8, ucs2
+		var jojo = new Monkey();
+		var name = "乔乔";
+		jojo.name = name;
+		jojo.uname = name;
+		__eq(jojo.uname == name && jojo.name == name);
+		jojo.free();
 	}
 	///////
 
@@ -192,8 +224,10 @@ class MemTest {
 		"hashlink";
 		#elseif js
 		"js";
-		#elseif hxcpp
-		"hxcpp"
+		#elseif cpp
+		"hxcpp";
+		#elseif interp
+		"interp";
 		#else
 		"others";
 		#end
@@ -218,9 +252,10 @@ enum abstract Color(Int) {
 }
 
 @:build(mem.Struct.auto()) abstract Monkey(Ptr) {
-	@idx(16) var name: String;  // 16bytes for name
-	@idx var color: Color;      // same as Int, default is 1 byte.
-	@idx var favor: Monkey;     // pointer to another
+	@idx(16) var name: String;    // 16bytes for name
+	@idx var color: Color;        // same as Int, default is 1 byte.
+	@idx var favor: Monkey;       // pointer to another,     4 bytes
+	@idx(16) var uname: UCString; // (16 * 2) bytes, UCS2 String
 }
 
 @:build(mem.Struct.auto()) abstract FlexibleStruct(Ptr) {

@@ -44,26 +44,31 @@ extern abstract Ptr(Int) {
 //////////////
 
 @idx(1, "array") extern abstract AU8(Ptr) to Ptr {
-	@:arrayAccess inline function get(i:Int):Int return this[i];
-	@:arrayAccess inline function set(i:Int, v:Int):Void this[i] = v;
+	@:arrayAccess private inline function aget(i:Int):Int return this[i];
+	@:arrayAccess private inline function aset(i:Int, v:Int):Void this[i] = v;
 }
 
 @idx(2, "array") extern abstract AU16(Ptr) to Ptr {
-	@:arrayAccess inline function get(i:Int):Int return Memory.getUI16(this.toInt() + (i + i));
-	@:arrayAccess inline function set(i:Int, v:Int):Void Memory.setI16(this.toInt() + (i + i), v);
+	@:arrayAccess private inline function aget(i:Int):Int return Memory.getUI16(this.toInt() + (i + i));
+	@:arrayAccess private inline function aset(i:Int, v:Int):Void Memory.setI16(this.toInt() + (i + i), v);
 }
 
 @idx(4, "array") extern abstract AI32(Ptr) to Ptr {
-	@:arrayAccess inline function get(i:Int):Int return Memory.getI32(this.toInt() + (i << 2));
-	@:arrayAccess inline function set(i:Int, v:Int):Void Memory.setI32(this.toInt() + (i << 2), v);
+	@:arrayAccess private inline function aget(i:Int):Int return Memory.getI32(this.toInt() + (i << 2));
+	@:arrayAccess private inline function aset(i:Int, v:Int):Void Memory.setI32(this.toInt() + (i << 2), v);
 }
 
 @idx(4, "array") extern abstract AF4(Ptr) to Ptr {
-	@:arrayAccess inline function get(i:Int):Float return Memory.getFloat(this.toInt() + (i << 2));
-	@:arrayAccess inline function set(i:Int, v:Float):Void Memory.setFloat(this.toInt() + (i << 2), v);
+	@:arrayAccess private inline function aget(i:Int):Float return Memory.getFloat(this.toInt() + (i << 2));
+	@:arrayAccess private inline function aset(i:Int, v:Float):Void Memory.setFloat(this.toInt() + (i << 2), v);
 }
 
 @idx(8, "array") extern abstract AF8(Ptr) to Ptr {
-	@:arrayAccess inline function get(i:Int):Float return Memory.getDouble(this.toInt() + (i << 3));
-	@:arrayAccess inline function set(i:Int, v:Float):Void Memory.setDouble(this.toInt() + (i << 3), v);
+	@:arrayAccess private inline function aget(i:Int):Float return Memory.getDouble(this.toInt() + (i << 3));
+	@:arrayAccess private inline function aset(i:Int, v:Float):Void Memory.setDouble(this.toInt() + (i << 3), v);
 }
+
+/**
+* UCS2 String. only works with `mem.Sturct.auto()` that will be automatically converted to a String
+*/
+extern abstract UCString(Ptr) {}

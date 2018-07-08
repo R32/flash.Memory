@@ -135,7 +135,7 @@ class Fixed {
 * should be used with Fixed.
 */
 @:allow(mem.Fixed)
-extern abstract Chunk(Ptr) to Ptr {
+private extern abstract Chunk(Ptr) to Ptr {
 	var next(get, set): Chunk;  // 4 bytes, for link with List
 	var frags(get, set): Int;   // 2 bytes, how many frags in current chunk
 	var caret(get, set): Int;   // 2 bytes,
