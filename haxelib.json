@@ -1,8 +1,8 @@
 {
-  "name": "raw",
+  "name": "mem",
   "url": "https://github.com/r32/flash-memory",
-  "license": "BSD",
-  "description": "A way to typedef struct like c language",
+  "license": "MIT",
+  "description": "",
   "releasenote": "See https://github.com/r32/flash-memory",
   "version": "0.1.0",
   "contributors": ["r32"],

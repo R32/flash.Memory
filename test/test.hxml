@@ -1,23 +1,21 @@
+-cp ../src
 -dce full
--lib raw
--main RawTest
+-main MemTest
 -D old-error-format
 -D analyzer-optimize
---each
 
+--each
 -swf-header 800:500:24:000000
 --flash-strict
 -swf-version 10.3
--swf bin/test.swf
+-swf bin/mtest.swf
 
 --next
--hl bin/test.hl
+-hl bin/mtest.hl
 
 --next
--js bin/test.js
+--macro exclude('js.html.compat')
+-js bin/mtest.js
 
-#--next
-#-neko bin/test.n
-
-#--next
-#-cpp bin/cpp
+--next
+--interp

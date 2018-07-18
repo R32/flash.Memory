@@ -1,35 +1,31 @@
-package raw._macros;
+package mem._macros;
 
 import haxe.macro.Expr;
 
 class IDXParams {
 
-	public var extra  : String;
 	public var sizeOf : Int;
 	public var offset : Int;
 	public var count  : Int;
-
+	public var extra  : String;
 	public var bytes(get, never): Int;
 	inline function get_bytes():Int return sizeOf * count;
 
-	public var argc (default, null): Int;  // does not include "extra" field
+	public var argc (default, null): Int;  // do not include "extra" field
 
-	public function new(a = 1, b = 0, c = 1, d = null) {
-		sizeOf = a;
-		offset = b;
-		count  = c;
-		extra  = d;
-		argc   = 0;
+	public function new() {
+		reset();
 	}
 
-	public inline function isArray():Bool return extra == "&";
-	public inline function unSupported():Bool return extra == "no";
+	static var reserve = ["array", "no"];
+	public inline function isArray():Bool return extra == reserve[0];
+	public inline function unSupported():Bool return extra == reserve[1];
 
 	function set(order: Int, value: Int) {
 		switch (order) {
 		case 0: sizeOf = value;
 		case 1: offset = value;
-		//case 2: count  = value;
+		case 2: count  = value;
 		default: throw haxe.io.Error.OutsideBounds;
 		}
 	}
@@ -38,12 +34,12 @@ class IDXParams {
 		return switch (order) {
 		case 0: sizeOf;
 		case 1: offset;
-		//case 2: count;
+		case 2: count;
 		default: throw haxe.io.Error.OutsideBounds;
 		}
 	}
 
-	public function clear() {
+	public function reset() {
 		sizeOf = 1;
 		offset = 0;
 		count  = 1;
@@ -60,6 +56,7 @@ class IDXParams {
 			case EConst(c):
 				switch (c) {
 				case CString(s) | CIdent(s):
+					if (reserve.indexOf(s) == -1) throw "UnSupported " + s;
 					extra = s;
 					++skip;
 				case CInt(n) | CFloat(n):
