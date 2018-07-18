@@ -69,6 +69,9 @@ class Struct {
 			default:
 				Context.error("UnSupported Type", cls.pos);
 		}
+		if (TypeTools.toString(abst.type) != "mem.Ptr")
+			Context.error("UnSupported underlying type of the abstract", cls.pos);
+
 		var alloc = macro $i{ alloc_s };
 		var ct_ptr = macro :mem.Ptr;
 		var ct_int = macro :Int;
@@ -77,7 +80,7 @@ class Struct {
 		var fields:Array<Field> = Context.getBuildFields();
 		var offset_first = 0;
 		var offset = 0;
-		var flexible = false;
+		var flexible = false; // flexible struct
 		var idx = new IDXParams();
 		var all_fields = new haxe.ds.StringMap<Bool>();
 
@@ -231,9 +234,11 @@ class Struct {
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
 					var setter_name = "set_" + f.name;
+					// overwrite
 					f.kind = FProp("get", (setter == null ? "never" : "set"), vt, null);
-					if (f.access.length == 0 && f.name.charCodeAt(0) != "_".code)
-						f.access = [APublic];
+					if (f.access.length == 0) {
+						f.access = f.name.charCodeAt(0) == "_".code ? [APrivate] : [APublic];
+					}
 					if (!all_fields.exists(getter_name))
 						fields.push({
 							name : getter_name,

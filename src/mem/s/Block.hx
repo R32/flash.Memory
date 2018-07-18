@@ -10,11 +10,13 @@ import mem.Ptr;
 
 	inline function toBytes():haxe.io.Bytes return Mem.readBytes(this, length);
 
-	inline function new(size: Int) {
-		this = mem.Alloc.req(size, false, 16) - OFFSET_FIRST;
+	inline function new(size: Int, zero: Bool, pad: Int) {
+		this = mem.Alloc.req(size, zero, pad) - OFFSET_FIRST;
 		_len = size;
 	}
 
 	@:arrayAccess inline function aget(i: Int):Int return (this + i).getByte();
 	@:arrayAccess inline function aset(i: Int, v:Int):Void (this + i).setByte(v);
+
+	static inline function alloc(size: Int):Block return new Block(size, false, 16);
 }

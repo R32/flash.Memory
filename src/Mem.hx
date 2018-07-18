@@ -126,13 +126,13 @@ class Mem {
 		return ts;
 	}
 	static public function mallocFromBytes(b: haxe.io.Bytes): mem.s.Block {
-		var ret = new mem.s.Block(b.length);
+		var ret = mem.s.Block.alloc(b.length);
 		Mem.writeBytes(ret, b.length, b);
 		return ret;
 	}
 	static public function mallocFromHex(hex: String): mem.s.Block {
 		var len = hex.length >> 1;
-		var b = new mem.s.Block(len);
+		var b = mem.s.Block.alloc(len);
 		var j: Int;
 		for (i in 0...len) {
 			j = i + i;
