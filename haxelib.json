@@ -1,0 +1,10 @@
+{
+  "name": "mem",
+  "url": "https://github.com/r32/flash-memory",
+  "license": "MIT",
+  "description": "",
+  "releasenote": "See https://github.com/r32/flash-memory",
+  "version": "0.1.0",
+  "contributors": ["r32"],
+  "classPath": "src"
+}
