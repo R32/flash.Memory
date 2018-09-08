@@ -53,7 +53,7 @@ class Ucs2 {
 	* @return number of wchar_t(UCS2) written to out, not including the eventual ending null-character.
 	*/
 	static public function ofString(out: Ptr, wlen: Int, src: String): Int @:privateAccess {
-	#if (cpp || neko || eval || python || lua)
+	#if !utf16
 		inline function char(i) return StringTools.fastCodeAt(src, i);
 		var bytes = src.length;
 		var i = 0;

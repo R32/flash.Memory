@@ -149,7 +149,7 @@ class Utf8 {
 	*/
 	static public function ofString(out: Ptr, max: Int, src: String): Int {
 		inline function char(i):Int return StringTools.fastCodeAt(src, i);
-	#if (cpp || neko || eval || python || lua)
+	#if (!utf16)
 		if (out == Ptr.NUL) return src.length;
 		var len = Ut.imin(max, src.length);
 		for (i in 0...len)
