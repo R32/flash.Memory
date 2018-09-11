@@ -2,7 +2,7 @@ package mem.s;
 
 import mem.Ptr;
 
-@:build(mem.Struct.auto()) extern abstract UTF8String(Ptr) to Ptr {
+@:build(mem.Struct.build()) extern abstract UTF8String(Ptr) to Ptr {
 	@idx(4, -4) var _len: Int;
 
 	var length(get, never): Int;

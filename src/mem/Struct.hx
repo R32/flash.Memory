@@ -35,43 +35,36 @@ class Struct {
 #if macro
 	static inline var IDX = "idx";
 
-	static var def = new haxe.ds.StringMap<IDXParams>();
+	static var defs = new haxe.ds.StringMap<IDXParams>();
 
-	static function expr_cast(e: Expr, unsafe: Bool): Expr {
-		return unsafe ? { expr: ECast(e, null), pos: e.pos } : e;
-	}
+	static function exprCast(e: Expr, unsafe = true): Expr return unsafe ? { expr: ECast(e, null), pos: e.pos } : e;
 
-	static function is_tptr(t: Type): Bool {
-		return
-		if (TypeTools.toString(t) == "mem.Ptr")
+	static function toFull(pack, name) return pack.length == 0 ? name : pack.join(".") + "." + name;
+
+	static function isPtrType(t: Type) {
+		return if (TypeTools.toString(t) == "mem.Ptr") {
 			true;
-		else
+		} else {
 			switch(t) {
-			case TAbstract(a, _): is_tptr(a.get().type);
+			case TAbstract(a, _): isPtrType(a.get().type);
 			default: false;
 			}
+		}
 	}
 
-	static function to_full(pack, name) {
-		return pack.length == 0 ? name : pack.join(".") + "." + name;
-	}
-
-	static public function auto(?fixedmem: {bulk: Int, ?extra: Int}) {
+	static public function build(?fixedmem: {bulk: Int, ?extra: Int}) {
 		var alloc_s = "Mem";
 		var cls:ClassType = Context.getLocalClass().get();
 		var abst = switch (cls.kind) {
-			case KAbstractImpl(_.get() => t):
+			case KAbstractImpl(_.get() => t) if ( isPtrType(t.type) ):
 				if (fixedmem != null) {
-					alloc_s = to_full(t.pack, t.name);
+					alloc_s = toFull(t.pack, t.name);
 					if (cls.isExtern) Context.error("No \"extern\" if fixedmem", cls.pos);
 				}
 				t;
 			default:
 				Context.error("UnSupported Type", cls.pos);
 		}
-		if (TypeTools.toString(abst.type) != "mem.Ptr")
-			Context.error("UnSupported underlying type of the abstract", cls.pos);
-
 		var alloc = macro $i{ alloc_s };
 		var ct_ptr = macro :mem.Ptr;
 		var ct_int = macro :Int;
@@ -110,11 +103,10 @@ class Struct {
 			var unsafe_cast = false;
 			switch (f.kind) {
 			case FVar(vt = TPath(path), _):
-				var t = Context.getType(to_full(path.pack, path.name));
+				var t = Context.getType(toFull(path.pack, path.name));
 				var ts = "";
 				var exprs: Array<Expr> = null;
-				var setter_value: Expr = macro v;
-				setter_value.pos = f.pos;
+				var setter_value: Expr = macro @:pos(f.pos) v;
 				switch (t) {
 				case TAbstract(a, _):
 					var at = a.get();
@@ -124,7 +116,7 @@ class Struct {
 							var sas = sa.toString();
 							if (sas == "Int" || sas == "Float") {
 								unsafe_cast = true;
-								setter_value = expr_cast(setter_value, true);
+								setter_value = exprCast(setter_value);
 								a = sa;
 							}
 						case _:
@@ -157,7 +149,7 @@ class Struct {
 
 					case "mem.Ptr":
 						unsafe_cast = true;
-						setter_value = expr_cast(setter_value, true);
+						setter_value = exprCast(setter_value);
 						idx.sizeOf = 4;
 						offset += idx.offset;
 						exprs = [macro (this+$v{offset}).getI32(), macro (this+$v{offset}).setI32($setter_value)];
@@ -170,15 +162,15 @@ class Struct {
 							macro mem.Ucs2.ofString(this + $v{offset}, $v{idx.bytes >> 1}, $setter_value)
 						];
 					default:
-						if (is_tptr(at.type)) {
+						if ( isPtrType(at.type) ) {
 							unsafe_cast = true;
-							setter_value = expr_cast(setter_value, true);
+							setter_value = exprCast(setter_value);
 							if (at.meta.has(IDX)) {              // parse meta from the class define, see: [AU8, AU16, AI32]
-								var FORCE = def.get(ts);
+								var FORCE = defs.get(ts);
 								if (FORCE == null) {
 									FORCE = new IDXParams();
 									FORCE.parse(at.meta.extract(IDX)[0]);
-									def.set(ts, FORCE);
+									defs.set(ts, FORCE);
 								}
 								if (FORCE.unSupported()) Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 								if (FORCE.isArray()) {           // force override
@@ -188,7 +180,7 @@ class Struct {
 								}
 							}
 							if (idx.isArray()) {                 // Struct Block
-								if (ts == to_full(abst.pack, abst.name)) Context.error("Nested error", f.pos);
+								if (ts == toFull(abst.pack, abst.name)) Context.error("Nested error", f.pos);
 								if (idx.count == 0) {
 									if (f == fds[fds.length - 1]) {
 										flexible = true;
@@ -230,7 +222,7 @@ class Struct {
 					} else if (offset < offset_first) {
 						Context.error("offset is out of range", f.pos);
 					}
-					var getter = expr_cast(exprs[0], unsafe_cast);
+					var getter = exprCast(exprs[0], unsafe_cast);
 					var setter = exprs[1];
 					var getter_name = "get_" + f.name;
 					var setter_name = "set_" + f.name;

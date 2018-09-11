@@ -251,17 +251,17 @@ enum abstract Color(Int) {
 	var B = 1 << 2;
 }
 
-@:build(mem.Struct.auto()) abstract Monkey(Ptr) {
+@:build(mem.Struct.build()) abstract Monkey(Ptr) {
 	@idx(16) var name: String;    // 16bytes for name
 	@idx var color: Color;        // same as Int, default is 1 byte.
 	@idx var favor: Monkey;       // pointer to another,     4 bytes
 	@idx(16) var uname: UCString; // (16 * 2) bytes, UCS2 String
 }
-@:build(mem.Struct.auto()) abstract FlexibleStruct(Ptr) {
+@:build(mem.Struct.build()) abstract FlexibleStruct(Ptr) {
 	@idx(4, -4) var length: Int; // @idx(bytes, offset); offset(relative to this) of the first field is -4
 	@idx(0) var _b: AU8;         // Specify size by `new FlexibleStruct(size)` and the variable Type must be "array",
 }
-@:build(mem.Struct.auto({bulk: 1})) abstract FixedBlock(Ptr) {
+@:build(mem.Struct.build({bulk: 1})) abstract FixedBlock(Ptr) {
 	@idx(1) var b: Bool;
 	@idx(1) var u8: Int;
 	@idx(2) var u16: Int;
