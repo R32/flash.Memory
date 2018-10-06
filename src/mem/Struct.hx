@@ -59,11 +59,11 @@ class Struct {
 			case KAbstractImpl(_.get() => t) if ( isPtrType(t.type) ):
 				if (fixedmem != null) {
 					alloc_s = toFull(t.pack, t.name);
-					if (cls.isExtern) Context.error("No \"extern\" if fixedmem", cls.pos);
+					if (cls.isExtern) Context.fatalError("No \"extern\" if fixedmem", cls.pos);
 				}
 				t;
 			default:
-				Context.error("UnSupported Type", cls.pos);
+				Context.fatalError("UnSupported Type", cls.pos);
 		}
 		var alloc = macro $i{ alloc_s };
 		var ct_ptr = macro :mem.Ptr;
@@ -83,7 +83,7 @@ class Struct {
 			case FVar(_, _) if (f.meta != null):
 				for (meta in f.meta) {
 					if (meta.name == IDX) {
-						if (f.access.indexOf(AStatic) > -1) Context.error("doesn't support static properties", f.pos);
+						if (f.access.indexOf(AStatic) > -1) Context.fatalError("doesn't support static properties", f.pos);
 						return true;
 					}
 				}
@@ -172,7 +172,7 @@ class Struct {
 									FORCE.parse(at.meta.extract(IDX)[0]);
 									defs.set(ts, FORCE);
 								}
-								if (FORCE.unSupported()) Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+								if (FORCE.unSupported()) Context.fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 								if (FORCE.isArray()) {           // force override
 									idx.count  = idx.sizeOf;     // first argument is "count";
 									idx.sizeOf = FORCE.sizeOf;
@@ -180,19 +180,19 @@ class Struct {
 								}
 							}
 							if (idx.isArray()) {                 // Struct Block
-								if (ts == toFull(abst.pack, abst.name)) Context.error("Nested error", f.pos);
+								if (ts == toFull(abst.pack, abst.name)) Context.fatalError("Nested error", f.pos);
 								if (idx.count == 0) {
 									if (f == fds[fds.length - 1]) {
 										flexible = true;
 									} else {
-										Context.error("the flexible array member is supports only for the final field.", f.pos);
+										Context.fatalError("the flexible array member is supports only for the final field.", f.pos);
 									}
 								}
 								offset += idx.offset;
 								exprs = [(macro (this + $v{offset})), null];
 							} else {                             // Point to Struct
 								if (idx.argc == 0) idx.sizeOf = 4;
-								if (idx.sizeOf != 4) Context.error("first argument of @idx must be empty or 4.", f.pos);
+								if (idx.sizeOf != 4) Context.fatalError("first argument of @idx must be empty or 4.", f.pos);
 								offset += idx.offset;
 								exprs = [macro (this+$v{offset}).getI32(), macro (this+$v{offset}).setI32($setter_value)];
 							}
@@ -213,14 +213,14 @@ class Struct {
 				}
 
 				if (exprs == null) {
-					Context.error("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+					Context.fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 				} else {
-					if (idx.bytes == 0 && flexible == false) Context.error("Something is wrong", f.pos);
+					if (idx.bytes == 0 && flexible == false) Context.fatalError("Something is wrong", f.pos);
 					if (f == fds[0]) {
-						if (offset > 0) Context.error("offset of the first field can only be <= 0",f.pos);
+						if (offset > 0) Context.fatalError("offset of the first field can only be <= 0",f.pos);
 						offset_first = offset;
 					} else if (offset < offset_first) {
-						Context.error("offset is out of range", f.pos);
+						Context.fatalError("offset is out of range", f.pos);
 					}
 					var getter = exprCast(exprs[0], unsafe_cast);
 					var setter = exprs[1];
