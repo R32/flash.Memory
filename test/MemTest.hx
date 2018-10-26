@@ -10,7 +10,8 @@ import mem.s.Block;
 
 class MemTest {
 
-	static function t_alloc() @:privateAccess {
+	@:access(mem)
+	static function t_alloc() {
 		function rand() return Mem.malloc(Std.int(512 * Math.random()) + 16);
 
 		var ap = [];
@@ -29,6 +30,14 @@ class MemTest {
 		__eq(Alloc.simpleCheck());
 
 		for (i in 0...256) Mem.free(ap.pop()); // free 256
+		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
+
+		// realloc
+		var x = Mem.malloc(128);
+		x[0] = 101;
+		x = Mem.realloc(x, 256);
+		__eq(x[0] == 101 && Alloc.hd(x).entrySize == 256);
+		Mem.free(x);
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 

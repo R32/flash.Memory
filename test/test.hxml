@@ -17,5 +17,5 @@
 --macro exclude('js.html.compat')
 -js bin/mtest.js
 
---next
---interp
+#--next
+#--interp

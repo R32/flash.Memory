@@ -99,7 +99,7 @@ class Alloc {
 		return cast Ptr.NUL;
 	}
 
-	static public function hd(entry: Ptr): Header {
+	static function hd(entry: Ptr): Header {
 		if (entry.toInt() >= (ADDR_START + Header.CAPACITY)) {
 			var h: Header = new Header(entry - Header.CAPACITY);
 			if ( h == last || h == first ) return h;
