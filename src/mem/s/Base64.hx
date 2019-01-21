@@ -69,9 +69,11 @@ class Base64 {
 	}
 
 	static public function destory() {
-		Mem.free(encoding_table);
-		encoding_table = Ptr.NUL;
-		decoding_table = Ptr.NUL;
+		if (encoding_table != Ptr.NUL) {
+			Mem.free(encoding_table);
+			encoding_table = Ptr.NUL;
+			decoding_table = Ptr.NUL;
+		}
 	}
 
 	static public function encode(data: Ptr, len: Int): Base64String {

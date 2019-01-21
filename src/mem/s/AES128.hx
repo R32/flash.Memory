@@ -79,8 +79,10 @@ class AES128 {
 	}
 
 	static public function destory() {
-		aes.free();
-		aes = cast Ptr.NUL;
+		if (aes != Ptr.NUL) {
+			aes.free();
+			aes = cast Ptr.NUL;
+		}
 	}
 
 	static public function ecbEncrypt(input: Ptr, key: Ptr, output: Ptr):Void {

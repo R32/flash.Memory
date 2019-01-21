@@ -19,8 +19,10 @@ class AES128Embed {
 	}
 
 	static public function destory() {
-		b.free();
-		b = cast Ptr.NUL;
+		if (b != Ptr.NUL) {
+			b.free();
+			b = cast Ptr.NUL;
+		}
 	}
 
 	public static inline function cbcEncryptBuff(input: Ptr, output: Ptr, length:Int, iv:Ptr): Void {

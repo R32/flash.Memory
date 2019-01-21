@@ -7,6 +7,7 @@ import mem.Ucs2;
 import mem.Alloc;
 import mem.Fixed;
 import mem.s.Block;
+import mem.s.Md5;
 import mem.s.Sha1;
 import mem.s.Base64;
 import mem.s.AES128;
@@ -146,6 +147,25 @@ class MemTest {
 		Mem.free(p1);
 		Mem.free(p23);
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
+	}
+
+	static function t_md5() {
+		function eq_md5(s: String) {
+			var b = haxe.crypto.Md5.make( haxe.io.Bytes.ofString(s) );
+			var ptrStr = Mem.mallocFromString(s);
+			var ptrBlk1 = new mem.s.Block(16, false, 8);
+			Md5.make(ptrStr, ptrStr.length, ptrBlk1);
+
+			var ptrBlk2 = Mem.mallocFromBytes(b);
+			__eq(Mem.memcmp(ptrBlk2, ptrBlk1, ptrBlk2.length) == 0);
+			ptrStr.free();
+			ptrBlk1.free();
+			ptrBlk2.free();
+		}
+		eq_md5("hello world!");
+		eq_md5("0123456789");
+		eq_md5("明月几时有 把酒问青天");
+		Md5.destory();
 	}
 
 	static function t_sha1(){
@@ -355,6 +375,7 @@ class MemTest {
 		t_struct();
 		t_mem();
 		t_utf8();
+		t_md5();
 		t_sha1();
 		t_base64();
 		t_aes128();

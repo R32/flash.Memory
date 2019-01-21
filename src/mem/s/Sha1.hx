@@ -48,8 +48,10 @@ class Sha1{
 	}
 
 	static public function destory() {
-		sa.free();
-		sa = cast Ptr.NUL;
+		if (sa != Ptr.NUL) {
+			sa.free();
+			sa = cast Ptr.NUL;
+		}
 	}
 
 	public static function make(input: Ptr, ilen:Int, output: Ptr):Void {
