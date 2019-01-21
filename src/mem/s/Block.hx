@@ -11,7 +11,7 @@ import mem.Ptr;
 	inline function toBytes():haxe.io.Bytes return Mem.readBytes(this, length);
 
 	inline function new(size: Int, zero: Bool, pad: Int) {
-		this = mem.Alloc.req(size, zero, pad) - OFFSET_FIRST;
+		this = mem.Alloc.req(size + CAPACITY, zero, pad) - OFFSET_FIRST;
 		_len = size;
 	}
 
