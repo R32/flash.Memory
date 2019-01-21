@@ -7,6 +7,10 @@ import mem.Ucs2;
 import mem.Alloc;
 import mem.Fixed;
 import mem.s.Block;
+import mem.s.Sha1;
+import mem.s.Base64;
+import mem.s.AES128;
+import mem.s.AES128Embed;
 
 class MemTest {
 
@@ -144,6 +148,108 @@ class MemTest {
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
+	static function t_sha1(){
+		function eq_sha1(s: String) {
+			var b = haxe.crypto.Sha1.make( haxe.io.Bytes.ofString(s) );
+			var ptrStr = Mem.mallocFromString(s);
+			var ptrBlk1 = new mem.s.Block(20, false, 8);
+			Sha1.make(ptrStr, ptrStr.length, ptrBlk1);
+			var ptrBlk2 = Mem.mallocFromBytes(b);
+			__eq(Mem.memcmp(ptrBlk2, ptrBlk1, ptrBlk2.length) == 0);
+			ptrStr.free();
+			ptrBlk1.free();
+			ptrBlk2.free();
+		}
+		eq_sha1("hello world!");
+		eq_sha1("0123456789");
+		eq_sha1("明月几时有 把酒问青天");
+		Sha1.destory();
+	}
+
+	static function t_base64() {
+		var str = "hi 为什么这样子";
+		var ptrStr = Mem.mallocFromString(str);
+		var ptrB64 = Base64.encode(ptrStr, ptrStr.length);
+		__eq( ptrB64.toString() == haxe.crypto.Base64.encode(haxe.io.Bytes.ofString(str)) );
+		var ptrBlk = Base64.decode(ptrB64, ptrB64.length);
+		__eq( Mem.memcmp(ptrStr, ptrBlk, ptrStr.length) == 0 );
+		ptrStr.free();
+		ptrBlk.free();
+		ptrB64.free();
+		Base64.destory();
+	}
+
+	static function t_aes128(){
+
+
+		var text = [
+			"6bc1bee22e409f96e93d7e117393172a",
+			"ae2d8a571e03ac9c9eb76fac45af8e51",
+			"30c81c46a35ce411e5fbc1191a0a52ef",
+			"f69f2445df4f9b17ad2b417be66c3710"
+		];
+		var cipher = [
+			"3ad77bb40d7a3660a89ecaf32466ef97",
+			"f5d3d58503b9699de785895a96fdbaaf",
+			"43b1cd7f598ece23881b00e3ed030688",
+			"7b0c785e27e8ad3f8223207104725dd4"
+		];
+		inline function BLK16(size) return new mem.s.Block(size, false, 16);
+		var ptrKey = Mem.mallocFromHex("2b7e151628aed2a6abf7158809cf4f3c");
+		for (i in 0...text.length) {
+			var ptrInput = Mem.mallocFromHex(text[i]);
+			var ptrResult = Mem.mallocFromHex(cipher[i]);
+			var ptrOutput = BLK16(ptrInput.length);
+
+			AES128.ecbEncrypt(ptrInput, ptrKey, ptrOutput);
+			__eq(Mem.memcmp(ptrOutput, ptrResult, ptrOutput.length) == 0);
+
+			AES128.ecbDecrypt(ptrOutput, ptrKey, ptrOutput); // input == output
+			__eq(Mem.memcmp(ptrInput,  ptrOutput, ptrOutput.length) == 0);
+			ptrInput.free();
+			ptrOutput.free();
+			ptrResult.free();
+		}
+		var ptrInput = Mem.mallocFromHex(text.join(""));
+		var length = ptrInput.length;
+		var ptrOutput_1 = BLK16(length);
+		var ptrOutput_2 = BLK16(length);
+		var ptrOutput_x = BLK16(length);
+		var ptrOutput_y = BLK16(length);
+
+		// ptrOutput_1 to Ciphertext
+		AES128.cbcEncryptBuff(ptrInput, ptrKey, ptrOutput_1, length, Ptr.NUL);
+		// copy const KeyExpansion, the aes126Embed macro building used the same key
+		AES128Embed.init();
+		// ptrOutput_x to Ciphertext
+		AES128Embed.cbcEncryptBuff(ptrInput, ptrOutput_x, length, Ptr.NUL);
+
+		// ptrOutput_2 to clear text
+		AES128.cbcDecryptBuff(ptrOutput_1, ptrKey, ptrOutput_2, length, Ptr.NUL);  // input != output
+		// ptrOutput_1 to clear text
+		AES128.cbcDecryptBuff(ptrOutput_1, ptrKey, ptrOutput_1, length, Ptr.NUL);  // input == output
+
+		// copy const KeyExpansion, the aes126Embed macro building used the same key
+		AES128Embed.init();
+		// ptrOutput_y to clear text
+		AES128Embed.cbcDecryptBuff(ptrOutput_x, ptrOutput_y, length, Ptr.NUL);     // input != output
+		// ptrOutput_x to clear text
+		AES128Embed.cbcDecryptBuff(ptrOutput_x, ptrOutput_x, length, Ptr.NUL);     // input == output
+
+		__eq(Mem.memcmp(ptrInput, ptrOutput_1, length) == 0);
+		__eq(Mem.memcmp(ptrInput, ptrOutput_2, length) == 0);
+		__eq(Mem.memcmp(ptrInput, ptrOutput_x, length) == 0);
+		__eq(Mem.memcmp(ptrInput, ptrOutput_y, length) == 0);
+		ptrInput.free();
+		ptrOutput_1.free();
+		ptrOutput_2.free();
+		ptrOutput_x.free();
+		ptrOutput_y.free();
+		ptrKey.free();
+		AES128.destory();
+		AES128Embed.destory();
+	}
+
 	// haxe generated too many unnecessary temporary variables
 	static function too_many_local_var() {
 		inline function rand() return MemTest.rand(100);
@@ -249,6 +355,9 @@ class MemTest {
 		t_struct();
 		t_mem();
 		t_utf8();
+		t_sha1();
+		t_base64();
+		t_aes128();
 		too_many_local_var();
 		trace(platform() + " done!");
 	}

@@ -69,6 +69,6 @@ extern abstract Ptr(Int) {
 }
 
 /**
-* UCS2 String. only works with `mem.Sturct.auto()` that will be automatically converted to a String
+* UCS2 String. only works with `mem.Sturct.build()` that will be automatically converted to a String
 */
 extern abstract UCString(Ptr) {}
