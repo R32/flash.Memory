@@ -200,8 +200,6 @@ class MemTest {
 	}
 
 	static function t_aes128(){
-
-
 		var text = [
 			"6bc1bee22e409f96e93d7e117393172a",
 			"ae2d8a571e03ac9c9eb76fac45af8e51",

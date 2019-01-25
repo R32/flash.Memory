@@ -39,7 +39,7 @@ Ported by r32
 @:dce private abstract AES128Context(Ptr) to Ptr {
 	@idx(176) var roundKey:AU8;
 	@idx(4)   var tempa:AU8;   // local variable,
-	@idx(32)  var tbuf:AU8;    // cbcDecryptBuff if inout == output, 32
+	@idx(32)  var xiv:AU8;     // Iv1, Iv2 tmp
 	@idx(256) var sbox:AU8;    // const data table
 	@idx(256) var rsbox:AU8;
 	@idx(256) var rcon:AU8;
@@ -48,7 +48,10 @@ Ported by r32
 	}
 }
 
-// N.B: 现在 haxe 编译器局部变量过多, 看以后是否会解决再优化这一块, 先不管它
+/**
+	NOTE: This is the fill mode I personally use which is **not standard**.
+	If you want to use it you need to modify the fill mode.
+*/
 class AES128 {
 
 	static var aes:AES128Context = cast Ptr.NUL;
@@ -99,115 +102,91 @@ class AES128 {
 		InvCipher(output);
 	}
 
-	static inline function XorWithIv (buf:Ptr, iv:Ptr):Void {
+	static function XorWithIv (buf:Ptr, iv:Ptr):Void {
 		setI32(buf +  0, getI32(buf +  0) ^ getI32(iv +  0));
 		setI32(buf +  4, getI32(buf +  4) ^ getI32(iv +  4));
 		setI32(buf +  8, getI32(buf +  8) ^ getI32(iv +  8));
 		setI32(buf + 12, getI32(buf + 12) ^ getI32(iv + 12));
 	}
 
-	/**
-	 IMPORTANT: make sure that (Capability(input|output) % 16 == 0)
-
-	 example:
-
-	 ```haxe
-	 var file = haxe.Resource.getBytes("res");
-	 var input = Mem.mallocFromBytes(file, 16);
-	 var output = input;
-	 AES128.cbcEncryptBuff(input, cast 0, output, mem.Ut.padmul(file.length, 16), cast 0);  // no key, no iv
-	 ```
-	*/
-	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
+	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Int {
 		if (aes == Ptr.NUL) init();
 		var i = 0;
-
 		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
-
+		if (remainders > 0) {
+			// only padding zero if not enough, if no remainders then no padding.
+			Mem.memset(output + length, 0, KEYLEN - remainders);
+		}
+		if (iv == Ptr.NUL) {
+			iv = aes.xiv;
+			Mem.memset(iv, 0, KEYLEN);
+		}
 		// Skip the key expansion if key is passed as 0
 		if (key != Ptr.NUL) KeyExpansion(key);
 
 		while (i < length) {
 			if (input != output) BlockCopy(output, input);
-			if (iv != Ptr.NUL) XorWithIv(output, iv);
+			XorWithIv(output, iv);
 			Cipher(output);
 			iv = output;
 			input += KEYLEN;
 			output += KEYLEN;
-		i += KEYLEN;
+			i += KEYLEN;
 		}
-
-		if (remainders > 0) {
-			if (input != output) BlockCopy(output, input);
-			Mem.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
-			Cipher(output);
-		}
+		return remainders > 0 ? length + (KEYLEN - remainders) : length;
 	}
 
+	// make sure the captial(io) is multi of 16.
 	static public function cbcDecryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
 		if (aes == Ptr.NUL) init();
 		var i = 0;
 
 		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
 
-		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
-
-		// Skip the key expansion if key is passed as 0
 		if (key != Ptr.NUL) KeyExpansion(key);
+
+		if (iv == Ptr.NUL) {
+			iv = aes.xiv;
+			Mem.memset(iv, 0, KEYLEN);
+		}
+		// Skip the key expansion if key is passed as 0
 
 		while (i < length) {
 			BlockCopy(output, input);
 			InvCipher(output);
 			// If iv is passed as 0, we continue to encrypt without re-setting the Iv
-			if (iv != Ptr.NUL) XorWithIv(output, iv);
+			XorWithIv(output, iv);
 			iv = input;
 			input += KEYLEN;
 			output += KEYLEN;
-		i += KEYLEN;
-		}
-
-		if (remainders > 0) {
-			BlockCopy(output, input);
-			Mem.memset(output + remainders, 0, KEYLEN - remainders); /* add 0-padding */
-			XorWithIv(output, iv);
+			i += KEYLEN;
 		}
 	}
 
-	// when output == input
+	// when output == input, make sure the captial(io) is multi of 16.
 	static function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
 		if (aes == Ptr.NUL) init();
-		var i = 0, j = 0;
-
-		var remainders:Int = length & (KEYLEN - 1); // eq length % KEYLEN;
-
-		var tb:Ptr = aes.tbuf; // 32 bites
+		var i = 0;
 
 		if (key != Ptr.NUL) KeyExpansion(key);
 
-		BlockCopy(tb + KEYLEN, io);
-		InvCipher(io);
-		if (iv != Ptr.NUL) XorWithIv(io, iv);
-		io += KEYLEN;
-		i += KEYLEN;
-
-		while (i < length) {
-			if ( j & 1 == 1) {
-				BlockCopy(tb + KEYLEN, io);
-				InvCipher(io);
-				XorWithIv(io, tb);
-			 } else {
-				BlockCopy(tb, io);
-				InvCipher(io);
-				XorWithIv(io, tb + KEYLEN);
-			}
-			++j;
-			io += KEYLEN;
-			i += KEYLEN;
+		if (iv == Ptr.NUL) {
+			iv = aes.xiv;
+			Mem.memset(iv, 0, KEYLEN);
 		}
 
-		if (remainders > 0) {
-			Mem.memset(io + remainders, 0, KEYLEN - remainders); // add 0-padding
-			XorWithIv(io, j & 1 == 1 ? tb : tb + KEYLEN);
+		var iv2:Ptr = iv + KEYLEN;
+		var tmp:Ptr;
+		while (i < length) {
+			BlockCopy(iv2, io);
+			InvCipher(io);
+			XorWithIv(io, iv);
+			// swap
+			tmp = iv2;
+			iv2 = iv;
+			iv = tmp;
+			io += KEYLEN;
+			i += KEYLEN;
 		}
 	}
 
@@ -424,7 +403,7 @@ class AES128 {
 	}
 
 	// unsafe BlockCopy
-	static inline function BlockCopy(output: Ptr, input: Ptr):Void {
+	static function BlockCopy(output: Ptr, input: Ptr):Void {
 		//Mem.memcpy(output, input, 16);
 		setI32(output     , getI32(input     ));
 		setI32(output +  4, getI32(input +  4));
