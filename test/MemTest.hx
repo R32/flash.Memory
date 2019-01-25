@@ -215,7 +215,6 @@ class MemTest {
 		inline function BLK_PCK5(size) return AES128.blkPK5(size);
 		var ptrKey = Mem.mallocFromHex("2b7e151628aed2a6abf7158809cf4f3c");
 		AES128.init(ptrKey);  // requered.
-
 		for (i in 0...text.length) {
 			var ptrStr = Mem.mallocFromHex(text[i]);
 			var ptrBuf = BLK_PCK5(ptrStr.length);     // ptrBuf.length > ptrStr.length
@@ -230,6 +229,7 @@ class MemTest {
 			ptrBuf.free();
 			ptrResult.free();
 		}
+		// AES CBC
 		var ptrStr = Mem.mallocFromHex(text.join(""));
 		var length = ptrStr.length;
 		var ptrBuf = BLK_PCK5(length);
@@ -237,7 +237,7 @@ class MemTest {
 
 		var padded = AES128.cbcEncrypt(ptrBuf, length, ptrBuf.length);
 
-		// reset, it's IMPORTANT
+		// reset IV, it's IMPORTANT
 		AES128.setIv(Ptr.NUL);
 
 		var result = AES128.cbcDecrypt(ptrBuf, ptrBuf.length);
@@ -247,6 +247,23 @@ class MemTest {
 		ptrStr.free();
 		ptrBuf.free();
 		ptrKey.free();
+
+		// AES CTR, there is no need to padding.
+		var str = "Hi I'm trying to write a program that can compare two files line by line, word by word!";
+		var ptrBuf = Mem.mallocFromString(str);
+		var ptrKey = Mem.mallocFromString("0123456789ABCDEF");
+		AES128.setKey(ptrKey);
+		// AES CTR, encrypt
+		AES128.setIv(Ptr.NUL);
+		AES128.ctrXcrypt(ptrBuf, ptrBuf.length);
+		// RESET,   decrypt use same function
+		AES128.setIv(Ptr.NUL);
+		AES128.ctrXcrypt(ptrBuf, ptrBuf.length);
+
+		__eq(str == Utf8.getString(ptrBuf, ptrBuf.length));
+
+		ptrKey.free();
+		ptrBuf.free();
 		AES128.destory();
 	}
 

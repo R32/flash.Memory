@@ -89,7 +89,7 @@ class AES128 {
 	}
 
 	static public inline function padPK5(n: Int) {
-		return (n & (KEYLEN - 1)) == 0 ? (n + KEYLEN) : ((n - 1) | (KEYLEN - 1)) + 1;
+		return (n & (BLKLEN - 1)) == 0 ? (n + BLKLEN) : ((n - 1) | (BLKLEN - 1)) + 1;
 	}
 
 	static public inline function setKey(key: Ptr) {
@@ -98,9 +98,9 @@ class AES128 {
 
 	static public function setIv(iv: Ptr) {
 		if (iv == Ptr.NUL) {
-			Mem.memset(aes.xiv, 0, KEYLEN);
+			Mem.memset(aes.xiv, 0, BLKLEN);
 		} else {
-			Mem.memcpy(aes.xiv, iv, KEYLEN);
+			Mem.memcpy(aes.xiv, iv, BLKLEN);
 		}
 	}
 
@@ -130,6 +130,32 @@ class AES128 {
 		cbcDecryptBuff(buf, padded);
 		return padded - buf[padded - 1];
 	}
+	// no need to padding
+	static public function ctrXcrypt(buf: Ptr, length: Int): Void {
+		var iv: Ptr = aes.xiv;
+		var tmp: Ptr = iv + BLKLEN;
+		var i = 0, bi = BLKLEN;  // the block len is 16;
+		while (i < length) {
+			if (bi == BLKLEN) {
+				Mem.memcpy(tmp, iv, BLKLEN);
+				Cipher(tmp);
+				bi = (BLKLEN - 1);
+				while (bi >= 0) {
+					if (iv[bi] == 255) {
+						iv[bi] = 0;
+					} else {
+						iv[bi] += 1;
+						break;
+					}
+					-- bi;
+				}
+				bi = 0;
+			}
+			buf[i] = (buf[i] ^ tmp[bi]);
+			++ i;
+			++ bi;
+		}
+	}
 	static public function cbcEncryptBuff(buf: Ptr, padded: Int): Void {
 		var iv:Ptr = aes.xiv;
 		var right: Ptr = buf + padded;
@@ -137,14 +163,14 @@ class AES128 {
 			XorWithIv(buf, iv);
 			Cipher(buf);
 			iv = buf;
-			buf += KEYLEN;
+			buf += BLKLEN;
 		}
 		// store Iv in ctx for next call
-		Mem.memcpy(aes.xiv, iv, KEYLEN);
+		Mem.memcpy(aes.xiv, iv, BLKLEN);
 	}
 	public static function cbcDecryptBuff(buf: Ptr, length:Int): Void {
 		var iv: Ptr = aes.xiv;
-		var iv2:Ptr = iv + KEYLEN;
+		var iv2:Ptr = iv + BLKLEN;
 		var tmp:Ptr;
 		var right: Ptr = buf + length;
 		while (buf < right) {
@@ -155,7 +181,7 @@ class AES128 {
 			tmp = iv2;
 			iv2 = iv;
 			iv = tmp;
-			buf += KEYLEN;
+			buf += BLKLEN;
 		}
 	}
 
@@ -383,4 +409,6 @@ class AES128 {
 	static inline function  getI32(ptr: Ptr):Int return ptr.getI32();
 	static inline function setByte(ptr: Ptr, v: Int):Void ptr.setByte(v);
 	static inline function  setI32(ptr: Ptr, v: Int):Void ptr.setI32(v);
+
+	static inline var BLKLEN = 16;
 }

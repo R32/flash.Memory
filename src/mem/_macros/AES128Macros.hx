@@ -3,7 +3,6 @@ package mem._macros;
 @:dce class AES128Macros {
 	static public inline var Nb = 4;
 	static public inline var Nk = 4;
-	static public inline var KEYLEN = 16;
 	static public inline var Nr = 10;
 
 	macro static public function xtime(x) return macro (($x << 1) ^ ((($x >> 7) & 1) * 0x1b));
