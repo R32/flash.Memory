@@ -212,60 +212,42 @@ class MemTest {
 			"43b1cd7f598ece23881b00e3ed030688",
 			"7b0c785e27e8ad3f8223207104725dd4"
 		];
-		inline function BLK16(size) return new mem.s.Block(size, false, 16);
+		inline function BLK_PCK5(size) return AES128.blkPK5(size);
 		var ptrKey = Mem.mallocFromHex("2b7e151628aed2a6abf7158809cf4f3c");
+		AES128.init(ptrKey);  // requered.
+
 		for (i in 0...text.length) {
-			var ptrInput = Mem.mallocFromHex(text[i]);
+			var ptrStr = Mem.mallocFromHex(text[i]);
+			var ptrBuf = BLK_PCK5(ptrStr.length);     // ptrBuf.length > ptrStr.length
 			var ptrResult = Mem.mallocFromHex(cipher[i]);
-			var ptrOutput = BLK16(ptrInput.length);
+			Mem.memcpy(ptrBuf, ptrStr, ptrStr.length);
+			AES128.ecbEncrypt(ptrBuf);
+			__eq(Mem.memcmp(ptrBuf, ptrResult, ptrResult.length) == 0);
 
-			AES128.ecbEncrypt(ptrInput, ptrKey, ptrOutput);
-			__eq(Mem.memcmp(ptrOutput, ptrResult, ptrOutput.length) == 0);
-
-			AES128.ecbDecrypt(ptrOutput, ptrKey, ptrOutput); // input == output
-			__eq(Mem.memcmp(ptrInput,  ptrOutput, ptrOutput.length) == 0);
-			ptrInput.free();
-			ptrOutput.free();
+			AES128.ecbDecrypt(ptrBuf);
+			__eq(Mem.memcmp(ptrBuf, ptrStr, ptrStr.length) == 0);
+			ptrStr.free();
+			ptrBuf.free();
 			ptrResult.free();
 		}
-		var ptrInput = Mem.mallocFromHex(text.join(""));
-		var length = ptrInput.length;
-		var ptrOutput_1 = BLK16(length);
-		var ptrOutput_2 = BLK16(length);
-		var ptrOutput_x = BLK16(length);
-		var ptrOutput_y = BLK16(length);
+		var ptrStr = Mem.mallocFromHex(text.join(""));
+		var length = ptrStr.length;
+		var ptrBuf = BLK_PCK5(length);
+		Mem.memcpy(ptrBuf, ptrStr, length);
 
-		// ptrOutput_1 to Ciphertext
-		AES128.cbcEncryptBuff(ptrInput, ptrKey, ptrOutput_1, length, Ptr.NUL);
-		// copy const KeyExpansion, the aes126Embed macro building used the same key
-		AES128Embed.init();
-		// ptrOutput_x to Ciphertext
-		AES128Embed.cbcEncryptBuff(ptrInput, ptrOutput_x, length, Ptr.NUL);
+		var padded = AES128.cbcEncrypt(ptrBuf, length, ptrBuf.length);
 
-		// ptrOutput_2 to clear text
-		AES128.cbcDecryptBuff(ptrOutput_1, ptrKey, ptrOutput_2, length, Ptr.NUL);  // input != output
-		// ptrOutput_1 to clear text
-		AES128.cbcDecryptBuff(ptrOutput_1, ptrKey, ptrOutput_1, length, Ptr.NUL);  // input == output
+		// reset, it's IMPORTANT
+		AES128.setIv(Ptr.NUL);
 
-		// copy const KeyExpansion, the aes126Embed macro building used the same key
-		AES128Embed.init();
-		// ptrOutput_y to clear text
-		AES128Embed.cbcDecryptBuff(ptrOutput_x, ptrOutput_y, length, Ptr.NUL);     // input != output
-		// ptrOutput_x to clear text
-		AES128Embed.cbcDecryptBuff(ptrOutput_x, ptrOutput_x, length, Ptr.NUL);     // input == output
+		var result = AES128.cbcDecrypt(ptrBuf, ptrBuf.length);
 
-		__eq(Mem.memcmp(ptrInput, ptrOutput_1, length) == 0);
-		__eq(Mem.memcmp(ptrInput, ptrOutput_2, length) == 0);
-		__eq(Mem.memcmp(ptrInput, ptrOutput_x, length) == 0);
-		__eq(Mem.memcmp(ptrInput, ptrOutput_y, length) == 0);
-		ptrInput.free();
-		ptrOutput_1.free();
-		ptrOutput_2.free();
-		ptrOutput_x.free();
-		ptrOutput_y.free();
+		__eq(result == length && (Mem.memcmp(ptrBuf, ptrStr, result) == 0));
+
+		ptrStr.free();
+		ptrBuf.free();
 		ptrKey.free();
 		AES128.destory();
-		AES128Embed.destory();
 	}
 
 	// haxe generated too many unnecessary temporary variables

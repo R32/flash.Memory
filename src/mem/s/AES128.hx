@@ -32,8 +32,6 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
         You should pad the end of the string with zeros if this is not the case.
 
 Project Org: https://github.com/kokke/tiny-AES128-C
-
-Ported by r32
 */
 #if !macro @:build(mem.Struct.build()) #end
 @:dce private abstract AES128Context(Ptr) to Ptr {
@@ -42,42 +40,40 @@ Ported by r32
 	@idx(32)  var xiv:AU8;     // Iv1, Iv2 tmp
 	@idx(256) var sbox:AU8;    // const data table
 	@idx(256) var rsbox:AU8;
-	@idx(256) var rcon:AU8;
-	inline public function reset():Void {
-		Mem.memset(this, 0, 176 + (4 * 4));
-	}
+	@idx(12)  var rcon:AU8;
 }
 
-/**
-	NOTE: This is the fill mode I personally use which is **not standard**.
-	If you want to use it you need to modify the fill mode.
-*/
 class AES128 {
 
 	static var aes:AES128Context = cast Ptr.NUL;
 
 	//static var pstate: Ptr;
 
-	static public function init():Void {
+	static public function init(key: Ptr, iv: Ptr = Ptr.NUL):Void {
 		if (aes != Ptr.NUL) return;
 		// write to mem
 		aes = new AES128Context();
 
 		var org_box32:Array<Int>   = to32(1);
 		var org_rsbox32:Array<Int> = to32(2);
-		var org_rcon32:Array<Int>  = to32(3);
-
 		var box32: AI32 = cast aes.sbox;
 		var rbox32:AI32 = cast aes.rsbox;
-		var Rcon32:AI32 = cast aes.rcon;
-
-		var i = 0, len = 256 >> 2;
-		while (i < len) {
+		var i = 0;
+		while (i < 64) {
 			box32[i] = org_box32[i];
 			rbox32[i] = org_rsbox32[i];
-			Rcon32[i] = org_rcon32[i];
-		++i;
+			++i;
 		}
+		var org_rcon32:Array<Int>  = to32(3);
+		var Rcon32:AI32 = cast aes.rcon;
+		i = 0;
+		while (i < 4) {
+			Rcon32[i] = org_rcon32[i];
+			++ i;
+		}
+		if (key != Ptr.NUL)
+			setKey(key);
+		setIv(iv);
 		org_box32 = org_rsbox32 = org_rcon32 = null;
 	}
 
@@ -88,18 +84,32 @@ class AES128 {
 		}
 	}
 
-	static public function ecbEncrypt(input: Ptr, key: Ptr, output: Ptr):Void {
-		if (aes == Ptr.NUL) init();
-		if (input != output) BlockCopy(output, input);
-		if (key != Ptr.NUL) KeyExpansion(key);
-		Cipher(output);
+	static public function blkPK5(size: Int): mem.s.Block {
+		return new mem.s.Block(padPK5(size), false, 16);
 	}
 
-	static public function ecbDecrypt(input: Ptr, key: Ptr, output: Ptr):Void {
-		if (aes == Ptr.NUL) init();
-		if (input != output) BlockCopy(output, input);
-		if (key != Ptr.NUL) KeyExpansion(key);
-		InvCipher(output);
+	static public inline function padPK5(n: Int) {
+		return (n & (KEYLEN - 1)) == 0 ? (n + KEYLEN) : ((n - 1) | (KEYLEN - 1)) + 1;
+	}
+
+	static public inline function setKey(key: Ptr) {
+		KeyExpansion(key);
+	}
+
+	static public function setIv(iv: Ptr) {
+		if (iv == Ptr.NUL) {
+			Mem.memset(aes.xiv, 0, KEYLEN);
+		} else {
+			Mem.memcpy(aes.xiv, iv, KEYLEN);
+		}
+	}
+
+	static public inline function ecbEncrypt(buf: Ptr):Void {
+		Cipher(buf);
+	}
+
+	static public inline function ecbDecrypt(buf: Ptr):Void {
+		InvCipher(buf);
 	}
 
 	static function XorWithIv (buf:Ptr, iv:Ptr):Void {
@@ -109,84 +119,43 @@ class AES128 {
 		setI32(buf + 12, getI32(buf + 12) ^ getI32(iv + 12));
 	}
 
-	static public function cbcEncryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Int {
-		if (aes == Ptr.NUL) init();
-		var i = 0;
-		var remainders = length & (KEYLEN - 1); // eq length % KEYLEN;
-		if (remainders > 0) {
-			// only padding zero if not enough, if no remainders then no padding.
-			Mem.memset(output + length, 0, KEYLEN - remainders);
-		}
-		if (iv == Ptr.NUL) {
-			iv = aes.xiv;
-			Mem.memset(iv, 0, KEYLEN);
-		}
-		// Skip the key expansion if key is passed as 0
-		if (key != Ptr.NUL) KeyExpansion(key);
-
-		while (i < length) {
-			if (input != output) BlockCopy(output, input);
-			XorWithIv(output, iv);
-			Cipher(output);
-			iv = output;
-			input += KEYLEN;
-			output += KEYLEN;
-			i += KEYLEN;
-		}
-		return remainders > 0 ? length + (KEYLEN - remainders) : length;
+	// use PCK5
+	static public function cbcEncrypt(buf: Ptr, length: Int, padded: Int): Int {
+		var extra = padded - length;
+		Mem.memset(buf + length, extra, extra);
+		cbcEncryptBuff(buf, padded);
+		return padded;
 	}
-
-	// make sure the captial(io) is multi of 16.
-	static public function cbcDecryptBuff(input: Ptr, key: Ptr, output: Ptr, length:Int, iv:Ptr/*16 bytes*/):Void {
-		if (aes == Ptr.NUL) init();
-		var i = 0;
-
-		if (input == output) return cbcDecryptBuffIO(input, key, length, iv);
-
-		if (key != Ptr.NUL) KeyExpansion(key);
-
-		if (iv == Ptr.NUL) {
-			iv = aes.xiv;
-			Mem.memset(iv, 0, KEYLEN);
-		}
-		// Skip the key expansion if key is passed as 0
-
-		while (i < length) {
-			BlockCopy(output, input);
-			InvCipher(output);
-			// If iv is passed as 0, we continue to encrypt without re-setting the Iv
-			XorWithIv(output, iv);
-			iv = input;
-			input += KEYLEN;
-			output += KEYLEN;
-			i += KEYLEN;
-		}
+	static public function cbcDecrypt(buf: Ptr, padded:Int) {
+		cbcDecryptBuff(buf, padded);
+		return padded - buf[padded - 1];
 	}
-
-	// when output == input, make sure the captial(io) is multi of 16.
-	static function cbcDecryptBuffIO(io: Ptr, key:Ptr, length:Int, iv:Ptr): Void {
-		if (aes == Ptr.NUL) init();
-		var i = 0;
-
-		if (key != Ptr.NUL) KeyExpansion(key);
-
-		if (iv == Ptr.NUL) {
-			iv = aes.xiv;
-			Mem.memset(iv, 0, KEYLEN);
+	static public function cbcEncryptBuff(buf: Ptr, padded: Int): Void {
+		var iv:Ptr = aes.xiv;
+		var right: Ptr = buf + padded;
+		while (buf < right) {
+			XorWithIv(buf, iv);
+			Cipher(buf);
+			iv = buf;
+			buf += KEYLEN;
 		}
-
+		// store Iv in ctx for next call
+		Mem.memcpy(aes.xiv, iv, KEYLEN);
+	}
+	public static function cbcDecryptBuff(buf: Ptr, length:Int): Void {
+		var iv: Ptr = aes.xiv;
 		var iv2:Ptr = iv + KEYLEN;
 		var tmp:Ptr;
-		while (i < length) {
-			BlockCopy(iv2, io);
-			InvCipher(io);
-			XorWithIv(io, iv);
+		var right: Ptr = buf + length;
+		while (buf < right) {
+			BlockCopy(iv2, buf);
+			InvCipher(buf);
+			XorWithIv(buf, iv);
 			// swap
 			tmp = iv2;
 			iv2 = iv;
 			iv = tmp;
-			io += KEYLEN;
-			i += KEYLEN;
+			buf += KEYLEN;
 		}
 	}
 

@@ -14,7 +14,7 @@ class AES128Embed {
 			b = Mem.mallocFromBytes(haxe.Resource.getBytes(_R)); // _R defined by macro
 		}
 		if (AES128.aes == Ptr.NUL)
-			AES128.init();
+			AES128.init(Ptr.NUL);
 		Mem.memcpy(@:privateAccess AES128.aes, b, 176 + 4);      // override "roundKey" + "tempa"
 	}
 
@@ -23,13 +23,5 @@ class AES128Embed {
 			b.free();
 			b = cast Ptr.NUL;
 		}
-	}
-
-	public static inline function cbcEncryptBuff(input: Ptr, output: Ptr, length:Int, iv:Ptr): Void {
-		AES128.cbcEncryptBuff(input, Ptr.NUL, output, length, iv);
-	}
-
-	public static inline function cbcDecryptBuff(input: Ptr, output: Ptr, length:Int, iv:Ptr): Void {
-		AES128.cbcDecryptBuff(input, Ptr.NUL, output, length, iv);
 	}
 }
