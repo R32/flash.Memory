@@ -153,10 +153,12 @@ class Mem {
 	static public function mallocFromHex(hex: String): mem.s.Block {
 		var len = hex.length >> 1;
 		var b = mem.s.Block.alloc(len);
-		var j: Int;
 		for (i in 0...len) {
-			j = i + i;
-			b[i] = Std.parseInt("0x" + hex.charAt(j) + hex.charAt(j + 1));
+			var high = StringTools.fastCodeAt(hex,  i << 1);
+			var low  = StringTools.fastCodeAt(hex, (i << 1) + 1);
+			high = (high & 0xF) + ((high & 0x40) >> 6) * 9;
+			low  = (low  & 0xF) + ((low  & 0x40) >> 6) * 9;
+			b[i] = ((high << 4) | low)  & 0xFF;
 		}
 		return b;
 	}
