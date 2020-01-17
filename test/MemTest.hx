@@ -41,7 +41,7 @@ class MemTest {
 		var x = Mem.malloc(128);
 		x[0] = 101;
 		x = Mem.realloc(x, 256);
-		__eq(x[0] == 101 && Alloc.hd(x).entrySize == 256);
+		__eq(x[0] == 101 && Alloc.hd(x).entrySize >= 256);
 		Mem.free(x);
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}

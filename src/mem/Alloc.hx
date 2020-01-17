@@ -11,6 +11,8 @@ private extern abstract Header(Ptr) to Ptr {
 	var entry(get, never): Ptr;
 	var entrySize(get, never):Int;
 
+	var free_next(get, set): Header; //
+
 	inline function prev():Header return cast this - psize;
 	inline function next():Header return cast this + size;
 	inline function new(ptr: Ptr) this = ptr;
@@ -22,6 +24,7 @@ private extern abstract Header(Ptr) to Ptr {
 	private inline function get_is_free():Bool return (__free & 1) == 0; // 0 == free
 	private inline function get_entry():Ptr return this + CAPACITY;
 	private inline function get_entrySize():Int return size - CAPACITY;
+	private inline function get_free_next():Header return cast entry.getI32();
 
 	private inline function set___size(v: Int): Int {
 		this.setI32(v);
@@ -44,6 +47,11 @@ private extern abstract Header(Ptr) to Ptr {
 		return b;
 	}
 
+	private inline function set_free_next(h: Header): Header {
+		entry.setI32(cast h);
+		return h;
+	}
+
 	static inline function init(h: Header, bsize: Int, clear: Bool): Void {
 		Mem.memset(h, 0, (clear ? bsize : CAPACITY));
 		h.__size = bsize | 1;  // `.free = false` for new Header()
@@ -56,6 +64,17 @@ class Alloc {
 
 	static var first: Header = cast Ptr.NUL;
 	static var last: Header = cast Ptr.NUL;
+	static var hfree_a: Array<Header> = cast [0, 0, 0, 0, 0, 0, 0, 0]; // length = (FREE_MAX + 1)
+
+	static inline function hfree_index(bsize:Int) : Int {
+		return (((bsize - Header.CAPACITY) >>> LBITS) - 1) & FREE_MAX;
+	}
+
+	static inline function hfree_add(h:Header) {
+		var i = hfree_index(h.size);
+		h.free_next = hfree_a[i];
+		hfree_a[i] = h;
+	}
 
 	static public var frags(default, null): Int = 0;
 	static public var length(default, null): Int = 0;
@@ -66,37 +85,50 @@ class Alloc {
 		return isEmpty() ? ADDR_START : ((last: Ptr).toInt() + last.size);
 	}
 
-	static public function req(size: Int, z: Bool, pad: Int): Ptr {
-		pad = pad <= LB ? LB : Ut.nextPow(pad);
-		var bsize = Header.CAPACITY + Ut.align(size, pad) ;
-
-		var h: Header = frags > 16 ? fromFrags(bsize) : cast Ptr.NUL;
-
+	static public function req(size: Int, zero: Bool, pad: Int): Ptr {
+		if (size <= LB) {
+			size = LB;
+		} else {
+			size = ((size - 1) | (LB - 1)) + 1; // multiple of LB
+		}
+		var bsize = size + Header.CAPACITY;
+		var h = hfree_frags(bsize);
 		if (h == Ptr.NUL) {
-			var addr: Int = used();
+			var addr = used();
 			Mem.grow(addr + bsize);
-			h = new Header(Ptr.ofInt(addr));
-			Header.init(h, bsize, z);
+			h = new Header(cast addr);
+			Header.init(h, bsize, zero);
 			add(h);
-		} else if (split(h, bsize) == false) {
+		} else {
 			h.is_free = false;
 			-- frags;
 		}
 		return h.entry;
 	}
 
-	// TODO: Need to be ReImplemented, such as using a linked list to store the fragments.
-	static function fromFrags(bsize: Int): Header {
-		var ct = frags;
-		var h = first;
-		while (ct > 0 && h != last) {
-			if (h.is_free) {
-				if (bsize <= h.size) return h;
-				-- ct;
-			}
-			h = h.next();
+	static function hfree_frags(bsize: Int): Header {
+		var i = hfree_index(bsize);
+		var cur = hfree_a[i];
+		if (cur == cast Ptr.NUL)
+			return cur;
+		if (i == FREE_MAX) {
+			var prev: Header = cast Ptr.NUL;
+			do {
+				if (cur.size >= bsize) {
+					if (prev == cast Ptr.NUL) { // if first element
+						hfree_a[i] = cur.free_next;
+					} else {
+						prev.free_next = cur.free_next;
+					}
+					break;
+				}
+				prev = cur;
+				cur = cur.free_next;
+			} while (cur != cast Ptr.NUL);
+		} else {
+			hfree_a[i] = cur.free_next;
 		}
-		return cast Ptr.NUL;
+		return cur;
 	}
 
 	static function hd(entry: Ptr): Header {
@@ -116,16 +148,14 @@ class Alloc {
 		if (isEmpty() || h == Ptr.NUL || h.is_free) return;
 		h.is_free = true;
 		++ frags;
-		while (last.is_free) {
-			-- length;
-			-- frags;
-			if (last == first) {
-				last = cast Ptr.NUL;
-				first = cast Ptr.NUL;
-				break;
-			} else {
-				last = last.prev();
-			}
+		hfree_add(h);
+		if (frags == length) { // reset
+			last = cast Ptr.NUL;
+			first = cast Ptr.NUL;
+			for (i in 0...(FREE_MAX + 1))
+				hfree_a[i] = cast Ptr.NUL;
+			frags = 0;
+			length = 0;
 		}
 	}
 
@@ -137,24 +167,6 @@ class Alloc {
 		}
 		last = h;
 		++ length;
-	}
-
-	static function split(h: Header, bsize: Int): Bool {
-		var hsize = h.size;
-		if (hsize >= (bsize << 1)) {
-			h.__size = 1 | bsize;        // reset h.size and h.free = false
-			var next = h.next();
-			next.__size = hsize - bsize; // next.size and next.free = true
-			next.psize = bsize;          // next.prev = h
-			if (last == h) {
-				last = next;
-			} else {
-				next.next().psize = hsize - bsize;
-			}
-			++ length;
-			return true;
-		}
-		return false;
 	}
 
 	static public function simpleCheck() {
@@ -178,6 +190,8 @@ class Alloc {
 		return i == length && fs == frags;
 	}
 
-	static inline var LB = 8;
+	static inline var LB = 16;
+	static inline var LBITS = 4;        // 1 << 4 == 16
+	static inline var FREE_MAX = (8-1); // 0b111
 	static inline var ADDR_START = 32;
 }
