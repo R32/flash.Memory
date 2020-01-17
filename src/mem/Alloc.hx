@@ -5,7 +5,6 @@ import mem.Ptr;
 private extern abstract Header(Ptr) to Ptr {
 	var __free(get, set): Int;   // union with __size.   [0x0000 - 0x0001]
 	var __size(get, set): Int;   // size of this Header. [0x0000 - 0x0003]
-	var psize(get, set): Int;    // size of prev Header. [0x0004 - 0x0007]
 	var is_free(get, set): Bool; // reference to __free
 	var size(get, set): Int;     // reference to __size
 	var entry(get, never): Ptr;
@@ -13,13 +12,11 @@ private extern abstract Header(Ptr) to Ptr {
 
 	var free_next(get, set): Header; //
 
-	inline function prev():Header return cast this - psize;
 	inline function next():Header return cast this + size;
 	inline function new(ptr: Ptr) this = ptr;
 
 	private inline function get___free():Int return this.getByte();
 	private inline function get___size():Int return this.getI32();
-	private inline function get_psize():Int return (this + 4).getI32();
 	private inline function get_size():Int return __size & (0xFFFFFFFE); // i32(~1) == 0xFFFFFFFE
 	private inline function get_is_free():Bool return (__free & 1) == 0; // 0 == free
 	private inline function get_entry():Ptr return this + CAPACITY;
@@ -32,10 +29,6 @@ private extern abstract Header(Ptr) to Ptr {
 	}
 	private inline function set___free(v: Int): Int {
 		this.setByte(v);
-		return v;
-	}
-	private inline function set_psize(v: Int): Int {
-		(this + 4).setI32(v);
 		return v;
 	}
 	private inline function set_size(i: Int): Int {
@@ -53,11 +46,12 @@ private extern abstract Header(Ptr) to Ptr {
 	}
 
 	static inline function init(h: Header, bsize: Int, clear: Bool): Void {
-		Mem.memset(h, 0, (clear ? bsize : CAPACITY));
+		if (clear)
+			Mem.memset(h, 0, bsize);
 		h.__size = bsize | 1;  // `.free = false` for new Header()
 	}
 
-	static inline var CAPACITY = 8;
+	static inline var CAPACITY = 4;
 }
 
 class Alloc {
@@ -100,7 +94,10 @@ class Alloc {
 			Mem.grow(addr + bsize);
 			h = new Header(cast addr);
 			Header.init(h, bsize, zero);
-			add(h);
+			if ( isEmpty() )
+				first = h;
+			last = h;
+			++ length;
 		} else {
 			h.is_free = false;
 			-- frags;
@@ -136,12 +133,8 @@ class Alloc {
 	static function hd(entry: Ptr): Header {
 		if (entry.toInt() >= (ADDR_START + Header.CAPACITY)) {
 			var h: Header = new Header(entry - Header.CAPACITY);
-			if ( h == last || h == first ) return h;
-			if ( (h:Ptr) < (last:Ptr) ) {
-				var prev = h.prev();
-				var next = h.next();
-				if ( prev.next() == h && next.prev() == h ) return h;
-			}
+			if ( h == last || h == first || (h:Ptr) < (last:Ptr) )
+				return h;
 		}
 		return cast Ptr.NUL;
 	}
@@ -161,16 +154,6 @@ class Alloc {
 		}
 	}
 
-	static function add(h: Header) {
-		if (isEmpty()) {
-			first = h;
-		} else {
-			h.psize = last.size;
-		}
-		last = h;
-		++ length;
-	}
-
 	static public function simpleCheck() {
 		var i = 0;
 		var fs = 0;
@@ -180,9 +163,8 @@ class Alloc {
 				++ i;
 				if (h.is_free)
 					++fs;
-				if (h != last) {
+				if ((h:Ptr) < (last:Ptr)) {
 					var next = h.next();
-					if (next.prev() != h) return false;
 					h = next;
 				} else {
 					break;

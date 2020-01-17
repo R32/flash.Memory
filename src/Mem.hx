@@ -117,7 +117,7 @@ class Mem {
 	#end
 	}
 
-	static public inline function malloc(size, clear = false): Ptr return mem.Alloc.req(size, clear);
+	static public inline function malloc(size, zero = false): Ptr return mem.Alloc.req(size, zero);
 
 	static public inline function free(ptr: Ptr) mem.Alloc.free(mem.Alloc.hd(ptr));
 
