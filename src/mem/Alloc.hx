@@ -11,8 +11,8 @@ private extern abstract Header(Ptr) to Ptr {
 	var entry(get, never): Ptr;
 	var entrySize(get, never):Int;
 
-	inline function prev():Header return new Header(this - psize);
-	inline function next():Header return new Header(this + size);
+	inline function prev():Header return cast this - psize;
+	inline function next():Header return cast this + size;
 	inline function new(ptr: Ptr) this = ptr;
 
 	private inline function get___free():Int return this.getByte();

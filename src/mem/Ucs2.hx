@@ -26,7 +26,7 @@ class Ucs2 {
 		}
 		bytes = Ut.imin(bytes, ucs - src);
 		return js.Syntax.code("String.fromCharCode.apply(null, {0})",
-			new js.html.Int16Array(Mem.b.b.buffer.slice(src.toInt(), src.toInt() + bytes))
+			new js.lib.Int16Array(Mem.b.b.buffer.slice(src.toInt(), src.toInt() + bytes))
 		);
 	#else
 		var utf8 = new haxe.Utf8(mem.Utf8.ofUcs2(Ptr.NUL, src, wlen));
