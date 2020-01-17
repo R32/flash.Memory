@@ -52,20 +52,14 @@ class Struct {
 		}
 	}
 
-	static public function build(?fixedmem: {bulk: Int, ?extra: Int}) {
-		var alloc_s = "Mem";
+	static public function build() {
 		var cls:ClassType = Context.getLocalClass().get();
 		var abst = switch (cls.kind) {
 			case KAbstractImpl(_.get() => t) if ( isPtrType(t.type) ):
-				if (fixedmem != null) {
-					alloc_s = toFull(t.pack, t.name);
-					if (cls.isExtern) Context.fatalError("No \"extern\" if fixedmem", cls.pos);
-				}
 				t;
 			default:
 				Context.fatalError("UnSupported Type", cls.pos);
 		}
-		var alloc = macro $i{ alloc_s };
 		var ct_ptr = macro :mem.Ptr;
 		var ct_int = macro :Int;
 		var ct_bool= macro :Bool;
@@ -293,23 +287,11 @@ class Struct {
 			kind: FVar(ct_int, macro $v{offset}),
 			pos: cls.pos
 		});
-		if (fixedmem != null) {
-			alloc = macro $alloc.__f;
-			if (fixedmem.extra == null) fixedmem.extra = 0;
-			if (fixedmem.bulk < 1) fixedmem.bulk = 1;
-			var f_sz = mem.Ut.align(fixedmem.extra + offset - offset_first, 8);
-			fields.push({
-			name : "__f",
-			access: [AStatic],
-			kind: FVar(macro :mem.Fixed, macro new mem.Fixed($v{f_sz}, $v{fixedmem.bulk})),
-			pos: cls.pos
-			});
-		}
 		if (!all_fields.exists("_new"))
 			fields.push({
 				name : "new",
 				access: [AInline, APublic],
-				kind: flexible && fixedmem == null ? FFun({
+				kind: flexible ? FFun({
 					args: [{name: "extra", type: ct_int}],
 					ret : null,
 					expr: (macro this = alloc(CAPACITY + extra, true))
@@ -327,7 +309,7 @@ class Struct {
 				kind: FFun({
 					args: [],
 					ret : macro: Void,
-					expr: (macro $alloc.free(realptr()))
+					expr: (macro Mem.free(realptr()))
 				}),
 				pos: cls.pos
 			});
@@ -349,9 +331,7 @@ class Struct {
 				kind: FFun({
 					args: [{name: "size", type: ct_int}, {name: "clean", type: ct_bool}],
 					ret : ct_ptr,
-					expr: fixedmem == null
-						? (macro return $alloc.malloc(size, clean) - OFFSET_FIRST)
-						: (macro return $alloc.malloc(clean) - OFFSET_FIRST)
+					expr: macro return Mem.malloc(size, clean) - OFFSET_FIRST
 				}),
 				pos: cls.pos
 			});

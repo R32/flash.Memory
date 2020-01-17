@@ -5,7 +5,6 @@ import mem.Ptr;
 import mem.Utf8;
 import mem.Ucs2;
 import mem.Alloc;
-import mem.Fixed;
 import mem.s.Block;
 import mem.s.Md5;
 import mem.s.Sha1;
@@ -43,30 +42,6 @@ class MemTest {
 		x = Mem.realloc(x, 256);
 		__eq(x[0] == 101 && Alloc.hd(x).entrySize >= 256);
 		Mem.free(x);
-		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
-	}
-
-	static function t_fixed() {
-		var fx = new Fixed(16, 10);
-		__eq(Alloc.length == 0); // not yet alloc chunk
-
-		var ap = [];
-		for (i in 0...480) ap.push(fx.malloc());
-		var chunks = Math.ceil(480 / (32 * 10));
-		__eq(Alloc.length == chunks);
-		shuffle(ap);
-
-		for (i in 0...240) fx.free(ap.pop());
-		shuffle(ap);
-		for (i in 0...240) ap.push(fx.malloc());
-		__eq(Alloc.length == chunks);
-		for (i in 0...480) fx.free(ap.pop());
-		@:privateAccess {
-			__eq(fx.h.caret == 0 && fx.h.frags == 0); // first chunk
-			__eq(fx.q.caret == 0 && fx.q.frags == 0); // last  chunk
-			fx.destory();
-			__eq((fx.h == cast Ptr.NUL) && (fx.q == cast Ptr.NUL));
-		}
 		__eq(Alloc.length == 0 && Alloc.frags == 0 && Alloc.isEmpty());
 	}
 
@@ -317,8 +292,6 @@ class MemTest {
 	static function t_struct() {
 		// no idea.
 		__eq(Monkey.CAPACITY == 16 + 1 + 4 + 32);
-		__eq(FixedBlock.CAPACITY == 70);
-		__eq(FlexibleStruct.CAPACITY == 4 && FlexibleStruct.OFFSET_FIRST == -4);
 
 		// utf8, ucs2
 		var jojo = new Monkey();
@@ -368,7 +341,6 @@ class MemTest {
 		Mem.init();
 		t_utils();
 		t_alloc();
-		t_fixed();
 		t_struct();
 		t_mem();
 		t_utf8();
@@ -396,14 +368,4 @@ enum abstract Color(Int) {
 @:build(mem.Struct.build()) abstract FlexibleStruct(Ptr) {
 	@idx(4, -4) var length: Int; // @idx(bytes, offset); offset(relative to this) of the first field is -4
 	@idx(0) var _b: AU8;         // Specify size by `new FlexibleStruct(size)` and the variable Type must be "array",
-}
-@:build(mem.Struct.build({bulk: 1})) abstract FixedBlock(Ptr) {
-	@idx(1) var b: Bool;
-	@idx(1) var u8: Int;
-	@idx(2) var u16: Int;
-	@idx(4) var i32: Int;
-	@idx(4) var f32: Float;
-	@idx(8) var f64: Float;
-	@idx(10) var au8: AU8;   // count = 10, byte = 1, bytes = 10 * 1
-	@idx(10) var ai32: AI32; // count = 10, byte = 4, bytes = 10 * 4.
 }
