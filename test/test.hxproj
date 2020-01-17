@@ -2,7 +2,7 @@
 <project version="2">
   <!-- Output SWF options -->
   <output>
-    <movie outputType="CustomBuild" />
+    <movie outputType="Application" />
     <movie input="" />
     <movie path="test.hxml" />
     <movie fps="24" />
@@ -11,7 +11,7 @@
     <movie version="0" />
     <movie minorVersion="0" />
     <movie platform="hxml" />
-    <movie background="000000" />
+    <movie background="#000000" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -24,7 +24,7 @@
     <option noInlineOnDebug="False" />
     <option mainClass="MemTest" />
     <option enabledebug="True" />
-    <option additional="-dce full&#xA;--flash-strict &#xA;-swf-version 10.3" />
+    <option additional="-dce full&#xA;-swf-header 800:500:24:000000&#xA;--flash-strict&#xA;-swf-version 10.3" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -40,7 +40,7 @@
     <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand>cmd /c haxe --connect 6000 $(OutputFile)</preBuildCommand>
+  <preBuildCommand />
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->

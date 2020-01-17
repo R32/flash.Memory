@@ -117,14 +117,14 @@ class Mem {
 	#end
 	}
 
-	static public inline function malloc(size, clear = false): Ptr return mem.Alloc.req(size, clear, 8);
+	static public inline function malloc(size, clear = false): Ptr return mem.Alloc.req(size, clear);
 
 	static public inline function free(ptr: Ptr) mem.Alloc.free(mem.Alloc.hd(ptr));
 
-	public static function realloc(src: Ptr, req: Int, pad = 8): Ptr {
+	public static function realloc(src: Ptr, req: Int): Ptr {
 		var hd = mem.Alloc.hd(src);
 		if (hd == Ptr.NUL) return Ptr.NUL; // TODO: throw a error?
-		req = mem.Ut.align(req, pad);
+		req = @:privateAccess mem.Alloc.ALIGN_LB(req);
 		var size = hd.entrySize;
 		if (hd == mem.Alloc.last) {
 			if (req > size) {
@@ -132,7 +132,7 @@ class Mem {
 				hd.size = req + 8;
 			}
 		} else if (req > size) {
-			var x:Ptr = mem.Alloc.req(req, false, pad);
+			var x:Ptr = mem.Alloc.req(req, false);
 			memcpy(x, src, size);
 			mem.Alloc.free(hd);
 			src = x;

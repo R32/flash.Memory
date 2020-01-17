@@ -85,11 +85,13 @@ class Alloc {
 		return isEmpty() ? ADDR_START : ((last: Ptr).toInt() + last.size);
 	}
 
-	static public function req(size: Int, zero: Bool, pad: Int): Ptr {
+	static inline function ALIGN_LB(size:Int) return ((size - 1) | (LB - 1)) + 1; // multiple of LB
+
+	static public function req(size: Int, zero: Bool): Ptr {
 		if (size <= LB) {
 			size = LB;
 		} else {
-			size = ((size - 1) | (LB - 1)) + 1; // multiple of LB
+			size = ALIGN_LB(size);
 		}
 		var bsize = size + Header.CAPACITY;
 		var h = hfree_frags(bsize);

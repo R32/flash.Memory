@@ -85,7 +85,7 @@ class AES128 {
 	}
 
 	static public function blkPK5(size: Int): mem.s.Block {
-		return new mem.s.Block(padPK5(size), false, 16);
+		return new mem.s.Block(padPK5(size), false);
 	}
 
 	static public inline function padPK5(n: Int) {

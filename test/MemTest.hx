@@ -153,7 +153,7 @@ class MemTest {
 		function eq_md5(s: String) {
 			var b = haxe.crypto.Md5.make( haxe.io.Bytes.ofString(s) );
 			var ptrStr = Mem.mallocFromString(s);
-			var ptrBlk1 = new mem.s.Block(16, false, 8);
+			var ptrBlk1 = new mem.s.Block(16, false);
 			Md5.make(ptrStr, ptrStr.length, ptrBlk1);
 
 			var ptrBlk2 = Mem.mallocFromBytes(b);
@@ -172,7 +172,7 @@ class MemTest {
 		function eq_sha1(s: String) {
 			var b = haxe.crypto.Sha1.make( haxe.io.Bytes.ofString(s) );
 			var ptrStr = Mem.mallocFromString(s);
-			var ptrBlk1 = new mem.s.Block(20, false, 8);
+			var ptrBlk1 = new mem.s.Block(20, false);
 			Sha1.make(ptrStr, ptrStr.length, ptrBlk1);
 			var ptrBlk2 = Mem.mallocFromBytes(b);
 			__eq(Mem.memcmp(ptrBlk2, ptrBlk1, ptrBlk2.length) == 0);

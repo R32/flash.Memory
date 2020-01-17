@@ -135,7 +135,7 @@ class Base64 {
 		len  -= pad;
 		olen -= pad;
 
-		var fb = new Block(olen, false, 8);
+		var fb = new Block(olen, false);
 		var base:Ptr = fb;
 
 		var dt:Ptr = decoding_table;
