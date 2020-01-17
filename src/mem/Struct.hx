@@ -52,13 +52,15 @@ class Struct {
 		}
 	}
 
+	static function fatalError(msg, pos) { return Context.fatalError("[struct]: " + msg, pos); }
+
 	static public function build() {
 		var cls:ClassType = Context.getLocalClass().get();
 		var abst = switch (cls.kind) {
 			case KAbstractImpl(_.get() => t) if ( isPtrType(t.type) ):
 				t;
 			default:
-				Context.fatalError("UnSupported Type", cls.pos);
+				fatalError("UnSupported Type", cls.pos);
 		}
 		var ct_ptr = macro :mem.Ptr;
 		var ct_int = macro :Int;
@@ -69,15 +71,16 @@ class Struct {
 		var offset = 0;
 		var flexible = false; // flexible struct
 		var idx = new IDXParams();
-		var all_fields = new haxe.ds.StringMap<Bool>();
+		var reserves = new haxe.ds.StringMap<Bool>();
 
 		var fds = fields.filter(function(f) {
-			all_fields.set(f.name, true);
+			reserves.set(f.name, true);
 			switch (f.kind) {
 			case FVar(_, _) if (f.meta != null):
 				for (meta in f.meta) {
 					if (meta.name == IDX) {
-						if (f.access.indexOf(AStatic) > -1) Context.fatalError("doesn't support static properties", f.pos);
+						if (f.access.indexOf(AStatic) > -1)
+							fatalError("doesn't support static properties", f.pos);
 						return true;
 					}
 				}
@@ -166,7 +169,8 @@ class Struct {
 									FORCE.parse(at.meta.extract(IDX)[0]);
 									defs.set(ts, FORCE);
 								}
-								if (FORCE.unSupported()) Context.fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+								if (FORCE.unSupported())
+									fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 								if (FORCE.isArray()) {           // force override
 									idx.count  = idx.sizeOf;     // first argument is "count";
 									idx.sizeOf = FORCE.sizeOf;
@@ -174,19 +178,21 @@ class Struct {
 								}
 							}
 							if (idx.isArray()) {                 // Struct Block
-								if (ts == toFull(abst.pack, abst.name)) Context.fatalError("Nested error", f.pos);
+								if (ts == toFull(abst.pack, abst.name))
+									fatalError("Nested error", f.pos);
 								if (idx.count == 0) {
 									if (f == fds[fds.length - 1]) {
 										flexible = true;
 									} else {
-										Context.fatalError("the flexible array member is supports only for the final field.", f.pos);
+										fatalError("the flexible array member is supports only for the final field.", f.pos);
 									}
 								}
 								offset += idx.offset;
 								exprs = [(macro (this + $v{offset})), null];
 							} else {                             // Point to Struct
 								if (idx.argc == 0) idx.sizeOf = 4;
-								if (idx.sizeOf != 4) Context.fatalError("first argument of @idx must be empty or 4.", f.pos);
+								if (idx.sizeOf != 4)
+									fatalError("first argument of @idx must be empty or 4.", f.pos);
 								offset += idx.offset;
 								exprs = [macro (this+$v{offset}).getI32(), macro (this+$v{offset}).setI32($setter_value)];
 							}
@@ -207,14 +213,16 @@ class Struct {
 				}
 
 				if (exprs == null) {
-					Context.fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
+					fatalError("Type (" + ts +") is not supported for field: " + f.name , f.pos);
 				} else {
-					if (idx.bytes == 0 && flexible == false) Context.fatalError("Something is wrong", f.pos);
+					if (idx.bytes == 0 && flexible == false)
+						fatalError("Something is wrong", f.pos);
 					if (f == fds[0]) {
-						if (offset > 0) Context.fatalError("offset of the first field can only be <= 0",f.pos);
+						if (offset > 0)
+							fatalError("offset of the first field can only be <= 0",f.pos);
 						offset_first = offset;
 					} else if (offset < offset_first) {
-						Context.fatalError("offset is out of range", f.pos);
+						fatalError("offset is out of range", f.pos);
 					}
 					var getter = exprCast(exprs[0], unsafe_cast);
 					var setter = exprs[1];
@@ -225,7 +233,7 @@ class Struct {
 					if (f.access.length == 0) {
 						f.access = f.name.charCodeAt(0) == "_".code ? [APrivate] : [APublic];
 					}
-					if (!all_fields.exists(getter_name))
+					if (!reserves.exists(getter_name))
 						fields.push({
 							name : getter_name,
 							access: [AInline, APrivate],
@@ -238,7 +246,7 @@ class Struct {
 							}),
 							pos: f.pos
 						});
-					if (setter!= null && !all_fields.exists(setter_name))
+					if (setter!= null && !reserves.exists(setter_name))
 						fields.push({
 							name: setter_name,
 							access: [AInline, APrivate],
@@ -287,7 +295,7 @@ class Struct {
 			kind: FVar(ct_int, macro $v{offset}),
 			pos: cls.pos
 		});
-		if (!all_fields.exists("_new"))
+		if (!reserves.exists("_new"))
 			fields.push({
 				name : "new",
 				access: [AInline, APublic],
@@ -302,7 +310,7 @@ class Struct {
 				}),
 				pos: cls.pos
 			});
-		if (!all_fields.exists("free"))
+		if (!reserves.exists("free"))
 			fields.push({
 				name : "free",
 				access: [AInline, APublic],
@@ -313,7 +321,7 @@ class Struct {
 				}),
 				pos: cls.pos
 			});
-		if (!all_fields.exists("realptr")) //
+		if (!reserves.exists("realptr")) //
 			fields.push({
 				name : "realptr",
 				access: [AInline, APrivate],
@@ -324,7 +332,7 @@ class Struct {
 				}),
 				pos: cls.pos
 			});
-		if (!all_fields.exists("alloc")) { // private
+		if (!reserves.exists("alloc")) { // private
 			fields.push({
 				name : "alloc",
 				access: [AInline, APrivate],
