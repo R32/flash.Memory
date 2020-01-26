@@ -60,8 +60,9 @@ class Alloc {
 	static var last: Header = cast Ptr.NUL;
 	static var hfree_a: Array<Header> = cast [0, 0, 0, 0, 0, 0, 0, 0]; // length = (FREE_MAX + 1)
 
-	static inline function hfree_index(bsize:Int) : Int {
-		return (((bsize - Header.CAPACITY) >>> LBITS) - 1) & FREE_MAX;
+	static function hfree_index(bsize:Int) : Int {
+		var i = ((bsize - Header.CAPACITY) >>> LBITS) - 1;
+		return i < FREE_MAX ? i : FREE_MAX;
 	}
 
 	static inline function hfree_add(h:Header) {
